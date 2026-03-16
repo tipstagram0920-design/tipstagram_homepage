@@ -1,65 +1,69 @@
-import Image from "next/image";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
+import { HeroSlider } from "@/components/home/HeroSlider";
+import { AboutSection } from "@/components/home/AboutSection";
+import { FeaturedCourses } from "@/components/home/FeaturedCourses";
+import { InterviewSection } from "@/components/home/InterviewSection";
+import { BenefitsSection } from "@/components/home/BenefitsSection";
+import { FaqSection } from "@/components/home/FaqSection";
+import { prisma } from "@/lib/prisma";
 
-export default function Home() {
+async function getProducts() {
+  try {
+    return await prisma.product.findMany({ where: { isActive: true }, orderBy: { order: "asc" }, take: 6 });
+  } catch { return []; }
+}
+
+async function getSlides() {
+  try {
+    return await prisma.slide.findMany({ where: { isActive: true }, orderBy: { order: "asc" } });
+  } catch { return []; }
+}
+
+async function getHomepageBlocks() {
+  try {
+    const raw = await prisma.homepageBlock.findMany({
+      where: { isActive: true },
+      orderBy: [{ section: "asc" }, { order: "asc" }],
+    });
+    const bySection = (section: string) =>
+      raw.filter(b => b.section === section).map(b => JSON.parse(b.data));
+    return {
+      stats: bySection("stats"),
+      painPoints: bySection("pain_points"),
+      solutions: bySection("solutions"),
+      benefits: bySection("benefits"),
+      faqs: bySection("faq"),
+      videos: bySection("videos"),
+      reviews: bySection("reviews"),
+    };
+  } catch {
+    return { stats: [], painPoints: [], solutions: [], benefits: [], faqs: [], videos: [], reviews: [] };
+  }
+}
+
+export default async function HomePage() {
+  const [products, slides, hb] = await Promise.all([getProducts(), getSlides(), getHomepageBlocks()]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="min-h-screen">
+      <Navbar />
+      <main>
+        <HeroSlider slides={slides.length > 0 ? slides : undefined} />
+        <AboutSection
+          stats={hb.stats.length > 0 ? hb.stats : undefined}
+          painPoints={hb.painPoints.length > 0 ? hb.painPoints : undefined}
+          solutions={hb.solutions.length > 0 ? hb.solutions : undefined}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        <FeaturedCourses products={products} />
+        <InterviewSection
+          videos={hb.videos.length > 0 ? hb.videos : undefined}
+          reviews={hb.reviews.length > 0 ? hb.reviews : undefined}
+        />
+        <BenefitsSection benefits={hb.benefits.length > 0 ? hb.benefits : undefined} />
+        <FaqSection faqs={hb.faqs.length > 0 ? hb.faqs : undefined} />
       </main>
+      <Footer />
     </div>
   );
 }
