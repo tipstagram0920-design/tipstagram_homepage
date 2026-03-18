@@ -4,9 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 import { formatPrice } from "@/lib/utils";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: NextRequest) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -58,7 +57,7 @@ export async function POST(req: NextRequest) {
       await prisma.coupon.update({
         where: { id: couponId },
         data: { uses: { increment: 1 } },
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     // 구매 완료 자동 이메일 발송
@@ -94,7 +93,7 @@ export async function POST(req: NextRequest) {
           to: user.email,
           subject,
           html,
-        }).catch(() => {}); // 이메일 실패해도 결제는 성공 처리
+        }).catch(() => { }); // 이메일 실패해도 결제는 성공 처리
       }
     }
 
