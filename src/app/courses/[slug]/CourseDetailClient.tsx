@@ -178,18 +178,9 @@ export function CourseDetailClient({ product, hasPurchased, isLoggedIn }: Course
               </div>
             )}
 
-            {/* Description */}
-            <div className="mt-8">
-              <h3 className="text-xl font-bold text-neutral-900 mb-4">강의 소개</h3>
-              <div
-                className="tiptap-content text-neutral-600 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: product.description }}
-              />
-            </div>
-
             {/* Curriculum */}
             {product.course && product.course.sections.length > 0 && (
-              <div className="mt-10">
+              <div className="mt-8">
                 <h3 className="text-xl font-bold text-neutral-900 mb-2">커리큘럼</h3>
                 <p className="text-sm text-neutral-500 mb-5">
                   총 {product.course.sections.length}섹션 · {totalLessons}강
@@ -236,6 +227,15 @@ export function CourseDetailClient({ product, hasPurchased, isLoggedIn }: Course
                 </div>
               </div>
             )}
+
+            {/* Description */}
+            <div className="mt-10">
+              <h3 className="text-xl font-bold text-neutral-900 mb-4">강의 소개</h3>
+              <div
+                className="tiptap-content text-neutral-600 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: product.description }}
+              />
+            </div>
           </div>
 
           {/* Right: Payment Card */}

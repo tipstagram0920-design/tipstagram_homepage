@@ -64,6 +64,7 @@ export function ProductForm({ product }: ProductFormProps) {
   const [uploading, setUploading] = useState(false);
   const [htmlMode, setHtmlMode] = useState(false);
   const [rawHtml, setRawHtml] = useState(product?.description || "");
+  const [previewMode, setPreviewMode] = useState(false);
 
   const uploadImage = useCallback(async (file: File): Promise<string | null> => {
     const fd = new FormData();
@@ -211,24 +212,39 @@ export function ProductForm({ product }: ProductFormProps) {
               상세 설명 *
               {uploading && <span className="ml-2 text-xs text-pink-500 animate-pulse">이미지 업로드 중...</span>}
             </label>
-            <button
-              type="button"
-              onClick={() => {
-                if (!htmlMode) {
-                  setRawHtml(editor?.getHTML() || "");
-                } else {
-                  editor?.commands.setContent(rawHtml);
-                }
-                setHtmlMode(!htmlMode);
-              }}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                htmlMode ? "bg-pink-100 text-pink-600" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+            <div className="flex items-center gap-2">
+              {htmlMode && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode(!previewMode)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                    previewMode ? "bg-blue-100 text-blue-600" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                  )}
+                >
+                  {previewMode ? "HTML 편집" : "미리보기"}
+                </button>
               )}
-            >
-              <span className="font-mono">&lt;/&gt;</span>
-              {htmlMode ? "에디터로 전환" : "HTML 소스 편집"}
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!htmlMode) {
+                    setRawHtml(editor?.getHTML() || "");
+                    setPreviewMode(false);
+                  } else {
+                    editor?.commands.setContent(rawHtml);
+                  }
+                  setHtmlMode(!htmlMode);
+                }}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                  htmlMode ? "bg-pink-100 text-pink-600" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                )}
+              >
+                <span className="font-mono">&lt;/&gt;</span>
+                {htmlMode ? "에디터로 전환" : "HTML 소스 편집"}
+              </button>
+            </div>
           </div>
           <div className="border border-neutral-200 rounded-2xl overflow-hidden focus-within:border-pink-400 transition-colors">
             {!htmlMode && (
@@ -259,15 +275,24 @@ export function ProductForm({ product }: ProductFormProps) {
               </div>
             )}
             {htmlMode ? (
-              <div className="p-3">
-                <textarea
-                  value={rawHtml}
-                  onChange={(e) => setRawHtml(e.target.value)}
-                  className="w-full font-mono text-xs text-neutral-800 bg-neutral-50 rounded-xl p-4 min-h-[400px] focus:outline-none focus:ring-2 focus:ring-pink-200 resize-y"
-                  placeholder="HTML 코드를 입력하세요..."
-                  spellCheck={false}
-                />
-              </div>
+              previewMode ? (
+                <div className="p-6 min-h-[400px] bg-white">
+                  <div
+                    className="tiptap-content text-neutral-600 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: rawHtml }}
+                  />
+                </div>
+              ) : (
+                <div className="p-3">
+                  <textarea
+                    value={rawHtml}
+                    onChange={(e) => setRawHtml(e.target.value)}
+                    className="w-full font-mono text-xs text-neutral-800 bg-neutral-50 rounded-xl p-4 min-h-[400px] focus:outline-none focus:ring-2 focus:ring-pink-200 resize-y"
+                    placeholder="HTML 코드를 입력하세요..."
+                    spellCheck={false}
+                  />
+                </div>
+              )
             ) : (
               <div className="relative p-5">
                 <EditorContent editor={editor} />
