@@ -7,7 +7,7 @@ import { CourseDetailClient } from "./CourseDetailClient";
 import { BoosterSalesPage } from "@/components/product/BoosterSalesPage";
 
 // 이 슬러그를 가진 상품은 커스텀 세일즈 페이지로 렌더링
-const BOOSTER_SLUG = "instagram-booster";
+const BOOSTER_SLUG = "marketing-booster";
 
 async function getProduct(slug: string) {
   return await prisma.product.findUnique({
