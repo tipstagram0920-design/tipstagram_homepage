@@ -154,8 +154,9 @@ export function ProductForm({ product }: ProductFormProps) {
     if (url && editor) editor.chain().focus().setLink({ href: url }).run();
   }, [editor]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (!form.title.trim()) { setError("상품 제목을 입력하세요."); return; }
+    if (!form.slug.trim()) { setError("슬러그를 입력하세요."); return; }
     setLoading(true);
     setError("");
     const description = htmlMode ? rawHtml : (editor?.getHTML() || "");
@@ -182,7 +183,7 @@ export function ProductForm({ product }: ProductFormProps) {
 
   return (
     <>
-    <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
+    <div className="max-w-3xl space-y-6">
       <div className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-5">
 
         <div className="grid grid-cols-2 gap-4">
@@ -356,13 +357,13 @@ export function ProductForm({ product }: ProductFormProps) {
           className="px-5 py-2.5 rounded-xl border border-neutral-200 text-sm font-semibold text-neutral-700 hover:bg-neutral-50">
           취소
         </button>
-        <button type="submit" disabled={loading || uploading}
+        <button type="button" onClick={handleSubmit} disabled={loading || uploading}
           className="px-5 py-2.5 rounded-xl ig-gradient text-white text-sm font-bold hover:opacity-90 disabled:opacity-50">
           {loading ? "저장 중..." : product ? "수정 완료" : "상품 등록"}
         </button>
       </div>
 
-    </form>
+    </div>
 
     {showTemplatePicker && (
       <TemplatePickerModal
