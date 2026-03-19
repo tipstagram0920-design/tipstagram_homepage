@@ -191,7 +191,6 @@ export function ProductForm({ product }: ProductFormProps) {
   };
 
   return (
-    <>
     <div className="max-w-3xl space-y-6">
       <div className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-5">
 
@@ -336,6 +335,17 @@ export function ProductForm({ product }: ProductFormProps) {
           </div>
         </div>
 
+        {showTemplatePicker && (
+          <TemplatePickerModal
+            onSelect={(html) => {
+              setRawHtml(html);
+              setHtmlMode(true);
+              setPreviewMode(false);
+            }}
+            onClose={() => setShowTemplatePicker(false)}
+          />
+        )}
+
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1.5">가격 (원) *</label>
@@ -382,17 +392,5 @@ export function ProductForm({ product }: ProductFormProps) {
       </div>
 
     </div>
-
-    {showTemplatePicker && (
-      <TemplatePickerModal
-        onSelect={(html) => {
-          setRawHtml(html);
-          setHtmlMode(true);
-          setPreviewMode(false);
-        }}
-        onClose={() => setShowTemplatePicker(false)}
-      />
-    )}
-    </>
   );
 }
