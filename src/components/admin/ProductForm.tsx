@@ -15,6 +15,7 @@ import {
   List, ListOrdered, Quote, ImageIcon, LinkIcon,
   Heading1, Heading2, Heading3,
 } from "lucide-react";
+import { TemplatePickerModal } from "./TemplatePickerModal";
 
 interface ProductFormProps {
   product?: {
@@ -65,6 +66,7 @@ export function ProductForm({ product }: ProductFormProps) {
   const [htmlMode, setHtmlMode] = useState(false);
   const [rawHtml, setRawHtml] = useState(product?.description || "");
   const [previewMode, setPreviewMode] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
 
   const uploadImage = useCallback(async (file: File): Promise<string | null> => {
     const fd = new FormData();
@@ -213,6 +215,13 @@ export function ProductForm({ product }: ProductFormProps) {
               {uploading && <span className="ml-2 text-xs text-pink-500 animate-pulse">이미지 업로드 중...</span>}
             </label>
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowTemplatePicker(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition-colors"
+              >
+                템플릿
+              </button>
               {htmlMode && (
                 <button
                   type="button"
@@ -348,6 +357,18 @@ export function ProductForm({ product }: ProductFormProps) {
           {loading ? "저장 중..." : product ? "수정 완료" : "상품 등록"}
         </button>
       </div>
+
+      {showTemplatePicker && (
+        <TemplatePickerModal
+          onSelect={(html) => {
+            setRawHtml(html);
+            setHtmlMode(true);
+            setPreviewMode(false);
+            editor?.commands.setContent(html);
+          }}
+          onClose={() => setShowTemplatePicker(false)}
+        />
+      )}
     </form>
   );
 }
