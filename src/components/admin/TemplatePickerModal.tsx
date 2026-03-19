@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { DESCRIPTION_TEMPLATES } from "./descriptionTemplates";
 
 interface TemplatePickerModalProps {
@@ -8,17 +9,22 @@ interface TemplatePickerModalProps {
 }
 
 export function TemplatePickerModal({ onSelect, onClose }: TemplatePickerModalProps) {
+  const [selected, setSelected] = useState(DESCRIPTION_TEMPLATES[0].id);
+
+  const current = DESCRIPTION_TEMPLATES.find((t) => t.id === selected)!;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden">
+
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 flex-shrink-0">
           <div>
             <h2 className="text-lg font-bold text-neutral-900">템플릿 선택</h2>
-            <p className="text-sm text-neutral-500 mt-0.5">원하는 템플릿을 선택하면 현재 내용이 교체됩니다.</p>
+            <p className="text-sm text-neutral-500 mt-0.5">오른쪽에서 실제 보여지는 모습을 확인하세요.</p>
           </div>
           <button
             onClick={onClose}
@@ -28,41 +34,65 @@ export function TemplatePickerModal({ onSelect, onClose }: TemplatePickerModalPr
           </button>
         </div>
 
-        {/* Template list */}
-        <div className="overflow-y-auto p-6 flex flex-col gap-4">
-          {DESCRIPTION_TEMPLATES.map((tpl) => (
-            <div
-              key={tpl.id}
-              className="border border-neutral-200 rounded-2xl overflow-hidden hover:border-pink-400 transition-colors cursor-pointer group"
-              onClick={() => {
-                if (confirm(`"${tpl.name}" 템플릿을 불러오면 현재 내용이 지워집니다. 계속할까요?`)) {
-                  onSelect(tpl.html);
-                  onClose();
-                }
-              }}
-            >
-              {/* Template info */}
-              <div className="flex items-center justify-between px-5 py-4 bg-neutral-50 group-hover:bg-pink-50 transition-colors">
-                <div>
-                  <p className="font-bold text-neutral-900 text-sm">{tpl.name}</p>
-                  <p className="text-xs text-neutral-500 mt-0.5">{tpl.description}</p>
-                </div>
-                <button className="px-4 py-1.5 rounded-lg bg-pink-500 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                  이 템플릿 사용
-                </button>
-              </div>
+        {/* Body */}
+        <div className="flex flex-1 overflow-hidden">
 
-              {/* Mini preview */}
-              <div className="h-40 overflow-hidden relative">
+          {/* Left: template list */}
+          <div className="w-56 flex-shrink-0 border-r border-neutral-100 overflow-y-auto p-3 flex flex-col gap-2">
+            {DESCRIPTION_TEMPLATES.map((tpl) => (
+              <button
+                key={tpl.id}
+                onClick={() => setSelected(tpl.id)}
+                className={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
+                  selected === tpl.id
+                    ? "bg-pink-50 border border-pink-300"
+                    : "hover:bg-neutral-50 border border-transparent"
+                }`}
+              >
+                <p className={`text-sm font-bold ${selected === tpl.id ? "text-pink-600" : "text-neutral-800"}`}>
+                  {tpl.name}
+                </p>
+                <p className="text-xs text-neutral-400 mt-0.5 leading-relaxed">{tpl.description}</p>
+              </button>
+            ))}
+          </div>
+
+          {/* Right: full-size preview */}
+          <div className="flex-1 overflow-y-auto bg-neutral-50">
+            {/* Simulated product page context */}
+            <div className="px-8 py-8">
+              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-4">
+                강의 소개 — 실제 표시 모습
+              </p>
+              <div className="bg-white rounded-2xl p-8 shadow-sm">
                 <div
-                  className="absolute inset-0 p-4 origin-top-left pointer-events-none"
-                  style={{ transform: "scale(0.45)", width: "222%", height: "222%" }}
-                  dangerouslySetInnerHTML={{ __html: tpl.html }}
+                  className="tiptap-content text-neutral-600 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: current.html }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white" />
               </div>
             </div>
-          ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-neutral-100 flex-shrink-0">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-xl border border-neutral-200 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+          >
+            취소
+          </button>
+          <button
+            onClick={() => {
+              if (confirm(`"${current.name}" 템플릿을 불러오면 현재 내용이 지워집니다. 계속할까요?`)) {
+                onSelect(current.html);
+                onClose();
+              }
+            }}
+            className="px-5 py-2.5 rounded-xl ig-gradient text-white text-sm font-bold hover:opacity-90"
+          >
+            이 템플릿 사용하기
+          </button>
         </div>
       </div>
     </div>
