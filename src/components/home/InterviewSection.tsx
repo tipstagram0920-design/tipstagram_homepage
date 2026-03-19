@@ -22,9 +22,16 @@ const defaultReviews: ReviewItem[] = [
   { name: "윤○○", tag: "@yoon_lifestyle", rating: 5, text: "오픈채팅방에서 궁금한 점을 물어보면 빠르게 답변해 주셔서 정말 좋았어요. 계속 지원받는 느낌이에요.", highlight: "끊임없는 커뮤니티 지원" },
 ];
 
-function VideoCard({ youtubeId, name, desc }: VideoItem) {
+function VideoCard({ youtubeId: rawId, name, desc }: VideoItem) {
   const { ref, inView } = useInView({ threshold: 0.5, triggerOnce: false });
   const [playing, setPlaying] = useState(false);
+
+  // URL에서 11자리 ID만 추출하는 로직 추가
+  const youtubeId = (() => {
+    const match = rawId.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/);
+    return (match && match[2].length === 11) ? match[2] : rawId.trim();
+  })();
+
   if (inView && !playing) setPlaying(true);
   if (!inView && playing) setPlaying(false);
 
@@ -39,7 +46,21 @@ function VideoCard({ youtubeId, name, desc }: VideoItem) {
           <iframe src={src} title={name} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="absolute inset-0 w-full h-full" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center cursor-pointer group" onClick={() => setPlaying(true)}>
-            <img src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`} alt={name} className="absolute inset-0 w-full h-full object-cover opacity-70" onError={e => { (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`; }} />
+            <img
+              src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`}
+              alt={name}
+              className="absolute inset-0 w-full h-full object-cover opacity-80"
+              onError={e => {
+                const target = e.target as HTMLImageElement;
+                if (target.src.includes('maxresdefault')) {
+                  target.src = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+                } else if (target.src.includes('hqdefault')) {
+                  target.src = `https://img.youtube.com/vi/${youtubeId}/sddefault.jpg`;
+                } else {
+                  target.src = `https://img.youtube.com/vi/${youtubeId}/0.jpg`;
+                }
+              }}
+            />
             <div className="relative z-10 w-16 h-16 rounded-full ig-gradient flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
               <Play className="w-6 h-6 text-white fill-white ml-1" />
             </div>

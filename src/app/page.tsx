@@ -8,6 +8,8 @@ import { BenefitsSection } from "@/components/home/BenefitsSection";
 import { FaqSection } from "@/components/home/FaqSection";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 async function getProducts() {
   try {
     return await prisma.product.findMany({ where: { isActive: true }, orderBy: { order: "asc" }, take: 6 });
@@ -27,7 +29,12 @@ async function getHomepageBlocks() {
       orderBy: [{ section: "asc" }, { order: "asc" }],
     });
     const bySection = (section: string) =>
-      raw.filter(b => b.section === section).map(b => JSON.parse(b.data));
+      raw
+        .filter(b => b.section === section)
+        .flatMap(b => {
+          try { return [JSON.parse(b.data)]; }
+          catch { return []; }
+        });
     return {
       stats: bySection("stats"),
       painPoints: bySection("pain_points"),
@@ -37,7 +44,8 @@ async function getHomepageBlocks() {
       videos: bySection("videos"),
       reviews: bySection("reviews"),
     };
-  } catch {
+  } catch (e) {
+    console.error("[getHomepageBlocks] Prisma error:", e);
     return { stats: [], painPoints: [], solutions: [], benefits: [], faqs: [], videos: [], reviews: [] };
   }
 }

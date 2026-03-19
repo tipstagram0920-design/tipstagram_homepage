@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import HomepageEditor from "./HomepageEditor";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomepagePage() {
   const raw = await prisma.homepageBlock.findMany({
     orderBy: [{ section: "asc" }, { order: "asc" }],

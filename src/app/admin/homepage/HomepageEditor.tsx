@@ -14,13 +14,13 @@ interface Block {
 type FieldDef = { k: string; label: string; placeholder: string };
 
 const SECTIONS: { key: string; label: string; fields: FieldDef[] }[] = [
-  { key: "stats",       label: "통계 숫자",   fields: [{ k: "value", label: "값", placeholder: "1,200+" }, { k: "label", label: "라벨", placeholder: "누적 수강생" }] },
-  { key: "pain_points", label: "고민 카드",   fields: [{ k: "emoji", label: "이모지", placeholder: "😔" }, { k: "title", label: "제목", placeholder: "제목" }, { k: "desc", label: "설명", placeholder: "설명" }] },
-  { key: "solutions",   label: "솔루션 카드", fields: [{ k: "num", label: "번호", placeholder: "01" }, { k: "title", label: "제목", placeholder: "제목" }, { k: "desc", label: "설명", placeholder: "설명" }] },
-  { key: "benefits",    label: "수강 혜택",   fields: [{ k: "icon", label: "아이콘", placeholder: "🎬" }, { k: "title", label: "제목", placeholder: "제목" }, { k: "desc", label: "설명", placeholder: "설명" }] },
-  { key: "faq",         label: "FAQ",          fields: [{ k: "q", label: "질문", placeholder: "질문" }, { k: "a", label: "답변", placeholder: "답변" }] },
-  { key: "videos",      label: "영상 후기",   fields: [{ k: "youtubeId", label: "YouTube ID", placeholder: "dQw4w9WgXcQ" }, { k: "name", label: "이름", placeholder: "김○○ 수강생" }, { k: "desc", label: "설명", placeholder: "후기 한 줄" }] },
-  { key: "reviews",     label: "텍스트 후기", fields: [{ k: "name", label: "이름", placeholder: "김○○" }, { k: "tag", label: "태그", placeholder: "@username" }, { k: "rating", label: "별점", placeholder: "5" }, { k: "text", label: "후기 내용", placeholder: "후기..." }, { k: "highlight", label: "하이라이트", placeholder: "3개월 만에 5,000명 달성" }] },
+  { key: "stats", label: "통계 숫자", fields: [{ k: "value", label: "값", placeholder: "1,200+" }, { k: "label", label: "라벨", placeholder: "누적 수강생" }] },
+  { key: "pain_points", label: "고민 카드", fields: [{ k: "emoji", label: "이모지", placeholder: "😔" }, { k: "title", label: "제목", placeholder: "제목" }, { k: "desc", label: "설명", placeholder: "설명" }] },
+  { key: "solutions", label: "솔루션 카드", fields: [{ k: "num", label: "번호", placeholder: "01" }, { k: "title", label: "제목", placeholder: "제목" }, { k: "desc", label: "설명", placeholder: "설명" }] },
+  { key: "benefits", label: "수강 혜택", fields: [{ k: "icon", label: "아이콘", placeholder: "🎬" }, { k: "title", label: "제목", placeholder: "제목" }, { k: "desc", label: "설명", placeholder: "설명" }] },
+  { key: "faq", label: "FAQ", fields: [{ k: "q", label: "질문", placeholder: "질문" }, { k: "a", label: "답변", placeholder: "답변" }] },
+  { key: "videos", label: "영상 후기", fields: [{ k: "youtubeId", label: "YouTube ID", placeholder: "dQw4w9WgXcQ" }, { k: "name", label: "이름", placeholder: "김○○ 수강생" }, { k: "desc", label: "설명", placeholder: "후기 한 줄" }] },
+  { key: "reviews", label: "텍스트 후기", fields: [{ k: "name", label: "이름", placeholder: "김○○" }, { k: "tag", label: "태그", placeholder: "@username" }, { k: "rating", label: "별점", placeholder: "5" }, { k: "text", label: "후기 내용", placeholder: "후기..." }, { k: "highlight", label: "하이라이트", placeholder: "3개월 만에 5,000명 달성" }] },
 ];
 
 const TEXTAREA_KEYS = new Set(["a", "desc", "text"]);
@@ -171,9 +171,8 @@ export default function HomepageEditor({ initial }: { initial: Block[] }) {
             <button
               key={s.key}
               onClick={() => setActiveTab(s.key)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === s.key ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-700"
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === s.key ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-700"
+                }`}
             >
               {s.label}
               <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeTab === s.key ? "bg-neutral-100 text-neutral-600" : "bg-neutral-200 text-neutral-500"}`}>
@@ -219,7 +218,14 @@ export default function HomepageEditor({ initial }: { initial: Block[] }) {
                         <input
                           type="text"
                           value={editData[f.k] ?? ""}
-                          onChange={e => setEditData(prev => ({ ...prev, [f.k]: e.target.value }))}
+                          onChange={e => {
+                            let val = e.target.value;
+                            if (f.k === "youtubeId") {
+                              const match = val.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/);
+                              if (match && match[2].length === 11) val = match[2];
+                            }
+                            setEditData(prev => ({ ...prev, [f.k]: val }));
+                          }}
                           placeholder={f.placeholder}
                           className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
                         />

@@ -16,8 +16,12 @@ export async function POST(req: NextRequest) {
     }
 
     const hashed = await bcrypt.hash(password, 12);
+
+    // 이메일이 ADMIN_EMAIL과 일치하면 ADMIN 권한 부여
+    const role = email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
+
     const user = await prisma.user.create({
-      data: { name, email, password: hashed },
+      data: { name, email, password: hashed, role },
     });
 
     return NextResponse.json({ id: user.id, email: user.email });
