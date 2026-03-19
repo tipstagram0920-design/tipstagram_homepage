@@ -181,6 +181,7 @@ export function ProductForm({ product }: ProductFormProps) {
   };
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
       <div className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-5">
 
@@ -361,17 +362,18 @@ export function ProductForm({ product }: ProductFormProps) {
         </button>
       </div>
 
-      {showTemplatePicker && (
-        <TemplatePickerModal
-          onSelect={(html) => {
-            setRawHtml(html);
-            setHtmlMode(true);
-            setPreviewMode(false);
-            editor?.commands.setContent(html);
-          }}
-          onClose={() => setShowTemplatePicker(false)}
-        />
-      )}
     </form>
+
+    {showTemplatePicker && (
+      <TemplatePickerModal
+        onSelect={(html) => {
+          setRawHtml(html);
+          setHtmlMode(true);
+          setPreviewMode(false);
+        }}
+        onClose={() => setShowTemplatePicker(false)}
+      />
+    )}
+    </>
   );
 }
