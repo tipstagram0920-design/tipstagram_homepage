@@ -26,7 +26,7 @@ export function TemplatePickerModal({ onSelect, onClose }: TemplatePickerModalPr
             <h2 className="text-lg font-bold text-neutral-900">템플릿 선택</h2>
             <p className="text-sm text-neutral-500 mt-0.5">오른쪽에서 실제 보여지는 모습을 확인하세요.</p>
           </div>
-          <button
+          <button type="button"
             onClick={onClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:bg-neutral-100 transition-colors text-xl leading-none"
           >
@@ -40,7 +40,7 @@ export function TemplatePickerModal({ onSelect, onClose }: TemplatePickerModalPr
           {/* Left: template list */}
           <div className="w-56 flex-shrink-0 border-r border-neutral-100 overflow-y-auto p-3 flex flex-col gap-2">
             {DESCRIPTION_TEMPLATES.map((tpl) => (
-              <button
+              <button type="button"
                 key={tpl.id}
                 onClick={() => setSelected(tpl.id)}
                 className={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
@@ -76,13 +76,13 @@ export function TemplatePickerModal({ onSelect, onClose }: TemplatePickerModalPr
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-neutral-100 flex-shrink-0">
-          <button
+          <button type="button"
             onClick={onClose}
             className="px-5 py-2.5 rounded-xl border border-neutral-200 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
           >
             취소
           </button>
-          <button
+          <button type="button"
             onClick={() => {
               if (confirm(`"${current.name}" 템플릿을 불러오면 현재 내용이 지워집니다. 계속할까요?`)) {
                 onSelect(current.html);
