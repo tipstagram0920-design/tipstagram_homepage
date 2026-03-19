@@ -15,7 +15,7 @@ import {
   List, ListOrdered, Quote, ImageIcon, LinkIcon,
   Heading1, Heading2, Heading3,
 } from "lucide-react";
-import { TemplatePickerModal } from "./TemplatePickerModal";
+import { DESCRIPTION_TEMPLATES } from "./descriptionTemplates";
 
 interface ProductFormProps {
   product?: {
@@ -67,6 +67,7 @@ export function ProductForm({ product }: ProductFormProps) {
   const [rawHtml, setRawHtml] = useState(product?.description || "");
   const [previewMode, setPreviewMode] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(DESCRIPTION_TEMPLATES[0].id);
   const previewDivRef = useRef<HTMLDivElement | null>(null);
   const isComposingRef = useRef(false);
 
@@ -335,16 +336,65 @@ export function ProductForm({ product }: ProductFormProps) {
           </div>
         </div>
 
-        {showTemplatePicker && (
-          <TemplatePickerModal
-            onSelect={(html) => {
-              setRawHtml(html);
-              setHtmlMode(true);
-              setPreviewMode(false);
-            }}
-            onClose={() => setShowTemplatePicker(false)}
-          />
-        )}
+        {showTemplatePicker && (() => {
+          const tpl = DESCRIPTION_TEMPLATES.find(t => t.id === selectedTemplateId)!;
+          return (
+            <div className="border border-pink-200 rounded-2xl bg-white shadow-sm">
+              {/* 헤더 */}
+              <div className="flex items-center justify-between px-5 py-3 bg-pink-50 border-b border-pink-100 rounded-t-2xl">
+                <span className="text-sm font-bold text-neutral-900">템플릿 선택</span>
+                <button type="button" onClick={() => setShowTemplatePicker(false)}
+                  className="text-neutral-400 hover:text-neutral-700 text-xl leading-none px-1">×</button>
+              </div>
+
+              {/* 바디 */}
+              <div className="flex" style={{ height: 560 }}>
+                {/* 왼쪽: 목록 */}
+                <div className="w-44 flex-shrink-0 border-r border-neutral-100 p-3 flex flex-col gap-2 overflow-y-auto">
+                  {DESCRIPTION_TEMPLATES.map(t => (
+                    <button type="button" key={t.id}
+                      onClick={() => setSelectedTemplateId(t.id)}
+                      className={cn("w-full text-left px-3 py-3 rounded-xl border transition-colors",
+                        selectedTemplateId === t.id
+                          ? "bg-pink-50 border-pink-300"
+                          : "border-transparent hover:bg-neutral-50"
+                      )}>
+                      <p className={cn("text-sm font-bold", selectedTemplateId === t.id ? "text-pink-600" : "text-neutral-800")}>{t.name}</p>
+                      <p className="text-xs text-neutral-400 mt-0.5">{t.description}</p>
+                    </button>
+                  ))}
+                </div>
+
+                {/* 오른쪽: 미리보기 */}
+                <div className="flex-1 overflow-y-auto bg-neutral-50 p-6">
+                  <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-3">실제 표시 모습</p>
+                  <div className="bg-white rounded-2xl p-6 shadow-sm">
+                    <div className="tiptap-content text-neutral-600 leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: tpl.html }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* 푸터 */}
+              <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-neutral-100 rounded-b-2xl bg-neutral-50">
+                <button type="button" onClick={() => setShowTemplatePicker(false)}
+                  className="px-4 py-2 rounded-xl border border-neutral-200 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">
+                  취소
+                </button>
+                <button type="button"
+                  onClick={() => {
+                    setRawHtml(tpl.html);
+                    setHtmlMode(true);
+                    setPreviewMode(false);
+                    setShowTemplatePicker(false);
+                  }}
+                  className="px-4 py-2 rounded-xl ig-gradient text-white text-sm font-bold hover:opacity-90">
+                  이 템플릿 사용하기
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="grid grid-cols-3 gap-4">
           <div>
