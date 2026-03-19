@@ -70,6 +70,34 @@ export function ProductForm({ product }: ProductFormProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState(DESCRIPTION_TEMPLATES[0].id);
   const previewDivRef = useRef<HTMLDivElement | null>(null);
   const isComposingRef = useRef(false);
+  const previewImgInputRef = useRef<HTMLInputElement>(null);
+
+  const exec = (cmd: string, value?: string) => {
+    previewDivRef.current?.focus();
+    document.execCommand(cmd, false, value);
+    setRawHtml(previewDivRef.current?.innerHTML || "");
+  };
+
+  const insertHtml = (html: string) => {
+    previewDivRef.current?.focus();
+    document.execCommand("insertHTML", false, html);
+    setRawHtml(previewDivRef.current?.innerHTML || "");
+  };
+
+  const uploadPreviewImage = useCallback(async (file: File) => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      if (!res.ok) return;
+      const { url } = await res.json();
+      insertHtml(`<img src="${url}" style="max-width:100%;height:auto;border-radius:8px;margin:12px 0;display:block;" />`);
+    } finally {
+      setUploading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // previewMode가 켜질 때만 div innerHTML 초기화 (사용자 타이핑 중엔 건드리지 않음)
   useEffect(() => {
@@ -296,24 +324,111 @@ export function ProductForm({ product }: ProductFormProps) {
             )}
             {htmlMode ? (
               previewMode ? (
-                <div className="p-6 min-h-[400px] bg-white">
-                  <div
-                    ref={previewDivRef}
-                    className="tiptap-content text-neutral-600 leading-relaxed outline-none"
-                    contentEditable
-                    suppressContentEditableWarning
-                    onCompositionStart={() => { isComposingRef.current = true; }}
-                    onCompositionEnd={(e) => {
-                      isComposingRef.current = false;
-                      setRawHtml((e.currentTarget as HTMLDivElement).innerHTML);
-                    }}
-                    onInput={(e) => {
-                      if (!isComposingRef.current) {
+                <>
+                  {/* 미리보기 편집 툴바 */}
+                  <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-neutral-100 bg-neutral-50">
+                    {/* 헤딩 */}
+                    {(["H1","H2","H3"] as const).map(h => (
+                      <button key={h} type="button" title={h}
+                        onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", h); }}
+                        className="px-2 py-1.5 rounded-lg text-xs font-bold text-neutral-600 hover:bg-neutral-100">{h}</button>
+                    ))}
+                    <div className="w-px h-5 bg-neutral-200 mx-1" />
+                    {/* 기본 서식 */}
+                    <button type="button" title="굵게" onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
+                      className="p-1.5 rounded-lg hover:bg-neutral-100"><Bold className="w-4 h-4" /></button>
+                    <button type="button" title="기울임" onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
+                      className="p-1.5 rounded-lg hover:bg-neutral-100"><Italic className="w-4 h-4" /></button>
+                    <button type="button" title="밑줄" onMouseDown={(e) => { e.preventDefault(); exec("underline"); }}
+                      className="p-1.5 rounded-lg hover:bg-neutral-100"><UnderlineIcon className="w-4 h-4" /></button>
+                    <button type="button" title="취소선" onMouseDown={(e) => { e.preventDefault(); exec("strikeThrough"); }}
+                      className="p-1.5 rounded-lg hover:bg-neutral-100"><Strikethrough className="w-4 h-4" /></button>
+                    <div className="w-px h-5 bg-neutral-200 mx-1" />
+                    {/* 글자 크기 */}
+                    <select title="글자 크기"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onChange={(e) => { exec("fontSize", e.target.value); e.target.value = ""; }}
+                      className="text-xs border border-neutral-200 rounded-lg px-1 py-1 bg-white text-neutral-600 focus:outline-none">
+                      <option value="">크기</option>
+                      <option value="1">매우 작게</option>
+                      <option value="2">작게</option>
+                      <option value="3">보통</option>
+                      <option value="4">크게</option>
+                      <option value="5">매우 크게</option>
+                      <option value="6">제목급</option>
+                    </select>
+                    {/* 글자 색상 */}
+                    <label title="글자 색" className="p-1.5 rounded-lg hover:bg-neutral-100 cursor-pointer relative">
+                      <span className="text-xs font-bold text-neutral-600">A</span>
+                      <input type="color" defaultValue="#f97316" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                        onChange={(e) => exec("foreColor", e.target.value)} />
+                    </label>
+                    {/* 배경 색상 */}
+                    <label title="배경 색" className="p-1.5 rounded-lg hover:bg-neutral-100 cursor-pointer relative">
+                      <span className="text-xs font-bold" style={{ background: "#fef3c7", padding: "1px 3px", borderRadius: 3 }}>A</span>
+                      <input type="color" defaultValue="#fef3c7" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                        onChange={(e) => exec("hiliteColor", e.target.value)} />
+                    </label>
+                    <div className="w-px h-5 bg-neutral-200 mx-1" />
+                    {/* 정렬 */}
+                    <button type="button" title="왼쪽" onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
+                      className="p-1.5 rounded-lg hover:bg-neutral-100"><AlignLeft className="w-4 h-4" /></button>
+                    <button type="button" title="가운데" onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
+                      className="p-1.5 rounded-lg hover:bg-neutral-100"><AlignCenter className="w-4 h-4" /></button>
+                    <button type="button" title="오른쪽" onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
+                      className="p-1.5 rounded-lg hover:bg-neutral-100"><AlignRight className="w-4 h-4" /></button>
+                    <div className="w-px h-5 bg-neutral-200 mx-1" />
+                    {/* 이미지 */}
+                    <input ref={previewImgInputRef} type="file" accept="image/*" className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPreviewImage(f); e.target.value = ""; }} />
+                    <button type="button" title="이미지 업로드"
+                      onMouseDown={(e) => { e.preventDefault(); previewImgInputRef.current?.click(); }}
+                      className="p-1.5 rounded-lg hover:bg-neutral-100"><ImageIcon className="w-4 h-4" /></button>
+                    <div className="w-px h-5 bg-neutral-200 mx-1" />
+                    {/* 박스 삽입 */}
+                    <select title="박스 삽입"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        const v = e.target.value; e.target.value = "";
+                        if (!v) return;
+                        const boxes: Record<string, string> = {
+                          default: `<div style="padding:16px 20px;background:#f9f9f9;border-radius:12px;border:1px solid #eee;margin:12px 0;"><p style="margin:0;">텍스트를 입력하세요</p></div>`,
+                          highlight: `<div style="padding:16px 20px;background:#fff7ed;border-left:4px solid #f97316;border-radius:0 12px 12px 0;margin:12px 0;"><p style="margin:0;font-weight:700;color:#f97316;">강조 텍스트</p></div>`,
+                          dark: `<div style="padding:20px 24px;background:#1a1a1a;border-radius:12px;margin:12px 0;"><p style="margin:0;color:white;font-weight:700;">다크 박스 텍스트</p></div>`,
+                          gradient: `<div style="padding:32px 24px;background:linear-gradient(135deg,#f97316,#ec4899);border-radius:16px;margin:12px 0;text-align:center;"><p style="margin:0;color:white;font-size:20px;font-weight:800;">그라데이션 박스</p></div>`,
+                          quote: `<blockquote style="padding:16px 20px;border-left:4px solid #e5e7eb;margin:12px 0;color:#6b7280;font-style:italic;">"인용구 텍스트를 입력하세요"</blockquote>`,
+                        };
+                        insertHtml(boxes[v] || "");
+                      }}
+                      className="text-xs border border-neutral-200 rounded-lg px-1 py-1 bg-white text-neutral-600 focus:outline-none">
+                      <option value="">박스 삽입</option>
+                      <option value="default">기본 박스</option>
+                      <option value="highlight">강조 박스 (주황)</option>
+                      <option value="dark">다크 박스</option>
+                      <option value="gradient">그라데이션 박스</option>
+                      <option value="quote">인용구</option>
+                    </select>
+                  </div>
+                  {/* 편집 영역 */}
+                  <div className="p-6 min-h-[400px] bg-white">
+                    <div
+                      ref={previewDivRef}
+                      className="tiptap-content text-neutral-600 leading-relaxed outline-none"
+                      contentEditable
+                      suppressContentEditableWarning
+                      onCompositionStart={() => { isComposingRef.current = true; }}
+                      onCompositionEnd={(e) => {
+                        isComposingRef.current = false;
                         setRawHtml((e.currentTarget as HTMLDivElement).innerHTML);
-                      }
-                    }}
-                  />
-                </div>
+                      }}
+                      onInput={(e) => {
+                        if (!isComposingRef.current) {
+                          setRawHtml((e.currentTarget as HTMLDivElement).innerHTML);
+                        }
+                      }}
+                    />
+                  </div>
+                </>
               ) : (
                 <div className="p-3">
                   <textarea
