@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -67,6 +67,15 @@ export function ProductForm({ product }: ProductFormProps) {
   const [rawHtml, setRawHtml] = useState(product?.description || "");
   const [previewMode, setPreviewMode] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const previewDivRef = useRef<HTMLDivElement | null>(null);
+  const isComposingRef = useRef(false);
+
+  // previewMode가 켜질 때만 div innerHTML 초기화 (사용자 타이핑 중엔 건드리지 않음)
+  useEffect(() => {
+    if (previewMode && previewDivRef.current) {
+      previewDivRef.current.innerHTML = rawHtml;
+    }
+  }, [previewMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const uploadImage = useCallback(async (file: File): Promise<string | null> => {
     const fd = new FormData();
@@ -289,11 +298,20 @@ export function ProductForm({ product }: ProductFormProps) {
               previewMode ? (
                 <div className="p-6 min-h-[400px] bg-white">
                   <div
+                    ref={previewDivRef}
                     className="tiptap-content text-neutral-600 leading-relaxed outline-none"
                     contentEditable
                     suppressContentEditableWarning
-                    dangerouslySetInnerHTML={{ __html: rawHtml }}
-                    onInput={(e) => setRawHtml((e.currentTarget as HTMLDivElement).innerHTML)}
+                    onCompositionStart={() => { isComposingRef.current = true; }}
+                    onCompositionEnd={(e) => {
+                      isComposingRef.current = false;
+                      setRawHtml((e.currentTarget as HTMLDivElement).innerHTML);
+                    }}
+                    onInput={(e) => {
+                      if (!isComposingRef.current) {
+                        setRawHtml((e.currentTarget as HTMLDivElement).innerHTML);
+                      }
+                    }}
                   />
                 </div>
               ) : (
