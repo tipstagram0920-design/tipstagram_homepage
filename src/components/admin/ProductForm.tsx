@@ -231,7 +231,7 @@ export function ProductForm({ product }: ProductFormProps) {
                     previewMode ? "bg-blue-100 text-blue-600" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                   )}
                 >
-                  {previewMode ? "HTML 편집" : "미리보기"}
+                  {previewMode ? "HTML 코드 보기" : "미리보기 · 직접 편집"}
                 </button>
               )}
               <button
@@ -287,8 +287,11 @@ export function ProductForm({ product }: ProductFormProps) {
               previewMode ? (
                 <div className="p-6 min-h-[400px] bg-white">
                   <div
-                    className="tiptap-content text-neutral-600 leading-relaxed"
+                    className="tiptap-content text-neutral-600 leading-relaxed outline-none"
+                    contentEditable
+                    suppressContentEditableWarning
                     dangerouslySetInnerHTML={{ __html: rawHtml }}
+                    onInput={(e) => setRawHtml((e.currentTarget as HTMLDivElement).innerHTML)}
                   />
                 </div>
               ) : (
