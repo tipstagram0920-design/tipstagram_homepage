@@ -62,6 +62,8 @@ export function ProductForm({ product }: ProductFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [htmlMode, setHtmlMode] = useState(false);
+  const [rawHtml, setRawHtml] = useState(product?.description || "");
 
   const uploadImage = useCallback(async (file: File): Promise<string | null> => {
     const fd = new FormData();
@@ -151,16 +153,16 @@ export function ProductForm({ product }: ProductFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editor) return;
     setLoading(true);
     setError("");
+    const description = htmlMode ? rawHtml : (editor?.getHTML() || "");
     try {
       const method = product ? "PUT" : "POST";
       const url = product ? `/api/admin/products/${product.id}` : "/api/admin/products";
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, description: editor.getHTML(), highlights: [] }),
+        body: JSON.stringify({ ...form, description, highlights: [] }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -204,42 +206,76 @@ export function ProductForm({ product }: ProductFormProps) {
 
         {/* 상세 설명 리치 에디터 */}
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-            상세 설명 *
-            {uploading && <span className="ml-2 text-xs text-pink-500 animate-pulse">이미지 업로드 중...</span>}
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-sm font-medium text-neutral-700">
+              상세 설명 *
+              {uploading && <span className="ml-2 text-xs text-pink-500 animate-pulse">이미지 업로드 중...</span>}
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                if (!htmlMode) {
+                  setRawHtml(editor?.getHTML() || "");
+                } else {
+                  editor?.commands.setContent(rawHtml);
+                }
+                setHtmlMode(!htmlMode);
+              }}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                htmlMode ? "bg-pink-100 text-pink-600" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+              )}
+            >
+              <span className="font-mono">&lt;/&gt;</span>
+              {htmlMode ? "에디터로 전환" : "HTML 소스 편집"}
+            </button>
+          </div>
           <div className="border border-neutral-200 rounded-2xl overflow-hidden focus-within:border-pink-400 transition-colors">
-            <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-neutral-100 bg-neutral-50">
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} active={editor?.isActive("heading", { level: 1 })} title="H1"><Heading1 className="w-4 h-4" /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })} title="H2"><Heading2 className="w-4 h-4" /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} title="H3"><Heading3 className="w-4 h-4" /></ToolbarBtn>
-              <div className="w-px h-5 bg-neutral-200 mx-1" />
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")} title="굵게"><Bold className="w-4 h-4" /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")} title="기울임"><Italic className="w-4 h-4" /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive("underline")} title="밑줄"><UnderlineIcon className="w-4 h-4" /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleStrike().run()} active={editor?.isActive("strike")} title="취소선"><Strikethrough className="w-4 h-4" /></ToolbarBtn>
-              <div className="w-px h-5 bg-neutral-200 mx-1" />
-              <ToolbarBtn onClick={() => editor?.chain().focus().setTextAlign("left").run()} active={editor?.isActive({ textAlign: "left" })} title="왼쪽"><AlignLeft className="w-4 h-4" /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })} title="가운데"><AlignCenter className="w-4 h-4" /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().setTextAlign("right").run()} active={editor?.isActive({ textAlign: "right" })} title="오른쪽"><AlignRight className="w-4 h-4" /></ToolbarBtn>
-              <div className="w-px h-5 bg-neutral-200 mx-1" />
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")} title="글머리 기호"><List className="w-4 h-4" /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="번호 목록"><ListOrdered className="w-4 h-4" /></ToolbarBtn>
-              <ToolbarBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} title="인용구"><Quote className="w-4 h-4" /></ToolbarBtn>
-              <div className="w-px h-5 bg-neutral-200 mx-1" />
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) insertImageFromFile(f); e.target.value = ""; }} />
-              <ToolbarBtn onClick={() => fileInputRef.current?.click()} title="이미지 업로드 (드래그·붙여넣기도 가능)">
-                <ImageIcon className="w-4 h-4" />
-              </ToolbarBtn>
-              <ToolbarBtn onClick={addLink} active={editor?.isActive("link")} title="링크"><LinkIcon className="w-4 h-4" /></ToolbarBtn>
-            </div>
-            <div className="relative p-5">
-              <EditorContent editor={editor} />
-              <p className="absolute bottom-2 right-3 text-xs text-neutral-300 pointer-events-none select-none">
-                이미지를 여기로 드래그하거나 붙여넣기
-              </p>
-            </div>
+            {!htmlMode && (
+              <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-neutral-100 bg-neutral-50">
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} active={editor?.isActive("heading", { level: 1 })} title="H1"><Heading1 className="w-4 h-4" /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })} title="H2"><Heading2 className="w-4 h-4" /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} title="H3"><Heading3 className="w-4 h-4" /></ToolbarBtn>
+                <div className="w-px h-5 bg-neutral-200 mx-1" />
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")} title="굵게"><Bold className="w-4 h-4" /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")} title="기울임"><Italic className="w-4 h-4" /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive("underline")} title="밑줄"><UnderlineIcon className="w-4 h-4" /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleStrike().run()} active={editor?.isActive("strike")} title="취소선"><Strikethrough className="w-4 h-4" /></ToolbarBtn>
+                <div className="w-px h-5 bg-neutral-200 mx-1" />
+                <ToolbarBtn onClick={() => editor?.chain().focus().setTextAlign("left").run()} active={editor?.isActive({ textAlign: "left" })} title="왼쪽"><AlignLeft className="w-4 h-4" /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })} title="가운데"><AlignCenter className="w-4 h-4" /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().setTextAlign("right").run()} active={editor?.isActive({ textAlign: "right" })} title="오른쪽"><AlignRight className="w-4 h-4" /></ToolbarBtn>
+                <div className="w-px h-5 bg-neutral-200 mx-1" />
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")} title="글머리 기호"><List className="w-4 h-4" /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="번호 목록"><ListOrdered className="w-4 h-4" /></ToolbarBtn>
+                <ToolbarBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} title="인용구"><Quote className="w-4 h-4" /></ToolbarBtn>
+                <div className="w-px h-5 bg-neutral-200 mx-1" />
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) insertImageFromFile(f); e.target.value = ""; }} />
+                <ToolbarBtn onClick={() => fileInputRef.current?.click()} title="이미지 업로드 (드래그·붙여넣기도 가능)">
+                  <ImageIcon className="w-4 h-4" />
+                </ToolbarBtn>
+                <ToolbarBtn onClick={addLink} active={editor?.isActive("link")} title="링크"><LinkIcon className="w-4 h-4" /></ToolbarBtn>
+              </div>
+            )}
+            {htmlMode ? (
+              <div className="p-3">
+                <textarea
+                  value={rawHtml}
+                  onChange={(e) => setRawHtml(e.target.value)}
+                  className="w-full font-mono text-xs text-neutral-800 bg-neutral-50 rounded-xl p-4 min-h-[400px] focus:outline-none focus:ring-2 focus:ring-pink-200 resize-y"
+                  placeholder="HTML 코드를 입력하세요..."
+                  spellCheck={false}
+                />
+              </div>
+            ) : (
+              <div className="relative p-5">
+                <EditorContent editor={editor} />
+                <p className="absolute bottom-2 right-3 text-xs text-neutral-300 pointer-events-none select-none">
+                  이미지를 여기로 드래그하거나 붙여넣기
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
