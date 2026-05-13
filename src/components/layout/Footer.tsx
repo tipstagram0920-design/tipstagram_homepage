@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { Instagram, Youtube, MessageCircle } from "lucide-react";
+import { COMPANY } from "@/lib/company";
 
 export function Footer() {
   return (
@@ -51,6 +52,7 @@ export function Footer() {
                 { label: "자주 묻는 질문", href: "/faq" },
                 { label: "이용약관", href: "/terms" },
                 { label: "개인정보처리방침", href: "/privacy" },
+                { label: "환불규정", href: "/refund" },
               ].map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className="text-sm hover:text-white transition-colors">
@@ -62,9 +64,22 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-600">
-          <p>© 2024 팁스타그램. All rights reserved.</p>
-          <p>사업자등록번호: 000-00-00000 | 대표: 홍길동</p>
+        <div className="pt-8 space-y-2 text-xs text-neutral-600">
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <span>{COMPANY.legalName}</span>
+            <span>대표: {COMPANY.ceo}</span>
+            <span>사업자등록번호: {COMPANY.businessNumber}</span>
+            <span>학원설립·운영등록: {COMPANY.academyRegistrationNumber}</span>
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <span>주소: {COMPANY.address}</span>
+            <span>전화: {COMPANY.phone}</span>
+            <span>이메일: {COMPANY.email}</span>
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <span>개인정보보호책임자: {COMPANY.privacyOfficer}</span>
+          </div>
+          <p className="pt-3">© {new Date().getFullYear()} {COMPANY.legalName}. All rights reserved.</p>
         </div>
       </div>
     </footer>

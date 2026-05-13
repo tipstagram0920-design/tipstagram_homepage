@@ -21,17 +21,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { type, productId, name, subject, html, isActive } = await req.json();
+  const { type, productId, name, subject, html, design, isActive } = await req.json();
   if (!type || !name || !subject || !html) {
     return NextResponse.json({ error: "필수 항목을 입력하세요." }, { status: 400 });
   }
 
   const resolvedProductId = productId || null;
+  const designStr = design ? JSON.stringify(design) : null;
 
   const template = await prisma.emailTemplate.upsert({
     where: { type_productId: { type, productId: resolvedProductId } },
-    update: { name, subject, html, isActive: isActive ?? true },
-    create: { type, productId: resolvedProductId, name, subject, html, isActive: isActive ?? true },
+    update: { name, subject, html, design: designStr, isActive: isActive ?? true },
+    create: { type, productId: resolvedProductId, name, subject, html, design: designStr, isActive: isActive ?? true },
     include: { product: { select: { id: true, title: true } } },
   });
   return NextResponse.json(template);

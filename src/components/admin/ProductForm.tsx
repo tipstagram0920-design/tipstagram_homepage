@@ -8,14 +8,27 @@ import TiptapImage from "@tiptap/extension-image";
 import TiptapLink from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import {
   Bold, Italic, UnderlineIcon, Strikethrough,
   AlignLeft, AlignCenter, AlignRight,
   List, ListOrdered, Quote, ImageIcon, LinkIcon,
-  Heading1, Heading2, Heading3,
+  Heading1, Heading2, Heading3, Loader2,
 } from "lucide-react";
 import { DESCRIPTION_TEMPLATES } from "./descriptionTemplates";
+import type { UnlayerEditorHandle } from "./UnlayerEditor";
+
+const UnlayerEditor = dynamic(() => import("./UnlayerEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-[600px] bg-neutral-50">
+      <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+    </div>
+  ),
+});
+
+type DescMode = "editor" | "unlayer" | "html";
 
 interface ProductFormProps {
   product?: {
@@ -24,6 +37,7 @@ interface ProductFormProps {
     title: string;
     subtitle?: string | null;
     description: string;
+    descriptionDesign?: string | null;
     price: number;
     thumbnail?: string | null;
     highlights: string[];
@@ -51,6 +65,7 @@ function ToolbarBtn({ onClick, active, title, children }: {
 export function ProductForm({ product }: ProductFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const unlayerRef = useRef<UnlayerEditorHandle>(null);
   const [form, setForm] = useState({
     slug: product?.slug || "",
     title: product?.title || "",
@@ -60,6 +75,9 @@ export function ProductForm({ product }: ProductFormProps) {
     isActive: product?.isActive ?? true,
     order: product?.order || 0,
   });
+  const [descMode, setDescMode] = useState<DescMode>(
+    product?.descriptionDesign ? "unlayer" : "editor"
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -99,7 +117,6 @@ export function ProductForm({ product }: ProductFormProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // previewMode가 켜질 때만 div innerHTML 초기화 (사용자 타이핑 중엔 건드리지 않음)
   useEffect(() => {
     if (previewMode && previewDivRef.current) {
       previewDivRef.current.innerHTML = rawHtml;
@@ -124,6 +141,7 @@ export function ProductForm({ product }: ProductFormProps) {
       TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
     content: product?.description || "",
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class: "tiptap-content ProseMirror focus:outline-none min-h-[320px] px-1",
@@ -192,19 +210,42 @@ export function ProductForm({ product }: ProductFormProps) {
     if (url && editor) editor.chain().focus().setLink({ href: url }).run();
   }, [editor]);
 
+  const existingDesign = (() => {
+    try { return product?.descriptionDesign ? JSON.parse(product.descriptionDesign) : null; }
+    catch { return null; }
+  })();
+
   const handleSubmit = async () => {
     if (!form.title.trim()) { setError("상품 제목을 입력하세요."); return; }
     if (!form.slug.trim()) { setError("슬러그를 입력하세요."); return; }
     setLoading(true);
     setError("");
-    const description = htmlMode ? rawHtml : (editor?.getHTML() || "");
+
+    let description = "";
+    let descriptionDesign: object | null = null;
+
+    if (descMode === "unlayer" && unlayerRef.current) {
+      const exported = await unlayerRef.current.exportHtmlAndDesign();
+      description = exported.html;
+      descriptionDesign = exported.design;
+    } else if (descMode === "html") {
+      description = rawHtml;
+    } else {
+      description = editor?.getHTML() || "";
+    }
+
     try {
       const method = product ? "PUT" : "POST";
       const url = product ? `/api/admin/products/${product.id}` : "/api/admin/products";
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, description, highlights: [] }),
+        body: JSON.stringify({
+          ...form,
+          description,
+          descriptionDesign: descriptionDesign ? JSON.stringify(descriptionDesign) : null,
+          highlights: [],
+        }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -246,148 +287,142 @@ export function ProductForm({ product }: ProductFormProps) {
             className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400" />
         </div>
 
-        {/* 상세 설명 리치 에디터 */}
+        {/* 상세 설명 - 에디터 모드 전환 탭 */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="block text-sm font-medium text-neutral-700">
               상세 설명 *
               {uploading && <span className="ml-2 text-xs text-pink-500 animate-pulse">이미지 업로드 중...</span>}
             </label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowTemplatePicker(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition-colors"
-              >
-                템플릿
-              </button>
-              {htmlMode && (
-                <button
-                  type="button"
+            <div className="flex items-center gap-1.5">
+              {/* 모드 탭 */}
+              {(["editor", "unlayer", "html"] as DescMode[]).map((mode) => {
+                const labels: Record<DescMode, string> = { editor: "에디터", unlayer: "드래그앤드랍", html: "HTML" };
+                return (
+                  <button key={mode} type="button"
+                    onClick={() => {
+                      if (mode === "html" && descMode !== "html") {
+                        setRawHtml(editor?.getHTML() || rawHtml);
+                        setHtmlMode(true);
+                      } else if (mode === "editor" && descMode === "html") {
+                        editor?.commands.setContent(rawHtml);
+                        setHtmlMode(false);
+                      }
+                      setDescMode(mode);
+                    }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                      descMode === mode
+                        ? "ig-gradient text-white"
+                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    )}
+                  >
+                    {mode === "html" ? <span className="font-mono">&lt;/&gt;</span> : null}
+                    {labels[mode]}
+                  </button>
+                );
+              })}
+              {/* 기존 기능: 템플릿, 미리보기 (에디터/HTML 모드에서만) */}
+              {descMode !== "unlayer" && (
+                <button type="button"
+                  onClick={() => setShowTemplatePicker(true)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition-colors"
+                >
+                  템플릿
+                </button>
+              )}
+              {descMode === "html" && (
+                <button type="button"
                   onClick={() => setPreviewMode(!previewMode)}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                    "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
                     previewMode ? "bg-blue-100 text-blue-600" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                   )}
                 >
-                  {previewMode ? "HTML 코드 보기" : "미리보기 · 직접 편집"}
+                  {previewMode ? "코드 보기" : "미리보기"}
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => {
-                  if (!htmlMode) {
-                    setRawHtml(editor?.getHTML() || "");
-                    setPreviewMode(false);
-                  } else {
-                    editor?.commands.setContent(rawHtml);
-                  }
-                  setHtmlMode(!htmlMode);
-                }}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                  htmlMode ? "bg-pink-100 text-pink-600" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-                )}
-              >
-                <span className="font-mono">&lt;/&gt;</span>
-                {htmlMode ? "에디터로 전환" : "HTML 소스 편집"}
-              </button>
             </div>
           </div>
+
           <div className="border border-neutral-200 rounded-2xl overflow-hidden focus-within:border-pink-400 transition-colors">
-            {!htmlMode && (
-              <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-neutral-100 bg-neutral-50">
-                <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} active={editor?.isActive("heading", { level: 1 })} title="H1"><Heading1 className="w-4 h-4" /></ToolbarBtn>
-                <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })} title="H2"><Heading2 className="w-4 h-4" /></ToolbarBtn>
-                <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} title="H3"><Heading3 className="w-4 h-4" /></ToolbarBtn>
-                <div className="w-px h-5 bg-neutral-200 mx-1" />
-                <ToolbarBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")} title="굵게"><Bold className="w-4 h-4" /></ToolbarBtn>
-                <ToolbarBtn onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")} title="기울임"><Italic className="w-4 h-4" /></ToolbarBtn>
-                <ToolbarBtn onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive("underline")} title="밑줄"><UnderlineIcon className="w-4 h-4" /></ToolbarBtn>
-                <ToolbarBtn onClick={() => editor?.chain().focus().toggleStrike().run()} active={editor?.isActive("strike")} title="취소선"><Strikethrough className="w-4 h-4" /></ToolbarBtn>
-                <div className="w-px h-5 bg-neutral-200 mx-1" />
-                <ToolbarBtn onClick={() => editor?.chain().focus().setTextAlign("left").run()} active={editor?.isActive({ textAlign: "left" })} title="왼쪽"><AlignLeft className="w-4 h-4" /></ToolbarBtn>
-                <ToolbarBtn onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })} title="가운데"><AlignCenter className="w-4 h-4" /></ToolbarBtn>
-                <ToolbarBtn onClick={() => editor?.chain().focus().setTextAlign("right").run()} active={editor?.isActive({ textAlign: "right" })} title="오른쪽"><AlignRight className="w-4 h-4" /></ToolbarBtn>
-                <div className="w-px h-5 bg-neutral-200 mx-1" />
-                <ToolbarBtn onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")} title="글머리 기호"><List className="w-4 h-4" /></ToolbarBtn>
-                <ToolbarBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="번호 목록"><ListOrdered className="w-4 h-4" /></ToolbarBtn>
-                <ToolbarBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} title="인용구"><Quote className="w-4 h-4" /></ToolbarBtn>
-                <div className="w-px h-5 bg-neutral-200 mx-1" />
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) insertImageFromFile(f); e.target.value = ""; }} />
-                <ToolbarBtn onClick={() => fileInputRef.current?.click()} title="이미지 업로드 (드래그·붙여넣기도 가능)">
-                  <ImageIcon className="w-4 h-4" />
-                </ToolbarBtn>
-                <ToolbarBtn onClick={addLink} active={editor?.isActive("link")} title="링크"><LinkIcon className="w-4 h-4" /></ToolbarBtn>
-              </div>
+            {/* Unlayer 드래그앤드랍 모드 */}
+            {descMode === "unlayer" && (
+              <UnlayerEditor
+                ref={unlayerRef}
+                design={existingDesign}
+              />
             )}
-            {htmlMode ? (
+
+            {/* 기존 Tiptap 에디터 모드 */}
+            {descMode === "editor" && (
+              <>
+                <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-neutral-100 bg-neutral-50">
+                  <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} active={editor?.isActive("heading", { level: 1 })} title="H1"><Heading1 className="w-4 h-4" /></ToolbarBtn>
+                  <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })} title="H2"><Heading2 className="w-4 h-4" /></ToolbarBtn>
+                  <ToolbarBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} title="H3"><Heading3 className="w-4 h-4" /></ToolbarBtn>
+                  <div className="w-px h-5 bg-neutral-200 mx-1" />
+                  <ToolbarBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")} title="굵게"><Bold className="w-4 h-4" /></ToolbarBtn>
+                  <ToolbarBtn onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")} title="기울임"><Italic className="w-4 h-4" /></ToolbarBtn>
+                  <ToolbarBtn onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive("underline")} title="밑줄"><UnderlineIcon className="w-4 h-4" /></ToolbarBtn>
+                  <ToolbarBtn onClick={() => editor?.chain().focus().toggleStrike().run()} active={editor?.isActive("strike")} title="취소선"><Strikethrough className="w-4 h-4" /></ToolbarBtn>
+                  <div className="w-px h-5 bg-neutral-200 mx-1" />
+                  <ToolbarBtn onClick={() => editor?.chain().focus().setTextAlign("left").run()} active={editor?.isActive({ textAlign: "left" })} title="왼쪽"><AlignLeft className="w-4 h-4" /></ToolbarBtn>
+                  <ToolbarBtn onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })} title="가운데"><AlignCenter className="w-4 h-4" /></ToolbarBtn>
+                  <ToolbarBtn onClick={() => editor?.chain().focus().setTextAlign("right").run()} active={editor?.isActive({ textAlign: "right" })} title="오른쪽"><AlignRight className="w-4 h-4" /></ToolbarBtn>
+                  <div className="w-px h-5 bg-neutral-200 mx-1" />
+                  <ToolbarBtn onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")} title="글머리 기호"><List className="w-4 h-4" /></ToolbarBtn>
+                  <ToolbarBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="번호 목록"><ListOrdered className="w-4 h-4" /></ToolbarBtn>
+                  <ToolbarBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} title="인용구"><Quote className="w-4 h-4" /></ToolbarBtn>
+                  <div className="w-px h-5 bg-neutral-200 mx-1" />
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) insertImageFromFile(f); e.target.value = ""; }} />
+                  <ToolbarBtn onClick={() => fileInputRef.current?.click()} title="이미지 업로드">
+                    <ImageIcon className="w-4 h-4" />
+                  </ToolbarBtn>
+                  <ToolbarBtn onClick={addLink} active={editor?.isActive("link")} title="링크"><LinkIcon className="w-4 h-4" /></ToolbarBtn>
+                </div>
+                <div className="relative p-5">
+                  <EditorContent editor={editor} />
+                  <p className="absolute bottom-2 right-3 text-xs text-neutral-300 pointer-events-none select-none">
+                    이미지를 여기로 드래그하거나 붙여넣기
+                  </p>
+                </div>
+              </>
+            )}
+
+            {/* HTML 소스 / 미리보기 모드 */}
+            {descMode === "html" && (
               previewMode ? (
                 <>
-                  {/* 미리보기 편집 툴바 */}
                   <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-neutral-100 bg-neutral-50">
-                    {/* 헤딩 */}
                     {(["H1","H2","H3"] as const).map(h => (
                       <button key={h} type="button" title={h}
                         onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", h); }}
                         className="px-2 py-1.5 rounded-lg text-xs font-bold text-neutral-600 hover:bg-neutral-100">{h}</button>
                     ))}
                     <div className="w-px h-5 bg-neutral-200 mx-1" />
-                    {/* 기본 서식 */}
-                    <button type="button" title="굵게" onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}
-                      className="p-1.5 rounded-lg hover:bg-neutral-100"><Bold className="w-4 h-4" /></button>
-                    <button type="button" title="기울임" onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}
-                      className="p-1.5 rounded-lg hover:bg-neutral-100"><Italic className="w-4 h-4" /></button>
-                    <button type="button" title="밑줄" onMouseDown={(e) => { e.preventDefault(); exec("underline"); }}
-                      className="p-1.5 rounded-lg hover:bg-neutral-100"><UnderlineIcon className="w-4 h-4" /></button>
-                    <button type="button" title="취소선" onMouseDown={(e) => { e.preventDefault(); exec("strikeThrough"); }}
-                      className="p-1.5 rounded-lg hover:bg-neutral-100"><Strikethrough className="w-4 h-4" /></button>
+                    <button type="button" onMouseDown={(e) => { e.preventDefault(); exec("bold"); }} className="p-1.5 rounded-lg hover:bg-neutral-100"><Bold className="w-4 h-4" /></button>
+                    <button type="button" onMouseDown={(e) => { e.preventDefault(); exec("italic"); }} className="p-1.5 rounded-lg hover:bg-neutral-100"><Italic className="w-4 h-4" /></button>
+                    <button type="button" onMouseDown={(e) => { e.preventDefault(); exec("underline"); }} className="p-1.5 rounded-lg hover:bg-neutral-100"><UnderlineIcon className="w-4 h-4" /></button>
+                    <button type="button" onMouseDown={(e) => { e.preventDefault(); exec("strikeThrough"); }} className="p-1.5 rounded-lg hover:bg-neutral-100"><Strikethrough className="w-4 h-4" /></button>
                     <div className="w-px h-5 bg-neutral-200 mx-1" />
-                    {/* 글자 크기 */}
-                    <select title="글자 크기"
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onChange={(e) => { exec("fontSize", e.target.value); e.target.value = ""; }}
+                    <select onMouseDown={(e) => e.stopPropagation()} onChange={(e) => { exec("fontSize", e.target.value); e.target.value = ""; }}
                       className="text-xs border border-neutral-200 rounded-lg px-1 py-1 bg-white text-neutral-600 focus:outline-none">
                       <option value="">크기</option>
-                      <option value="1">매우 작게</option>
-                      <option value="2">작게</option>
-                      <option value="3">보통</option>
-                      <option value="4">크게</option>
-                      <option value="5">매우 크게</option>
-                      <option value="6">제목급</option>
+                      {["1","2","3","4","5","6"].map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
-                    {/* 글자 색상 */}
-                    <label title="글자 색" className="p-1.5 rounded-lg hover:bg-neutral-100 cursor-pointer relative">
-                      <span className="text-xs font-bold text-neutral-600">A</span>
-                      <input type="color" defaultValue="#f97316" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                        onChange={(e) => exec("foreColor", e.target.value)} />
-                    </label>
-                    {/* 배경 색상 */}
-                    <label title="배경 색" className="p-1.5 rounded-lg hover:bg-neutral-100 cursor-pointer relative">
-                      <span className="text-xs font-bold" style={{ background: "#fef3c7", padding: "1px 3px", borderRadius: 3 }}>A</span>
-                      <input type="color" defaultValue="#fef3c7" className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                        onChange={(e) => exec("hiliteColor", e.target.value)} />
-                    </label>
                     <div className="w-px h-5 bg-neutral-200 mx-1" />
-                    {/* 정렬 */}
-                    <button type="button" title="왼쪽" onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }}
-                      className="p-1.5 rounded-lg hover:bg-neutral-100"><AlignLeft className="w-4 h-4" /></button>
-                    <button type="button" title="가운데" onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }}
-                      className="p-1.5 rounded-lg hover:bg-neutral-100"><AlignCenter className="w-4 h-4" /></button>
-                    <button type="button" title="오른쪽" onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }}
-                      className="p-1.5 rounded-lg hover:bg-neutral-100"><AlignRight className="w-4 h-4" /></button>
+                    <button type="button" onMouseDown={(e) => { e.preventDefault(); exec("justifyLeft"); }} className="p-1.5 rounded-lg hover:bg-neutral-100"><AlignLeft className="w-4 h-4" /></button>
+                    <button type="button" onMouseDown={(e) => { e.preventDefault(); exec("justifyCenter"); }} className="p-1.5 rounded-lg hover:bg-neutral-100"><AlignCenter className="w-4 h-4" /></button>
+                    <button type="button" onMouseDown={(e) => { e.preventDefault(); exec("justifyRight"); }} className="p-1.5 rounded-lg hover:bg-neutral-100"><AlignRight className="w-4 h-4" /></button>
                     <div className="w-px h-5 bg-neutral-200 mx-1" />
-                    {/* 이미지 */}
                     <input ref={previewImgInputRef} type="file" accept="image/*" className="hidden"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPreviewImage(f); e.target.value = ""; }} />
-                    <button type="button" title="이미지 업로드"
-                      onMouseDown={(e) => { e.preventDefault(); previewImgInputRef.current?.click(); }}
+                    <button type="button" onMouseDown={(e) => { e.preventDefault(); previewImgInputRef.current?.click(); }}
                       className="p-1.5 rounded-lg hover:bg-neutral-100"><ImageIcon className="w-4 h-4" /></button>
                     <div className="w-px h-5 bg-neutral-200 mx-1" />
-                    {/* 박스 삽입 */}
-                    <select title="박스 삽입"
-                      onMouseDown={(e) => e.stopPropagation()}
+                    <select onMouseDown={(e) => e.stopPropagation()}
                       onChange={(e) => {
                         const v = e.target.value; e.target.value = "";
                         if (!v) return;
@@ -403,13 +438,12 @@ export function ProductForm({ product }: ProductFormProps) {
                       className="text-xs border border-neutral-200 rounded-lg px-1 py-1 bg-white text-neutral-600 focus:outline-none">
                       <option value="">박스 삽입</option>
                       <option value="default">기본 박스</option>
-                      <option value="highlight">강조 박스 (주황)</option>
+                      <option value="highlight">강조 박스</option>
                       <option value="dark">다크 박스</option>
                       <option value="gradient">그라데이션 박스</option>
                       <option value="quote">인용구</option>
                     </select>
                   </div>
-                  {/* 편집 영역 */}
                   <div className="p-6 min-h-[400px] bg-white">
                     <div
                       ref={previewDivRef}
@@ -417,36 +451,18 @@ export function ProductForm({ product }: ProductFormProps) {
                       contentEditable
                       suppressContentEditableWarning
                       onCompositionStart={() => { isComposingRef.current = true; }}
-                      onCompositionEnd={(e) => {
-                        isComposingRef.current = false;
-                        setRawHtml((e.currentTarget as HTMLDivElement).innerHTML);
-                      }}
-                      onInput={(e) => {
-                        if (!isComposingRef.current) {
-                          setRawHtml((e.currentTarget as HTMLDivElement).innerHTML);
-                        }
-                      }}
+                      onCompositionEnd={(e) => { isComposingRef.current = false; setRawHtml((e.currentTarget as HTMLDivElement).innerHTML); }}
+                      onInput={(e) => { if (!isComposingRef.current) setRawHtml((e.currentTarget as HTMLDivElement).innerHTML); }}
                     />
                   </div>
                 </>
               ) : (
                 <div className="p-3">
-                  <textarea
-                    value={rawHtml}
-                    onChange={(e) => setRawHtml(e.target.value)}
+                  <textarea value={rawHtml} onChange={(e) => setRawHtml(e.target.value)}
                     className="w-full font-mono text-xs text-neutral-800 bg-neutral-50 rounded-xl p-4 min-h-[400px] focus:outline-none focus:ring-2 focus:ring-pink-200 resize-y"
-                    placeholder="HTML 코드를 입력하세요..."
-                    spellCheck={false}
-                  />
+                    placeholder="HTML 코드를 입력하세요..." spellCheck={false} />
                 </div>
               )
-            ) : (
-              <div className="relative p-5">
-                <EditorContent editor={editor} />
-                <p className="absolute bottom-2 right-3 text-xs text-neutral-300 pointer-events-none select-none">
-                  이미지를 여기로 드래그하거나 붙여넣기
-                </p>
-              </div>
             )}
           </div>
         </div>
@@ -455,54 +471,35 @@ export function ProductForm({ product }: ProductFormProps) {
           const tpl = DESCRIPTION_TEMPLATES.find(t => t.id === selectedTemplateId)!;
           return (
             <div className="border border-pink-200 rounded-2xl bg-white shadow-sm">
-              {/* 헤더 */}
               <div className="flex items-center justify-between px-5 py-3 bg-pink-50 border-b border-pink-100 rounded-t-2xl">
                 <span className="text-sm font-bold text-neutral-900">템플릿 선택</span>
                 <button type="button" onClick={() => setShowTemplatePicker(false)}
                   className="text-neutral-400 hover:text-neutral-700 text-xl leading-none px-1">×</button>
               </div>
-
-              {/* 바디 */}
               <div className="flex" style={{ height: 560 }}>
-                {/* 왼쪽: 목록 */}
                 <div className="w-44 flex-shrink-0 border-r border-neutral-100 p-3 flex flex-col gap-2 overflow-y-auto">
                   {DESCRIPTION_TEMPLATES.map(t => (
-                    <button type="button" key={t.id}
-                      onClick={() => setSelectedTemplateId(t.id)}
+                    <button type="button" key={t.id} onClick={() => setSelectedTemplateId(t.id)}
                       className={cn("w-full text-left px-3 py-3 rounded-xl border transition-colors",
-                        selectedTemplateId === t.id
-                          ? "bg-pink-50 border-pink-300"
-                          : "border-transparent hover:bg-neutral-50"
+                        selectedTemplateId === t.id ? "bg-pink-50 border-pink-300" : "border-transparent hover:bg-neutral-50"
                       )}>
                       <p className={cn("text-sm font-bold", selectedTemplateId === t.id ? "text-pink-600" : "text-neutral-800")}>{t.name}</p>
                       <p className="text-xs text-neutral-400 mt-0.5">{t.description}</p>
                     </button>
                   ))}
                 </div>
-
-                {/* 오른쪽: 미리보기 */}
                 <div className="flex-1 overflow-y-auto bg-neutral-50 p-6">
                   <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-3">실제 표시 모습</p>
                   <div className="bg-white rounded-2xl p-6 shadow-sm">
-                    <div className="tiptap-content text-neutral-600 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: tpl.html }} />
+                    <div className="tiptap-content text-neutral-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: tpl.html }} />
                   </div>
                 </div>
               </div>
-
-              {/* 푸터 */}
               <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-neutral-100 rounded-b-2xl bg-neutral-50">
                 <button type="button" onClick={() => setShowTemplatePicker(false)}
-                  className="px-4 py-2 rounded-xl border border-neutral-200 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">
-                  취소
-                </button>
+                  className="px-4 py-2 rounded-xl border border-neutral-200 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">취소</button>
                 <button type="button"
-                  onClick={() => {
-                    setRawHtml(tpl.html);
-                    setHtmlMode(true);
-                    setPreviewMode(false);
-                    setShowTemplatePicker(false);
-                  }}
+                  onClick={() => { setRawHtml(tpl.html); setDescMode("html"); setHtmlMode(true); setPreviewMode(false); setShowTemplatePicker(false); }}
                   className="px-4 py-2 rounded-xl ig-gradient text-white text-sm font-bold hover:opacity-90">
                   이 템플릿 사용하기
                 </button>
@@ -555,7 +552,6 @@ export function ProductForm({ product }: ProductFormProps) {
           {loading ? "저장 중..." : product ? "수정 완료" : "상품 등록"}
         </button>
       </div>
-
     </div>
   );
 }

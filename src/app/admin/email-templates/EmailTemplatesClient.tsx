@@ -1,10 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import { Save, ToggleLeft, ToggleRight, Mail, Info, Plus, Trash2 } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
+import { Save, ToggleLeft, ToggleRight, Mail, Info, Plus, Trash2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { UnlayerEditorHandle } from "@/components/admin/UnlayerEditor";
+
+const UnlayerEditor = dynamic(() => import("@/components/admin/UnlayerEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-[600px] bg-neutral-50 rounded-xl">
+      <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+    </div>
+  ),
+});
 
 interface Product {
   id: string;
@@ -18,6 +27,7 @@ interface EmailTemplate {
   name: string;
   subject: string;
   html: string;
+  design?: string | null;
   isActive: boolean;
   updatedAt: Date;
   product?: { id: string; title: string } | null;
@@ -30,18 +40,6 @@ const TEMPLATE_TYPES = [
     description: "상품 결제 완료 시 자동 발송",
     variables: ["{{name}}", "{{product}}", "{{amount}}", "{{orderId}}"],
     defaultSubject: "{{product}} 구매가 완료되었습니다!",
-    defaultHtml: `<p>안녕하세요 {{name}}님,</p>
-<p>팁스타그램 강의 구매가 완료되었습니다. 🎉</p>
-<br/>
-<p><strong>주문 정보</strong></p>
-<p>강의명: {{product}}</p>
-<p>결제 금액: {{amount}}</p>
-<p>주문 번호: {{orderId}}</p>
-<br/>
-<p>지금 바로 강의실에서 학습을 시작해보세요!</p>
-<p><a href="/classroom">강의실 바로가기 →</a></p>
-<br/>
-<p>감사합니다,<br/>팁스타그램 팀</p>`,
   },
   {
     type: "welcome",
@@ -49,26 +47,17 @@ const TEMPLATE_TYPES = [
     description: "신규 회원가입 완료 시 자동 발송",
     variables: ["{{name}}"],
     defaultSubject: "팁스타그램에 오신 것을 환영합니다!",
-    defaultHtml: `<p>안녕하세요 {{name}}님,</p>
-<p>팁스타그램 가입을 진심으로 환영합니다! 🎊</p>
-<br/>
-<p>지금 바로 강의를 둘러보세요!</p>
-<p><a href="/courses">강의 목록 보기 →</a></p>
-<br/>
-<p>감사합니다,<br/>팁스타그램 팀</p>`,
   },
 ];
 
 function TemplateEditor({
   templateType,
   existing,
-  products,
   onSave,
   onDelete,
 }: {
   templateType: (typeof TEMPLATE_TYPES)[0];
   existing?: EmailTemplate;
-  products: Product[];
   onSave: (template: EmailTemplate) => void;
   onDelete?: (id: string) => void;
 }) {
@@ -76,22 +65,30 @@ function TemplateEditor({
   const [isActive, setIsActive] = useState(existing?.isActive ?? true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editorReady, setEditorReady] = useState(false);
+  const editorRef = useRef<UnlayerEditorHandle>(null);
 
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: existing?.html || templateType.defaultHtml,
-    immediatelyRender: false,
-    editorProps: {
-      attributes: {
-        class: "tiptap-content ProseMirror focus:outline-none min-h-[240px] px-1",
-      },
-    },
-  });
+  const existingDesign = (() => {
+    try {
+      return existing?.design ? JSON.parse(existing.design) : null;
+    } catch {
+      return null;
+    }
+  })();
 
   const handleSave = async () => {
-    if (!subject || !editor?.getHTML()) return;
+    if (!subject) return;
     setSaving(true);
     try {
+      let html = existing?.html || "";
+      let design: object | undefined;
+
+      if (editorRef.current) {
+        const exported = await editorRef.current.exportHtmlAndDesign();
+        html = exported.html;
+        design = exported.design;
+      }
+
       const productTitle = existing?.product?.title;
       const res = await fetch("/api/admin/email-templates", {
         method: "POST",
@@ -103,7 +100,8 @@ function TemplateEditor({
             ? `${templateType.label} (${productTitle})`
             : `${templateType.label} (공통)`,
           subject,
-          html: editor.getHTML(),
+          html,
+          design,
           isActive,
         }),
       });
@@ -121,7 +119,6 @@ function TemplateEditor({
   const handleDelete = async () => {
     if (!existing?.id || !onDelete) return;
     if (!confirm("이 템플릿을 삭제하시겠습니까?")) return;
-    // 아직 저장 안 된 임시 항목이면 그냥 제거
     if (existing.id.startsWith("new-")) {
       onDelete(existing.id);
       return;
@@ -137,6 +134,8 @@ function TemplateEditor({
       setDeleting(false);
     }
   };
+
+  const handleReady = useCallback(() => setEditorReady(true), []);
 
   return (
     <div className="space-y-4">
@@ -159,7 +158,7 @@ function TemplateEditor({
       <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-xl">
         <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
         <div>
-          <p className="text-xs font-semibold text-blue-700 mb-1">사용 가능한 변수</p>
+          <p className="text-xs font-semibold text-blue-700 mb-1">사용 가능한 변수 (메일 내용에 그대로 입력)</p>
           <div className="flex flex-wrap gap-1.5">
             {templateType.variables.map((v) => (
               <code key={v} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-mono">
@@ -181,14 +180,19 @@ function TemplateEditor({
         />
       </div>
 
-      {/* 내용 */}
+      {/* Unlayer 드래그앤드랍 에디터 */}
       <div>
         <label className="block text-sm font-medium text-neutral-700 mb-1.5">메일 내용</label>
         <div className="border border-neutral-200 rounded-xl overflow-hidden">
-          <div className="p-4">
-            <EditorContent editor={editor} />
-          </div>
+          <UnlayerEditor
+            ref={editorRef}
+            design={existingDesign}
+            onReady={handleReady}
+          />
         </div>
+        {!editorReady && (
+          <p className="text-xs text-neutral-400 mt-1.5">에디터 로딩 중...</p>
+        )}
       </div>
 
       {/* 버튼 */}
@@ -238,7 +242,6 @@ export function EmailTemplatesClient({
 
   const handleSave = (updated: EmailTemplate) => {
     setTemplateList((prev) => {
-      // 임시 id(new-*)로 추가된 항목은 실제 id로 교체
       const idx = prev.findIndex(
         (t) => t.id === updated.id || (t.productId === updated.productId && t.type === updated.type)
       );
@@ -262,20 +265,20 @@ export function EmailTemplatesClient({
       productId: selectedNewProduct,
       name: `${activeType.label} (${product.title})`,
       subject: activeType.defaultSubject,
-      html: activeType.defaultHtml,
+      html: "",
+      design: null,
       isActive: true,
       updatedAt: new Date(),
       product,
     };
     setTemplateList((prev) => [...prev, fake]);
     setAddingProduct(false);
-    // 다음 추가 시 이미 선택된 상품 제외
     const next = availableProducts.find((p) => p.id !== selectedNewProduct);
     if (next) setSelectedNewProduct(next.id);
   };
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-5xl">
       {/* 탭 */}
       <div className="flex gap-2 mb-6">
         {TEMPLATE_TYPES.map((t, i) => {
@@ -316,7 +319,6 @@ export function EmailTemplatesClient({
               key={`global-${activeType.type}`}
               templateType={activeType}
               existing={globalTemplate}
-              products={products}
               onSave={handleSave}
             />
           </div>
@@ -339,7 +341,6 @@ export function EmailTemplatesClient({
                 key={tmpl.id}
                 templateType={activeType}
                 existing={tmpl}
-                products={products}
                 onSave={handleSave}
                 onDelete={handleDelete}
               />
@@ -347,7 +348,7 @@ export function EmailTemplatesClient({
           </div>
         ))}
 
-        {/* 상품별 추가 (구매 완료 이메일만) */}
+        {/* 상품별 추가 */}
         {activeType.type === "purchase_confirmation" && availableProducts.length > 0 && (
           <div className="bg-white rounded-2xl border border-dashed border-neutral-200 p-5">
             {!addingProduct ? (
