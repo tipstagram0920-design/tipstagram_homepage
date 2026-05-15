@@ -4,23 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { normalizeVideoInput, parseVideoSource, getEmbedUrl } from "@/lib/video";
 
-function extractVimeoId(input: string): string {
-  const trimmed = input.trim();
-  if (/^\d+$/.test(trimmed)) return trimmed;
-  const match = trimmed.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-  return match ? match[1] : trimmed;
-}
-
-function VimeoPreview({ vimeoId }: { vimeoId: string }) {
-  const id = extractVimeoId(vimeoId);
-  if (!id || !/^\d+$/.test(id)) return null;
+function VideoPreview({ source }: { source: string }) {
+  const parsed = parseVideoSource(source);
+  if (!parsed) return null;
   return (
     <div className="mt-2 rounded-xl overflow-hidden bg-black aspect-video">
       <iframe
-        src={`https://player.vimeo.com/video/${id}?badge=0&autopause=0`}
+        src={getEmbedUrl(parsed)}
         className="w-full h-full"
-        allow="autoplay; fullscreen; picture-in-picture"
+        allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
         allowFullScreen
       />
     </div>
@@ -126,7 +120,7 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
             ...s, lessons: s.lessons.map((l, j) => {
               if (j !== lIdx) return l;
               if (field === "vimeoId" && typeof value === "string") {
-                return { ...l, vimeoId: extractVimeoId(value) };
+                return { ...l, vimeoId: normalizeVideoInput(value) };
               }
               return { ...l, [field]: value };
             })
@@ -228,16 +222,16 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
                   <div className="pl-6 space-y-3">
                     <div className="grid grid-cols-3 gap-3">
                       <div className="col-span-2">
-                        <label className="block text-xs text-neutral-500 mb-1">Vimeo URL 또는 ID</label>
+                        <label className="block text-xs text-neutral-500 mb-1">영상 URL 또는 ID (YouTube / Vimeo)</label>
                         <div className="flex gap-2">
                           <input
                             type="text"
                             value={lesson.vimeoId}
                             onChange={(e) => updateLesson(sIdx, lIdx, "vimeoId", e.target.value)}
-                            placeholder="https://vimeo.com/123456789 또는 123456789"
+                            placeholder="https://youtu.be/xxxxx 또는 https://vimeo.com/123456789"
                             className="flex-1 px-3 py-2 rounded-lg border border-neutral-200 text-xs focus:outline-none focus:border-pink-400"
                           />
-                          {lesson.vimeoId && /^\d+$/.test(lesson.vimeoId) && (
+                          {parseVideoSource(lesson.vimeoId) && (
                             <button
                               type="button"
                               onClick={() => {
@@ -257,7 +251,7 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
                           )}
                         </div>
                         {previewOpen[`${sIdx}-${lIdx}`] && (
-                          <VimeoPreview vimeoId={lesson.vimeoId} />
+                          <VideoPreview source={lesson.vimeoId} />
                         )}
                       </div>
                       <div>

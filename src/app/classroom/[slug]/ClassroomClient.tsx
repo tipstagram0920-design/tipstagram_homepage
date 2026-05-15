@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, CheckCircle2, Circle, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { parseVideoSource, getEmbedUrl } from "@/lib/video";
 
 interface Lesson {
   id: string;
@@ -81,22 +82,30 @@ export function ClassroomClient({ product, progressMap: initialProgress, userId 
       <div className="flex-1 bg-neutral-950 flex flex-col">
         {/* Video */}
         <div className="relative aspect-video bg-black">
-          {currentLesson?.vimeoId ? (
-            <iframe
-              key={currentLesson.id}
-              src={`https://player.vimeo.com/video/${currentLesson.vimeoId}?autoplay=1&color=e1306c&title=0&byline=0&portrait=0`}
-              className="absolute inset-0 w-full h-full"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <Play className="w-16 h-16 text-neutral-600 mx-auto mb-3" />
-                <p className="text-neutral-500 text-sm">강의를 선택하세요</p>
+          {(() => {
+            const parsed = parseVideoSource(currentLesson?.vimeoId);
+            if (parsed) {
+              return (
+                <iframe
+                  key={currentLesson!.id}
+                  src={getEmbedUrl(parsed, { autoplay: true })}
+                  className="absolute inset-0 w-full h-full"
+                  allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+                  allowFullScreen
+                />
+              );
+            }
+            return (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <Play className="w-16 h-16 text-neutral-600 mx-auto mb-3" />
+                  <p className="text-neutral-500 text-sm">
+                    {currentLesson ? "영상 주소를 인식할 수 없습니다" : "강의를 선택하세요"}
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
 
         {/* Lesson info */}
