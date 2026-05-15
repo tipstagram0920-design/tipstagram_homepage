@@ -96,12 +96,19 @@ export function ClassroomClient({ product, progressMap: initialProgress, userId 
                   />
                   {parsed.provider === "youtube" && (
                     <>
+                      {/* 상단: 제목·"YouTube에서 보기" 가리기 */}
                       <div
-                        className="absolute top-0 left-0 right-0 h-14 z-10"
+                        className="absolute top-0 left-0 right-0 h-20 z-20 bg-gradient-to-b from-black via-black/70 to-transparent"
                         aria-hidden="true"
                       />
+                      {/* 우측 하단: 다음/추천 영상 카드 가리기 */}
                       <div
-                        className="absolute left-0 bottom-12 w-1/2 h-1/3 z-10"
+                        className="absolute right-0 bottom-10 w-48 h-28 z-20 bg-black"
+                        aria-hidden="true"
+                      />
+                      {/* 좌측 하단: 공유·저장 카드 가리기 */}
+                      <div
+                        className="absolute left-0 bottom-10 w-32 h-20 z-20 bg-black"
                         aria-hidden="true"
                       />
                     </>

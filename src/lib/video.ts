@@ -48,8 +48,12 @@ export function getEmbedUrl(
       modestbranding: "1",
       controls: "1",
       playsinline: "1",
+      iv_load_policy: "3",
+      cc_load_policy: "0",
+      disablekb: "1",
+      fs: "1",
     });
-    return `https://www.youtube.com/embed/${parsed.id}?${params.toString()}`;
+    return `https://www.youtube-nocookie.com/embed/${parsed.id}?${params.toString()}`;
   }
 
   const params = new URLSearchParams({
