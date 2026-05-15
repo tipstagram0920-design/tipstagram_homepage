@@ -101,9 +101,9 @@ export function ClassroomClient({ product, progressMap: initialProgress, userId 
                         className="absolute top-0 left-0 right-0 h-20 z-20 bg-gradient-to-b from-black via-black/70 to-transparent"
                         aria-hidden="true"
                       />
-                      {/* 진행바 아래 컨트롤바 전체 가리기 — 상단과 동일한 페이드 */}
+                      {/* 진행바 아래 컨트롤바 전체 가리기 — 진행바는 클릭 가능해야 하므로 낮게 */}
                       <div
-                        className="absolute left-0 right-0 bottom-0 h-20 z-20 bg-gradient-to-t from-black via-black/70 to-transparent"
+                        className="absolute left-0 right-0 bottom-0 h-12 z-20 bg-gradient-to-t from-black via-black/80 to-transparent"
                         aria-hidden="true"
                       />
                     </>
