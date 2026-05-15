@@ -101,14 +101,9 @@ export function ClassroomClient({ product, progressMap: initialProgress, userId 
                         className="absolute top-0 left-0 right-0 h-20 z-20 bg-gradient-to-b from-black via-black/70 to-transparent"
                         aria-hidden="true"
                       />
-                      {/* 우측 하단: 다음/추천 영상 카드 가리기 */}
+                      {/* 진행바 아래 컨트롤바 전체 가리기 (시간·공유·YouTube 로고·추천 카드) */}
                       <div
-                        className="absolute right-0 bottom-10 w-48 h-28 z-20 bg-black"
-                        aria-hidden="true"
-                      />
-                      {/* 좌측 하단: 공유·저장 카드 가리기 */}
-                      <div
-                        className="absolute left-0 bottom-10 w-32 h-20 z-20 bg-black"
+                        className="absolute left-0 right-0 bottom-0 h-10 z-20 bg-black"
                         aria-hidden="true"
                       />
                     </>
