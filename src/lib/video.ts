@@ -53,7 +53,7 @@ export function getEmbedUrl(
       disablekb: "1",
       fs: "1",
     });
-    return `https://www.youtube-nocookie.com/embed/${parsed.id}?${params.toString()}`;
+    return `https://www.youtube.com/embed/${parsed.id}?${params.toString()}`;
   }
 
   const params = new URLSearchParams({
