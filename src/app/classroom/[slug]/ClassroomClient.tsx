@@ -86,13 +86,21 @@ export function ClassroomClient({ product, progressMap: initialProgress, userId 
             const parsed = parseVideoSource(currentLesson?.vimeoId);
             if (parsed) {
               return (
-                <iframe
-                  key={currentLesson!.id}
-                  src={getEmbedUrl(parsed, { autoplay: true })}
-                  className="absolute inset-0 w-full h-full"
-                  allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
-                  allowFullScreen
-                />
+                <>
+                  <iframe
+                    key={currentLesson!.id}
+                    src={getEmbedUrl(parsed, { autoplay: true })}
+                    className="absolute inset-0 w-full h-full"
+                    allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+                    allowFullScreen
+                  />
+                  {parsed.provider === "youtube" && (
+                    <div
+                      className="absolute top-0 left-0 right-0 h-14 z-10"
+                      aria-hidden="true"
+                    />
+                  )}
+                </>
               );
             }
             return (
