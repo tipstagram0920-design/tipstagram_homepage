@@ -208,9 +208,16 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
       {sections.map((section, sIdx) => (
         <div
           key={sIdx}
-          draggable={draggingSection === sIdx}
+          draggable
           onDragStart={(e) => {
+            const target = e.target as HTMLElement;
+            if (!target.closest('[data-drag-handle="section"]')) {
+              e.preventDefault();
+              return;
+            }
+            setDraggingSection(sIdx);
             e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", `section:${sIdx}`);
           }}
           onDragOver={(e) => {
             if (draggingSection !== null && draggingSection !== sIdx) {
@@ -219,8 +226,8 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
             }
           }}
           onDrop={(e) => {
-            e.preventDefault();
             if (draggingSection !== null && draggingSection !== sIdx) {
+              e.preventDefault();
               reorderSections(draggingSection, sIdx);
             }
             setDraggingSection(null);
@@ -234,15 +241,13 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
         >
           {/* Section header */}
           <div className="flex items-center gap-3 px-5 py-4 border-b border-neutral-100 bg-neutral-50">
-            <button
-              type="button"
-              onMouseDown={() => setDraggingSection(sIdx)}
-              onTouchStart={() => setDraggingSection(sIdx)}
-              className="p-0.5 cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600"
+            <span
+              data-drag-handle="section"
+              className="p-0.5 cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 select-none"
               aria-label="섹션 순서 변경"
             >
-              <GripVertical className="w-4 h-4 shrink-0" />
-            </button>
+              <GripVertical className="w-4 h-4 shrink-0 pointer-events-none" />
+            </span>
             <input
               type="text"
               value={section.title}
@@ -264,10 +269,17 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
               {section.lessons.map((lesson, lIdx) => (
                 <div
                   key={lIdx}
-                  draggable={draggingLesson?.sIdx === sIdx && draggingLesson?.lIdx === lIdx}
+                  draggable
                   onDragStart={(e) => {
-                    e.dataTransfer.effectAllowed = "move";
+                    const target = e.target as HTMLElement;
+                    if (!target.closest('[data-drag-handle="lesson"]')) {
+                      e.preventDefault();
+                      return;
+                    }
                     e.stopPropagation();
+                    setDraggingLesson({ sIdx, lIdx });
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", `lesson:${sIdx}:${lIdx}`);
                   }}
                   onDragOver={(e) => {
                     if (
@@ -296,21 +308,13 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.stopPropagation();
-                        setDraggingLesson({ sIdx, lIdx });
-                      }}
-                      onTouchStart={(e) => {
-                        e.stopPropagation();
-                        setDraggingLesson({ sIdx, lIdx });
-                      }}
-                      className="p-0.5 cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600"
+                    <span
+                      data-drag-handle="lesson"
+                      className="p-0.5 cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 select-none"
                       aria-label="강의 순서 변경"
                     >
-                      <GripVertical className="w-4 h-4 shrink-0" />
-                    </button>
+                      <GripVertical className="w-4 h-4 shrink-0 pointer-events-none" />
+                    </span>
                     <input
                       type="text"
                       value={lesson.title}
