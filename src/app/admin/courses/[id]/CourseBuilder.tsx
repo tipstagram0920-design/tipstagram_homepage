@@ -82,6 +82,31 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
     })) || []
   );
   const [loading, setLoading] = useState(false);
+  const [draggingSection, setDraggingSection] = useState<number | null>(null);
+  const [draggingLesson, setDraggingLesson] = useState<{ sIdx: number; lIdx: number } | null>(null);
+
+  const reorderSections = (from: number, to: number) => {
+    if (from === to) return;
+    setSections((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
+
+  const reorderLessons = (sIdx: number, from: number, to: number) => {
+    if (from === to) return;
+    setSections((prev) =>
+      prev.map((s, i) => {
+        if (i !== sIdx) return s;
+        const nextLessons = [...s.lessons];
+        const [moved] = nextLessons.splice(from, 1);
+        nextLessons.splice(to, 0, moved);
+        return { ...s, lessons: nextLessons };
+      })
+    );
+  };
 
   const addSection = () => {
     setSections([...sections, { title: "", order: sections.length, lessons: [], isOpen: true }]);
@@ -181,10 +206,43 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
 
       {/* Sections */}
       {sections.map((section, sIdx) => (
-        <div key={sIdx} className="bg-white rounded-2xl border border-neutral-100 overflow-hidden">
+        <div
+          key={sIdx}
+          draggable={draggingSection === sIdx}
+          onDragStart={(e) => {
+            e.dataTransfer.effectAllowed = "move";
+          }}
+          onDragOver={(e) => {
+            if (draggingSection !== null && draggingSection !== sIdx) {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+            }
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            if (draggingSection !== null && draggingSection !== sIdx) {
+              reorderSections(draggingSection, sIdx);
+            }
+            setDraggingSection(null);
+          }}
+          onDragEnd={() => setDraggingSection(null)}
+          className={cn(
+            "bg-white rounded-2xl border border-neutral-100 overflow-hidden transition-opacity",
+            draggingSection === sIdx && "opacity-40",
+            draggingSection !== null && draggingSection !== sIdx && "border-dashed"
+          )}
+        >
           {/* Section header */}
           <div className="flex items-center gap-3 px-5 py-4 border-b border-neutral-100 bg-neutral-50">
-            <GripVertical className="w-4 h-4 text-neutral-300 shrink-0" />
+            <button
+              type="button"
+              onMouseDown={() => setDraggingSection(sIdx)}
+              onTouchStart={() => setDraggingSection(sIdx)}
+              className="p-0.5 cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600"
+              aria-label="섹션 순서 변경"
+            >
+              <GripVertical className="w-4 h-4 shrink-0" />
+            </button>
             <input
               type="text"
               value={section.title}
@@ -204,9 +262,55 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
           {section.isOpen && (
             <div className="p-4 space-y-3">
               {section.lessons.map((lesson, lIdx) => (
-                <div key={lIdx} className="border border-neutral-100 rounded-xl p-4 space-y-3 bg-neutral-50">
+                <div
+                  key={lIdx}
+                  draggable={draggingLesson?.sIdx === sIdx && draggingLesson?.lIdx === lIdx}
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    e.stopPropagation();
+                  }}
+                  onDragOver={(e) => {
+                    if (
+                      draggingLesson &&
+                      draggingLesson.sIdx === sIdx &&
+                      draggingLesson.lIdx !== lIdx
+                    ) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.dataTransfer.dropEffect = "move";
+                    }
+                  }}
+                  onDrop={(e) => {
+                    if (draggingLesson && draggingLesson.sIdx === sIdx && draggingLesson.lIdx !== lIdx) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      reorderLessons(sIdx, draggingLesson.lIdx, lIdx);
+                    }
+                    setDraggingLesson(null);
+                  }}
+                  onDragEnd={() => setDraggingLesson(null)}
+                  className={cn(
+                    "border border-neutral-100 rounded-xl p-4 space-y-3 bg-neutral-50 transition-opacity",
+                    draggingLesson?.sIdx === sIdx && draggingLesson?.lIdx === lIdx && "opacity-40",
+                    draggingLesson?.sIdx === sIdx && draggingLesson?.lIdx !== lIdx && "border-dashed"
+                  )}
+                >
                   <div className="flex items-center gap-2">
-                    <GripVertical className="w-4 h-4 text-neutral-300 shrink-0" />
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        setDraggingLesson({ sIdx, lIdx });
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        setDraggingLesson({ sIdx, lIdx });
+                      }}
+                      className="p-0.5 cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600"
+                      aria-label="강의 순서 변경"
+                    >
+                      <GripVertical className="w-4 h-4 shrink-0" />
+                    </button>
                     <input
                       type="text"
                       value={lesson.title}
