@@ -86,6 +86,9 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
   const [draggingLesson, setDraggingLesson] = useState<{ sIdx: number; lIdx: number } | null>(null);
   const draggingSectionRef = useRef<number | null>(null);
   const draggingLessonRef = useRef<{ sIdx: number; lIdx: number } | null>(null);
+  // handle의 mousedown이 발동된 위치 (dragstart 게이트 용)
+  const armedSectionRef = useRef<number | null>(null);
+  const armedLessonRef = useRef<{ sIdx: number; lIdx: number } | null>(null);
 
   const reorderSections = (from: number, to: number) => {
     if (from === to) return;
@@ -212,11 +215,11 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
           key={sIdx}
           draggable
           onDragStart={(e) => {
-            const target = e.target as HTMLElement;
-            if (!target.closest('[data-drag-handle="section"]')) {
+            if (armedSectionRef.current !== sIdx) {
               e.preventDefault();
               return;
             }
+            armedSectionRef.current = null;
             draggingSectionRef.current = sIdx;
             setDraggingSection(sIdx);
             e.dataTransfer.effectAllowed = "move";
@@ -251,6 +254,8 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
           <div className="flex items-center gap-3 px-5 py-4 border-b border-neutral-100 bg-neutral-50">
             <span
               data-drag-handle="section"
+              onMouseDown={() => { armedSectionRef.current = sIdx; }}
+              onMouseUp={() => { armedSectionRef.current = null; }}
               className="p-0.5 cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 select-none"
               aria-label="섹션 순서 변경"
             >
@@ -279,11 +284,12 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
                   key={lIdx}
                   draggable
                   onDragStart={(e) => {
-                    const target = e.target as HTMLElement;
-                    if (!target.closest('[data-drag-handle="lesson"]')) {
+                    const armed = armedLessonRef.current;
+                    if (!armed || armed.sIdx !== sIdx || armed.lIdx !== lIdx) {
                       e.preventDefault();
                       return;
                     }
+                    armedLessonRef.current = null;
                     e.stopPropagation();
                     draggingLessonRef.current = { sIdx, lIdx };
                     setDraggingLesson({ sIdx, lIdx });
@@ -321,6 +327,8 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
                   <div className="flex items-center gap-2">
                     <span
                       data-drag-handle="lesson"
+                      onMouseDown={(e) => { e.stopPropagation(); armedLessonRef.current = { sIdx, lIdx }; }}
+                      onMouseUp={() => { armedLessonRef.current = null; }}
                       className="p-0.5 cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 select-none"
                       aria-label="강의 순서 변경"
                     >
