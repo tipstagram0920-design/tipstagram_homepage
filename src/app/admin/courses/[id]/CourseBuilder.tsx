@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -84,6 +84,8 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
   const [loading, setLoading] = useState(false);
   const [draggingSection, setDraggingSection] = useState<number | null>(null);
   const [draggingLesson, setDraggingLesson] = useState<{ sIdx: number; lIdx: number } | null>(null);
+  const draggingSectionRef = useRef<number | null>(null);
+  const draggingLessonRef = useRef<{ sIdx: number; lIdx: number } | null>(null);
 
   const reorderSections = (from: number, to: number) => {
     if (from === to) return;
@@ -215,24 +217,30 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
               e.preventDefault();
               return;
             }
+            draggingSectionRef.current = sIdx;
             setDraggingSection(sIdx);
             e.dataTransfer.effectAllowed = "move";
             e.dataTransfer.setData("text/plain", `section:${sIdx}`);
           }}
           onDragOver={(e) => {
-            if (draggingSection !== null && draggingSection !== sIdx) {
+            if (draggingSectionRef.current !== null && draggingSectionRef.current !== sIdx) {
               e.preventDefault();
               e.dataTransfer.dropEffect = "move";
             }
           }}
           onDrop={(e) => {
-            if (draggingSection !== null && draggingSection !== sIdx) {
+            const from = draggingSectionRef.current;
+            if (from !== null && from !== sIdx) {
               e.preventDefault();
-              reorderSections(draggingSection, sIdx);
+              reorderSections(from, sIdx);
             }
+            draggingSectionRef.current = null;
             setDraggingSection(null);
           }}
-          onDragEnd={() => setDraggingSection(null)}
+          onDragEnd={() => {
+            draggingSectionRef.current = null;
+            setDraggingSection(null);
+          }}
           className={cn(
             "bg-white rounded-2xl border border-neutral-100 overflow-hidden transition-opacity",
             draggingSection === sIdx && "opacity-40",
@@ -277,30 +285,33 @@ export function CourseBuilder({ product }: CourseBuilderProps) {
                       return;
                     }
                     e.stopPropagation();
+                    draggingLessonRef.current = { sIdx, lIdx };
                     setDraggingLesson({ sIdx, lIdx });
                     e.dataTransfer.effectAllowed = "move";
                     e.dataTransfer.setData("text/plain", `lesson:${sIdx}:${lIdx}`);
                   }}
                   onDragOver={(e) => {
-                    if (
-                      draggingLesson &&
-                      draggingLesson.sIdx === sIdx &&
-                      draggingLesson.lIdx !== lIdx
-                    ) {
+                    const cur = draggingLessonRef.current;
+                    if (cur && cur.sIdx === sIdx && cur.lIdx !== lIdx) {
                       e.preventDefault();
                       e.stopPropagation();
                       e.dataTransfer.dropEffect = "move";
                     }
                   }}
                   onDrop={(e) => {
-                    if (draggingLesson && draggingLesson.sIdx === sIdx && draggingLesson.lIdx !== lIdx) {
+                    const cur = draggingLessonRef.current;
+                    if (cur && cur.sIdx === sIdx && cur.lIdx !== lIdx) {
                       e.preventDefault();
                       e.stopPropagation();
-                      reorderLessons(sIdx, draggingLesson.lIdx, lIdx);
+                      reorderLessons(sIdx, cur.lIdx, lIdx);
                     }
+                    draggingLessonRef.current = null;
                     setDraggingLesson(null);
                   }}
-                  onDragEnd={() => setDraggingLesson(null)}
+                  onDragEnd={() => {
+                    draggingLessonRef.current = null;
+                    setDraggingLesson(null);
+                  }}
                   className={cn(
                     "border border-neutral-100 rounded-xl p-4 space-y-3 bg-neutral-50 transition-opacity",
                     draggingLesson?.sIdx === sIdx && draggingLesson?.lIdx === lIdx && "opacity-40",
