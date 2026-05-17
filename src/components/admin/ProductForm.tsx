@@ -65,6 +65,7 @@ function ToolbarBtn({ onClick, active, title, children }: {
 export function ProductForm({ product }: ProductFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const unlayerRef = useRef<UnlayerEditorHandle>(null);
   const [form, setForm] = useState({
     slug: product?.slug || "",
@@ -116,6 +117,28 @@ export function ProductForm({ product }: ProductFormProps) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        alert(data.error || "업로드 실패");
+        return;
+      }
+      setForm((prev) => ({ ...prev, thumbnail: data.url }));
+    } catch {
+      alert("업로드 중 오류가 발생했습니다.");
+    } finally {
+      setUploading(false);
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     if (previewMode && previewDivRef.current) {
@@ -532,11 +555,32 @@ export function ProductForm({ product }: ProductFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1.5">썸네일 URL</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-sm font-medium text-neutral-700">썸네일</label>
+            <div className="flex items-center gap-2">
+              {form.thumbnail && (
+                <button type="button" onClick={() => setForm({ ...form, thumbnail: "" })}
+                  className="text-xs px-2.5 py-1.5 rounded-lg text-neutral-500 hover:bg-neutral-100">
+                  지우기
+                </button>
+              )}
+              <button type="button" onClick={() => thumbnailInputRef.current?.click()} disabled={uploading}
+                className="text-xs px-3 py-1.5 rounded-lg border border-neutral-200 hover:border-pink-300 hover:text-pink-500 disabled:opacity-50">
+                {uploading ? "업로드 중..." : "파일에서 업로드"}
+              </button>
+              <input ref={thumbnailInputRef} type="file" accept="image/*"
+                onChange={handleThumbnailUpload} className="hidden" />
+            </div>
+          </div>
           <input type="url" value={form.thumbnail}
             onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
-            placeholder="https://..."
+            placeholder="https://... 또는 파일에서 업로드"
             className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400" />
+          {form.thumbnail && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={form.thumbnail} alt="썸네일 미리보기"
+              className="mt-3 w-full max-w-xs aspect-video object-cover rounded-xl border border-neutral-200" />
+          )}
         </div>
       </div>
 
