@@ -76,56 +76,73 @@ export function HeroSlider({ slides = defaultSlides }: { slides?: Slide[] }) {
         </div>
       ))}
 
-      <div className="relative flex-1 flex items-center justify-center text-center px-6 pt-28 pb-36">
-        <div className="max-w-4xl w-full">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 text-white/80 text-sm font-medium mb-8">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
-            지금 바로 수강 신청 가능
-          </div>
+      <div className="relative flex-1 flex items-center justify-center px-6 pt-28 pb-36">
+        <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          {/* 좌측: 텍스트·CTA·통계 */}
+          <div className="text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 text-white/80 text-sm font-medium mb-8">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
+              지금 바로 수강 신청 가능
+            </div>
 
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-white leading-[1.1] tracking-tight">
-            {slide.title.split("\n").map((line, i, arr) => (
-              <span key={i}>
-                {i === arr.length - 1 ? <span className="ig-gradient-text">{line}</span> : line}
-                {i < arr.length - 1 && <br />}
-              </span>
-            ))}
-          </h1>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-[1.1] tracking-tight">
+              {slide.title.split("\n").map((line, i, arr) => (
+                <span key={i}>
+                  {i === arr.length - 1 ? <span className="ig-gradient-text">{line}</span> : line}
+                  {i < arr.length - 1 && <br />}
+                </span>
+              ))}
+            </h1>
 
-          {slide.subtitle && (
-            <p className="mt-7 text-lg sm:text-xl text-white/60 font-medium max-w-xl mx-auto leading-relaxed">
-              {slide.subtitle}
-            </p>
-          )}
-
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            {slide.link && slide.buttonText && (
-              <Link href={slide.link} className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-9 py-4 rounded-2xl font-bold text-base text-white ig-gradient hover:opacity-90 transition-opacity shadow-2xl shadow-pink-900/40">
-                {slide.buttonText}
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
+            {slide.subtitle && (
+              <p className="mt-6 text-base sm:text-lg text-white/60 font-medium max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                {slide.subtitle}
+              </p>
             )}
-            <Link href="/courses" className="w-full sm:w-auto inline-flex items-center justify-center px-9 py-4 rounded-2xl font-bold text-base text-white border border-white/20 hover:bg-white/10 transition-colors">
-              강의 둘러보기
-            </Link>
+
+            <div className="mt-8 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4">
+              {slide.link && slide.buttonText && (
+                <Link href={slide.link} className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-9 py-4 rounded-2xl font-bold text-base text-white ig-gradient hover:opacity-90 transition-opacity shadow-2xl shadow-pink-900/40">
+                  {slide.buttonText}
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              )}
+              <Link href="/courses" className="w-full sm:w-auto inline-flex items-center justify-center px-9 py-4 rounded-2xl font-bold text-base text-white border border-white/20 hover:bg-white/10 transition-colors">
+                강의 둘러보기
+              </Link>
+            </div>
+
+            <div className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-6">
+              <div className="flex items-center gap-2">
+                <div className="flex gap-0.5">
+                  {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />)}
+                </div>
+                <span className="text-white/60 text-sm"><strong className="text-white">4.9</strong>점 만족도</span>
+              </div>
+              <div className="w-px h-5 bg-white/15 hidden sm:block" />
+              <div className="flex items-center gap-2 text-white/60 text-sm">
+                <Users className="w-4 h-4 text-white/40" />
+                <span>누적 수강생 <strong className="text-white">1,200+</strong>명</span>
+              </div>
+              <div className="w-px h-5 bg-white/15 hidden sm:block" />
+              <div className="flex items-center gap-2 text-white/60 text-sm">
+                <TrendingUp className="w-4 h-4 text-white/40" />
+                <span>수료율 <strong className="text-white">94%</strong></span>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-            <div className="flex items-center gap-2">
-              <div className="flex gap-0.5">
-                {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />)}
-              </div>
-              <span className="text-white/60 text-sm"><strong className="text-white">4.9</strong>점 만족도</span>
-            </div>
-            <div className="w-px h-5 bg-white/15 hidden sm:block" />
-            <div className="flex items-center gap-2 text-white/60 text-sm">
-              <Users className="w-4 h-4 text-white/40" />
-              <span>누적 수강생 <strong className="text-white">1,200+</strong>명</span>
-            </div>
-            <div className="w-px h-5 bg-white/15 hidden sm:block" />
-            <div className="flex items-center gap-2 text-white/60 text-sm">
-              <TrendingUp className="w-4 h-4 text-white/40" />
-              <span>수료율 <strong className="text-white">94%</strong></span>
+          {/* 우측: YouTube 영상 */}
+          <div className="relative w-full">
+            <div className="absolute -inset-1 ig-gradient rounded-3xl opacity-50 blur-2xl" />
+            <div className="relative aspect-video w-full rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-2xl shadow-pink-900/40 bg-black">
+              <iframe
+                src="https://www.youtube.com/embed/5O7okBHQA6Q?autoplay=1&mute=1&loop=1&playlist=5O7okBHQA6Q&controls=1&rel=0&modestbranding=1&playsinline=1"
+                className="absolute inset-0 w-full h-full"
+                title="팁스타그램 소개 영상"
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                allowFullScreen
+              />
             </div>
           </div>
         </div>
