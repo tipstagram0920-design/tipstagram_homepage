@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Search, ChevronDown, ChevronUp, ShoppingBag, X, Check, Users, Upload, FileText, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { Search, ChevronDown, ChevronUp, ShoppingBag, X, Check, Users, Upload, FileText, AlertCircle, Pencil } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -520,8 +521,17 @@ export function UserManageClient({ users, products }: { users: User[]; products:
                 <ShoppingBag className="w-3.5 h-3.5 text-neutral-400" />
                 {user._count.purchases}건
               </div>
-              <div className="col-span-2 text-xs text-neutral-400">
-                {formatDate(user.createdAt)}
+              <div className="col-span-2 flex items-center justify-between gap-2">
+                <span className="text-xs text-neutral-400">{formatDate(user.createdAt)}</span>
+                <Link
+                  href={`/admin/users/${user.id}/edit`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="shrink-0 p-1.5 rounded-lg text-neutral-400 hover:text-pink-500 hover:bg-white border border-transparent hover:border-neutral-200 transition-colors"
+                  aria-label="회원 정보 수정"
+                  title="회원 정보 수정"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Link>
               </div>
             </div>
 
