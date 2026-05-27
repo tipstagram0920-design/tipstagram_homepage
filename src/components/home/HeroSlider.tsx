@@ -78,8 +78,8 @@ export function HeroSlider({ slides = defaultSlides }: { slides?: Slide[] }) {
 
       <div className="relative flex-1 flex items-center justify-center px-6 pt-28 pb-36">
         <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
-          {/* 좌측: 텍스트·CTA·통계 */}
-          <div className="text-center lg:text-left">
+          {/* 좌측: 텍스트·CTA·통계 (모바일에서는 영상 아래) */}
+          <div className="text-center lg:text-left order-2 lg:order-1">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 text-white/80 text-sm font-medium mb-8">
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
               지금 바로 수강 신청 가능
@@ -132,8 +132,8 @@ export function HeroSlider({ slides = defaultSlides }: { slides?: Slide[] }) {
             </div>
           </div>
 
-          {/* 우측: YouTube 영상 */}
-          <div className="relative w-full">
+          {/* 우측: YouTube 영상 (모바일에서는 위로) */}
+          <div className="relative w-full order-1 lg:order-2">
             <div className="absolute -inset-1 ig-gradient rounded-3xl opacity-50 blur-2xl" />
             <div className="relative aspect-video w-full rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-2xl shadow-pink-900/40 bg-black">
               <iframe

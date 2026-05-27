@@ -64,22 +64,18 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="pt-8 space-y-2 text-xs text-neutral-600">
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
-            <span>{COMPANY.legalName}</span>
-            <span>대표: {COMPANY.ceo}</span>
-            <span>사업자등록번호: {COMPANY.businessNumber}</span>
-            <span>학원설립·운영등록: {COMPANY.academyRegistrationNumber}</span>
+        <div className="pt-8 space-y-3 text-xs text-neutral-500 leading-relaxed">
+          <p className="text-white text-sm font-semibold">{COMPANY.legalName}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+            <span><span className="text-neutral-600">대표</span> · {COMPANY.ceo}</span>
+            <span><span className="text-neutral-600">사업자등록번호</span> · {COMPANY.businessNumber}</span>
+            <span><span className="text-neutral-600">학원설립·운영등록</span> · {COMPANY.academyRegistrationNumber}</span>
+            <span><span className="text-neutral-600">개인정보보호책임자</span> · {COMPANY.privacyOfficer}</span>
+            <span className="sm:col-span-2"><span className="text-neutral-600">주소</span> · {COMPANY.address}</span>
+            <span><span className="text-neutral-600">전화</span> · <a href={`tel:${COMPANY.phone.replace(/-/g, "")}`} className="hover:text-white">{COMPANY.phone}</a></span>
+            <span><span className="text-neutral-600">이메일</span> · <a href={`mailto:${COMPANY.email}`} className="hover:text-white">{COMPANY.email}</a></span>
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
-            <span>주소: {COMPANY.address}</span>
-            <span>전화: {COMPANY.phone}</span>
-            <span>이메일: {COMPANY.email}</span>
-          </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
-            <span>개인정보보호책임자: {COMPANY.privacyOfficer}</span>
-          </div>
-          <p className="pt-3">© {new Date().getFullYear()} {COMPANY.legalName}. All rights reserved.</p>
+          <p className="pt-4 text-neutral-600">© {new Date().getFullYear()} {COMPANY.legalName}. All rights reserved.</p>
         </div>
       </div>
     </footer>

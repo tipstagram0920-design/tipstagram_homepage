@@ -238,9 +238,9 @@ export function CourseDetailClient({ product, hasPurchased, isLoggedIn }: Course
             </div>
           </div>
 
-          {/* Right: Payment Card */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+          {/* Right: Payment Card (desktop sticky / mobile inline) */}
+          <div className="lg:col-span-1 pb-24 lg:pb-0">
+            <div className="lg:sticky lg:top-24 bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
               <div className="p-6">
                 <div className="text-3xl font-black text-neutral-900 mb-1">
                   {formatPrice(finalPrice)}
@@ -323,6 +323,37 @@ export function CourseDetailClient({ product, hasPurchased, isLoggedIn }: Course
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* 모바일 하단 결제 바 */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-neutral-100 shadow-[0_-8px_24px_rgba(0,0,0,0.06)]">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-lg font-black text-neutral-900 truncate">{formatPrice(finalPrice)}</div>
+            {discount > 0 && (
+              <div className="text-[11px] text-pink-600 font-semibold truncate">
+                {formatPrice(product.price)} → -{formatPrice(discount)} 할인
+              </div>
+            )}
+          </div>
+          <button
+            onClick={handlePayment}
+            disabled={isProcessing}
+            className={cn(
+              "shrink-0 px-5 py-3 rounded-xl font-bold text-white text-sm transition-all",
+              hasPurchased ? "bg-green-500 active:bg-green-600" : "ig-gradient active:opacity-90",
+              isProcessing && "opacity-50"
+            )}
+          >
+            {isProcessing
+              ? "처리 중..."
+              : hasPurchased
+              ? "바로 듣기"
+              : isLoggedIn
+              ? "결제하기"
+              : "로그인 후 신청"}
+          </button>
         </div>
       </div>
     </main>
