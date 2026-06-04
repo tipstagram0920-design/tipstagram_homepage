@@ -110,8 +110,10 @@ export function CourseDetailClient({ product, hasPurchased, isLoggedIn }: Course
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId: product.id, couponId }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || `결제 준비 실패 (${res.status})`);
+      }
 
       // Toss Payments 위젯 결제
       const { loadTossPayments } = await import("@tosspayments/tosspayments-sdk");
@@ -127,8 +129,9 @@ export function CourseDetailClient({ product, hasPurchased, isLoggedIn }: Course
         failUrl: `${window.location.origin}/payment/fail`,
       });
     } catch (err) {
-      console.error(err);
-      alert("결제 준비 중 오류가 발생했습니다.");
+      console.error("payment error:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      alert(msg || "결제 처리 중 오류가 발생했습니다.");
     } finally {
       setIsProcessing(false);
     }
