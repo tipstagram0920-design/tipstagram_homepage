@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
 import { COMPANY } from "@/lib/company";
+import { getSetting, SETTING_KEYS } from "@/lib/settings";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -48,9 +49,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "올바른 이메일을 입력해주세요." }, { status: 400 });
   }
 
-  const chatUrl = process.env.KAKAO_OPEN_CHAT_URL;
+  const chatUrl =
+    (await getSetting(SETTING_KEYS.kakaoChatUrl)) || process.env.KAKAO_OPEN_CHAT_URL;
   if (!chatUrl) {
-    console.error("KAKAO_OPEN_CHAT_URL 환경변수 미설정");
+    console.error("kakao_open_chat_url 설정 없음");
     return NextResponse.json(
       { error: "대기방 주소가 아직 설정되지 않았습니다. 잠시 후 다시 시도해주세요." },
       { status: 503 }

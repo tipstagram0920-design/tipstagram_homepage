@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, ShoppingBag, BookOpen, Users,
   Megaphone, FileText, SlidersHorizontal, Tag,
-  Mail, MailOpen, BarChart3, MessageSquare, PanelTop,
+  Mail, MailOpen, BarChart3, MessageSquare, PanelTop, Radio,
 } from "lucide-react";
 
 const navItems = [
@@ -22,6 +22,7 @@ const navItems = [
   { label: "회원 관리", href: "/admin/users", icon: Users },
   { label: "메일 발송", href: "/admin/mail", icon: Mail },
   { label: "이메일 템플릿", href: "/admin/email-templates", icon: MailOpen },
+  { label: "라이브 설정", href: "/admin/live-settings", icon: Radio },
 ];
 
 export function AdminSidebar() {
