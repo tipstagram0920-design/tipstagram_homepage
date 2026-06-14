@@ -1,19 +1,61 @@
+import { SolapiMessageService } from "solapi";
+import { getSetting } from "@/lib/settings";
 import type { MessagingChannel, SendArgs, SendResult } from "./types";
 
 /**
- * Solapi 알림톡/친구톡 어댑터. 현재는 placeholder.
- * 실제 발송 시 @solapi/solapi-nodejs 패키지를 설치하고 인터페이스 구현.
+ * Solapi 알림톡(KakaoOption) / 친구톡 / SMS 어댑터.
+ *
+ * 필요한 설정 (Setting 또는 env):
+ * - SOLAPI_API_KEY, SOLAPI_API_SECRET
+ * - SOLAPI_SENDER_NUMBER (등록된 발신번호, 알림톡 fallback)
+ * - SOLAPI_KAKAO_PFID (카카오 채널 식별자 = pfId)
+ * - 알림톡 발송 시: SendArgs.templateKey 또는 templateExternalId 가 카카오 사전등록 템플릿 코드여야 함
  */
+
+async function getCfg() {
+  const apiKey = (await getSetting("solapi_api_key")) || process.env.SOLAPI_API_KEY;
+  const apiSecret = (await getSetting("solapi_api_secret")) || process.env.SOLAPI_API_SECRET;
+  const sender = (await getSetting("solapi_sender_number")) || process.env.SOLAPI_SENDER_NUMBER;
+  const pfId = (await getSetting("solapi_kakao_pfid")) || process.env.SOLAPI_KAKAO_PFID;
+  return { apiKey, apiSecret, sender, pfId };
+}
+
+function makeService(apiKey?: string, apiSecret?: string) {
+  if (!apiKey || !apiSecret) return null;
+  return new SolapiMessageService(apiKey, apiSecret);
+}
+
 export class SolapiKakaoChannel implements MessagingChannel {
   channel = "kakao_alimtalk" as const;
   provider = "solapi";
 
-  async send(_args: SendArgs): Promise<SendResult> {
-    if (!process.env.SOLAPI_API_KEY || !process.env.SOLAPI_API_SECRET) {
-      return { ok: false, error: "SOLAPI API 키 미설정" };
+  async send(args: SendArgs): Promise<SendResult> {
+    const cfg = await getCfg();
+    const svc = makeService(cfg.apiKey, cfg.apiSecret);
+    if (!svc) return { ok: false, error: "Solapi API 키 미설정" };
+    if (!cfg.sender) return { ok: false, error: "Solapi 발신번호 미설정" };
+    if (!cfg.pfId) return { ok: false, error: "카카오 채널 pfId 미설정" };
+
+    // 알림톡: 사전등록 템플릿 코드 필요. SendArgs.templateKey를 templateId로 사용.
+    if (!args.templateKey) {
+      return { ok: false, error: "알림톡 발송은 templateKey(카카오 템플릿 코드)가 필요합니다." };
     }
-    // TODO: Solapi SDK 통합 (Phase 1 후반)
-    return { ok: false, error: "알림톡 채널은 아직 구현되지 않았습니다." };
+
+    try {
+      const res = await svc.send({
+        to: normalizePhone(args.to),
+        from: cfg.sender,
+        text: args.body,
+        kakaoOptions: {
+          pfId: cfg.pfId,
+          templateId: args.templateKey,
+          disableSms: false, // 알림톡 실패 시 SMS fallback 허용
+        },
+      });
+      return { ok: true, externalId: res.groupInfo?.groupId };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
   }
 }
 
@@ -21,10 +63,28 @@ export class SolapiSmsChannel implements MessagingChannel {
   channel = "sms" as const;
   provider = "solapi";
 
-  async send(_args: SendArgs): Promise<SendResult> {
-    if (!process.env.SOLAPI_API_KEY || !process.env.SOLAPI_API_SECRET) {
-      return { ok: false, error: "SOLAPI API 키 미설정" };
+  async send(args: SendArgs): Promise<SendResult> {
+    const cfg = await getCfg();
+    const svc = makeService(cfg.apiKey, cfg.apiSecret);
+    if (!svc) return { ok: false, error: "Solapi API 키 미설정" };
+    if (!cfg.sender) return { ok: false, error: "Solapi 발신번호 미설정" };
+
+    try {
+      const res = await svc.send({
+        to: normalizePhone(args.to),
+        from: cfg.sender,
+        text: args.body,
+      });
+      return { ok: true, externalId: res.groupInfo?.groupId };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) };
     }
-    return { ok: false, error: "SMS 채널은 아직 구현되지 않았습니다." };
   }
+}
+
+function normalizePhone(p: string) {
+  // 한국 번호 정규화: 하이픈/공백 제거. +82 → 0 변환
+  let s = p.replace(/[^\d+]/g, "");
+  if (s.startsWith("+82")) s = "0" + s.slice(3);
+  return s;
 }

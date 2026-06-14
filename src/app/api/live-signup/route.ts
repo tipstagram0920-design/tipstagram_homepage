@@ -5,6 +5,7 @@ import { getSetting, SETTING_KEYS } from "@/lib/settings";
 import { sendMessage } from "@/lib/messaging";
 import { upsertContactByEmail } from "@/lib/crm/contact";
 import { logEvent } from "@/lib/crm/events";
+import { triggerWorkflow } from "@/lib/crm/workflow-engine";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -98,6 +99,7 @@ export async function POST(req: NextRequest) {
   });
 
   await logEvent(contact.id, "live_signup", { liveSignupId: signup.id });
+  await triggerWorkflow("live_signup", contact.id, { liveSignupId: signup.id });
 
   // 메일 발송 (sendMessage 어댑터 경유)
   try {

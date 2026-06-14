@@ -5,6 +5,7 @@ import { formatPrice } from "@/lib/utils";
 import { sendMessage } from "@/lib/messaging";
 import { upsertContactByEmail } from "@/lib/crm/contact";
 import { logEvent } from "@/lib/crm/events";
+import { triggerWorkflow } from "@/lib/crm/workflow-engine";
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +84,11 @@ export async function POST(req: NextRequest) {
         productTitle: product?.title,
         amount,
         orderId,
+      });
+      await triggerWorkflow("purchase", contact.id, {
+        productId,
+        productTitle: product?.title,
+        amount,
       });
     }
 

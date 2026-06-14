@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { upsertContactByEmail } from "@/lib/crm/contact";
 import { logEvent } from "@/lib/crm/events";
+import { triggerWorkflow } from "@/lib/crm/workflow-engine";
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
     });
 
     await logEvent(contact.id, "register", { userId: user.id });
+    await triggerWorkflow("register", contact.id, { userId: user.id });
 
     return NextResponse.json({ id: user.id, email: user.email });
   } catch {
