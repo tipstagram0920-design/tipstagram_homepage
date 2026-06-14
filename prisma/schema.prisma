@@ -253,3 +253,14 @@ model EmailTemplate {
   @@unique([type, productId])
   @@map("email_templates")
 }
+
+model LiveSignup {
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+  @@map("live_signups")
+}
