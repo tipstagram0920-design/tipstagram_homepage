@@ -8,7 +8,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard, ShoppingBag, BookOpen, Users,
   FileText, SlidersHorizontal, Tag,
-  Mail, MailOpen, MessageSquare, PanelTop, Radio, Sparkles, Workflow, Calendar,
+  Mail, MailOpen, MessageSquare, PanelTop, Radio, Sparkles, Workflow, Calendar, CreditCard,
 } from "lucide-react";
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
@@ -24,8 +24,9 @@ const groups: NavGroup[] = [
   {
     title: "고객",
     items: [
-      { label: "컨택트 (통합 뷰)", href: "/admin/crm/contacts", icon: Sparkles },
-      { label: "회원 관리", href: "/admin/users", icon: Users },
+      { label: "컨택트", href: "/admin/crm/contacts", icon: Sparkles },
+      // 회원 관리는 컨택트로 통합됨. /admin/users URL은 유지 (CSV·일괄 작업용).
+      // 컨택트 리스트 상단의 "고급 일괄 작업" 링크로 접근.
     ],
   },
   {
@@ -53,6 +54,7 @@ const groups: NavGroup[] = [
     title: "판매",
     items: [
       { label: "쿠폰 관리", href: "/admin/coupons", icon: Tag },
+      { label: "결제 설정", href: "/admin/checkout-settings", icon: CreditCard },
     ],
   },
 ];

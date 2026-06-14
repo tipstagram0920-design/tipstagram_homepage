@@ -40,6 +40,8 @@ interface CourseDetailClientProps {
   product: Product;
   hasPurchased: boolean;
   isLoggedIn: boolean;
+  /** 비어있으면 내부 토스 결제. 설정돼 있으면 외부 결제 페이지로 안내. */
+  externalCheckoutUrl?: string | null;
 }
 
 function formatDuration(seconds: number) {
@@ -48,7 +50,12 @@ function formatDuration(seconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export function CourseDetailClient({ product, hasPurchased, isLoggedIn }: CourseDetailClientProps) {
+export function CourseDetailClient({
+  product,
+  hasPurchased,
+  isLoggedIn,
+  externalCheckoutUrl,
+}: CourseDetailClientProps) {
   const router = useRouter();
   const [openSections, setOpenSections] = useState<Set<string>>(new Set([product.course?.sections[0]?.id || ""]));
   const [couponCode, setCouponCode] = useState("");
@@ -94,12 +101,17 @@ export function CourseDetailClient({ product, hasPurchased, isLoggedIn }: Course
   const finalPrice = Math.max(0, product.price - discount);
 
   const handlePayment = async () => {
-    if (!isLoggedIn) {
-      router.push("/login?redirect=" + encodeURIComponent("/courses/" + product.slug));
-      return;
-    }
     if (hasPurchased) {
       router.push("/classroom");
+      return;
+    }
+    // 외부 결제 URL이 설정돼 있으면 그쪽으로 보냄 (로그인 불필요)
+    if (externalCheckoutUrl) {
+      window.open(externalCheckoutUrl, "_blank", "noopener");
+      return;
+    }
+    if (!isLoggedIn) {
+      router.push("/login?redirect=" + encodeURIComponent("/courses/" + product.slug));
       return;
     }
 
@@ -305,10 +317,17 @@ export function CourseDetailClient({ product, hasPurchased, isLoggedIn }: Course
                     ? "처리 중..."
                     : hasPurchased
                     ? "강의 바로 듣기"
+                    : externalCheckoutUrl
+                    ? "결제 페이지로 이동 →"
                     : isLoggedIn
                     ? "결제하기"
                     : "로그인하고 수강신청"}
                 </button>
+                {externalCheckoutUrl && !hasPurchased && (
+                  <p className="mt-2 text-xs text-neutral-400 text-center">
+                    외부 결제 페이지에서 안전하게 결제하세요.
+                  </p>
+                )}
 
                 {/* Features */}
                 <ul className="mt-5 space-y-2.5">
@@ -353,6 +372,8 @@ export function CourseDetailClient({ product, hasPurchased, isLoggedIn }: Course
               ? "처리 중..."
               : hasPurchased
               ? "바로 듣기"
+              : externalCheckoutUrl
+              ? "결제 페이지 →"
               : isLoggedIn
               ? "결제하기"
               : "로그인 후 신청"}

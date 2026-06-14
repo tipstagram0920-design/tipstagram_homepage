@@ -64,6 +64,7 @@ export default async function ContactDetailPage({
         totalSpent: contact.totalSpent,
         userRole: contact.user?.role ?? null,
         userTags: contact.user?.tags ?? [],
+        userId: contact.user?.id ?? null,
       }}
       events={contact.events.map((e) => ({
         id: e.id,

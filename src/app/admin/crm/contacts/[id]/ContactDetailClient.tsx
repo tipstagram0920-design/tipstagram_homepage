@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -17,6 +18,7 @@ import {
   Loader2,
   Ban,
   PencilLine,
+  ExternalLink,
 } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/utils";
 
@@ -37,6 +39,7 @@ interface ContactProps {
   totalSpent: number;
   userRole: string | null;
   userTags: string[];
+  userId: string | null;
 }
 
 interface Event {
@@ -221,6 +224,33 @@ export function ContactDetailClient({
               <p className="text-xs text-neutral-500 mt-0.5">총 결제</p>
             </div>
           </div>
+
+          {/* 회원 빠른 액션 (User가 연결된 경우만) */}
+          {contact.userId && (
+            <div className="bg-white rounded-2xl border border-neutral-100 p-5">
+              <h4 className="text-sm font-bold text-neutral-900 mb-3">회원 액션</h4>
+              <div className="space-y-2">
+                <Link
+                  href={`/admin/users/${contact.userId}/edit`}
+                  className="w-full inline-flex items-center justify-between px-3 py-2.5 rounded-xl border border-neutral-200 text-sm font-semibold text-neutral-700 hover:border-pink-300 hover:text-pink-500"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <PencilLine className="w-3.5 h-3.5" /> 회원 정보 수정
+                  </span>
+                  <ExternalLink className="w-3 h-3 text-neutral-400" />
+                </Link>
+                <Link
+                  href={`/admin/users/${contact.userId}/add-product`}
+                  className="w-full inline-flex items-center justify-between px-3 py-2.5 rounded-xl border border-neutral-200 text-sm font-semibold text-neutral-700 hover:border-pink-300 hover:text-pink-500"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <ShoppingBag className="w-3.5 h-3.5" /> 강의 수동 부여
+                  </span>
+                  <ExternalLink className="w-3 h-3 text-neutral-400" />
+                </Link>
+              </div>
+            </div>
+          )}
 
           {/* Consent / Unsub */}
           <div className="bg-white rounded-2xl border border-neutral-100 p-5">

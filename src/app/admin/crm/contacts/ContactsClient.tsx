@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, ShoppingBag, Radio, UserPlus, Ban } from "lucide-react";
+import { Search, ShoppingBag, Radio, UserPlus, Ban, Settings2 } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/utils";
 
 interface Contact {
@@ -42,6 +42,17 @@ export function ContactsClient({ initial }: { initial: Contact[] }) {
 
   return (
     <div>
+      {/* 고급 작업 안내 */}
+      <div className="mb-4 flex justify-end">
+        <Link
+          href="/admin/users"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-pink-500"
+        >
+          <Settings2 className="w-3.5 h-3.5" />
+          회원 일괄 작업 (CSV·태그 일괄·구매 부여)
+        </Link>
+      </div>
+
       {/* 검색 + 필터 */}
       <div className="bg-white rounded-2xl border border-neutral-100 p-4 mb-5 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">

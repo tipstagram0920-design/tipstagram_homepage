@@ -3,6 +3,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { getSetting, SETTING_KEYS } from "@/lib/settings";
 import { CourseDetailClient } from "./CourseDetailClient";
 
 async function getProduct(slug: string) {
@@ -43,6 +44,8 @@ export default async function CourseDetailPage({
     hasPurchased = !!purchase;
   }
 
+  const externalCheckoutUrl = (await getSetting(SETTING_KEYS.externalCheckoutUrl)) || null;
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -50,6 +53,7 @@ export default async function CourseDetailPage({
         product={product as Parameters<typeof CourseDetailClient>[0]["product"]}
         hasPurchased={hasPurchased}
         isLoggedIn={!!session}
+        externalCheckoutUrl={externalCheckoutUrl}
       />
       <Footer />
     </div>
