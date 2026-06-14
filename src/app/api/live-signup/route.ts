@@ -95,12 +95,21 @@ export async function POST(req: NextRequest) {
   // 메일 발송
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
-      from: `${COMPANY.serviceName} <${process.env.ADMIN_EMAIL || "noreply@tipstagram.co.kr"}>`,
+    // 발신자는 반드시 Resend에 인증된 도메인의 메일이어야 함 (naver.com 등 외부 메일 불가)
+    const fromAddr = process.env.MAIL_FROM || "noreply@tipstagram.co.kr";
+    const sendResult = await resend.emails.send({
+      from: `${COMPANY.serviceName} <${fromAddr}>`,
       to: email,
       subject: `[${COMPANY.serviceName}] 무료 라이브 대기방 입장 안내`,
       html: buildEmailHtml({ name, chatUrl, ebookUrl }),
     });
+    if (sendResult.error) {
+      console.error("Resend send error:", sendResult.error);
+      return NextResponse.json(
+        { error: `메일 발송 거부: ${sendResult.error.message}` },
+        { status: 500 }
+      );
+    }
     await prisma.liveSignup.update({
       where: { id: signup.id },
       data: { sentAt: new Date() },
