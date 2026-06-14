@@ -19,13 +19,12 @@ const groups: NavGroup[] = [
     title: "개요",
     items: [
       { label: "대시보드", href: "/admin", icon: LayoutDashboard },
-      { label: "CRM 대시보드", href: "/admin/crm", icon: Sparkles },
     ],
   },
   {
     title: "고객",
     items: [
-      { label: "컨택트 (통합 뷰)", href: "/admin/crm/contacts", icon: Users },
+      { label: "컨택트 (통합 뷰)", href: "/admin/crm/contacts", icon: Sparkles },
       { label: "회원 관리", href: "/admin/users", icon: Users },
     ],
   },
@@ -36,6 +35,7 @@ const groups: NavGroup[] = [
       { label: "예약 메시지", href: "/admin/crm/broadcast", icon: Calendar },
       { label: "메일 발송", href: "/admin/mail", icon: Mail },
       { label: "이메일 템플릿", href: "/admin/email-templates", icon: MailOpen },
+      { label: "라이브 설정", href: "/admin/live-settings", icon: Radio },
     ],
   },
   {
@@ -50,10 +50,9 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    title: "운영",
+    title: "판매",
     items: [
       { label: "쿠폰 관리", href: "/admin/coupons", icon: Tag },
-      { label: "라이브 설정", href: "/admin/live-settings", icon: Radio },
     ],
   },
 ];
