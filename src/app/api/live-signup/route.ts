@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
 import { COMPANY } from "@/lib/company";
 import { getSetting, SETTING_KEYS } from "@/lib/settings";
+import { sendMessage } from "@/lib/messaging";
+import { upsertContactByEmail } from "@/lib/crm/contact";
+import { logEvent } from "@/lib/crm/events";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -85,28 +87,32 @@ export async function POST(req: NextRequest) {
   }
   const ebookUrl = await getSetting(SETTING_KEYS.ebookUrl);
 
-  // 중복이면 업데이트, 아니면 생성
+  // Contact 통합 (CRM)
+  const contact = await upsertContactByEmail({ email, name, source: "live_signup" });
+
+  // 중복이면 업데이트, 아니면 생성. contactId 연결.
   const signup = await prisma.liveSignup.upsert({
     where: { email },
-    update: { name },
-    create: { name, email },
+    update: { name, contactId: contact.id },
+    create: { name, email, contactId: contact.id },
   });
 
-  // 메일 발송
+  await logEvent(contact.id, "live_signup", { liveSignupId: signup.id });
+
+  // 메일 발송 (sendMessage 어댑터 경유)
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    // 발신자는 반드시 Resend에 인증된 도메인의 메일이어야 함 (naver.com 등 외부 메일 불가)
-    const fromAddr = process.env.MAIL_FROM || "noreply@tipstagram.co.kr";
-    const sendResult = await resend.emails.send({
-      from: `${COMPANY.serviceName} <${fromAddr}>`,
+    const sendResult = await sendMessage({
       to: email,
+      contactId: contact.id,
       subject: `[${COMPANY.serviceName}] 무료 라이브 대기방 입장 안내`,
-      html: buildEmailHtml({ name, chatUrl, ebookUrl }),
+      body: buildEmailHtml({ name, chatUrl, ebookUrl }),
+      templateKey: "live_signup_immediate",
+      transactional: true,
     });
-    if (sendResult.error) {
+    if (!sendResult.ok) {
       console.error("Resend send error:", sendResult.error);
       return NextResponse.json(
-        { error: `메일 발송 거부: ${sendResult.error.message}` },
+        { error: `메일 발송 거부: ${sendResult.error}` },
         { status: 500 }
       );
     }

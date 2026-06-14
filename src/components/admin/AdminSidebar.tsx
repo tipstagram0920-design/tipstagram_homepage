@@ -7,11 +7,13 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, ShoppingBag, BookOpen, Users,
   Megaphone, FileText, SlidersHorizontal, Tag,
-  Mail, MailOpen, BarChart3, MessageSquare, PanelTop, Radio,
+  Mail, MailOpen, BarChart3, MessageSquare, PanelTop, Radio, Sparkles,
 } from "lucide-react";
 
 const navItems = [
   { label: "대시보드", href: "/admin", icon: LayoutDashboard },
+  { label: "CRM 대시보드", href: "/admin/crm", icon: Sparkles },
+  { label: "컨택트", href: "/admin/crm/contacts", icon: Users },
   { label: "홈페이지 편집", href: "/admin/homepage", icon: PanelTop },
   { label: "상품 관리", href: "/admin/products", icon: ShoppingBag },
   { label: "교육과정 관리", href: "/admin/courses", icon: BookOpen },

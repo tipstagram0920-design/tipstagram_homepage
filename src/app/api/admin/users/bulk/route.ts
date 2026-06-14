@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateOrderId } from "@/lib/utils";
+import { logEvent } from "@/lib/crm/events";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -22,12 +23,13 @@ export async function POST(req: NextRequest) {
         const { tags } = payload as { tags: string[] };
         const users = await prisma.user.findMany({
           where: { id: { in: userIds } },
-          select: { id: true, tags: true },
+          select: { id: true, tags: true, contactId: true },
         });
         await Promise.all(
-          users.map((u) => {
+          users.map(async (u) => {
             const newTags = Array.from(new Set([...u.tags, ...tags]));
-            return prisma.user.update({ where: { id: u.id }, data: { tags: newTags } });
+            await prisma.user.update({ where: { id: u.id }, data: { tags: newTags } });
+            if (u.contactId) await logEvent(u.contactId, "tag_added", { tags });
           })
         );
         return NextResponse.json({ ok: true, count: userIds.length });

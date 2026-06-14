@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { upsertContactByEmail } from "@/lib/crm/contact";
+import { logEvent } from "@/lib/crm/events";
 
 // CSV 파싱: 따옴표 처리 포함
 function parseCSV(text: string): Record<string, string>[] {
@@ -96,9 +98,11 @@ export async function POST(req: NextRequest) {
         ? row["tags"].split(",").map((t) => t.trim()).filter(Boolean)
         : [];
 
-      await prisma.user.create({
-        data: { email, name, password, tags, role: "USER" },
+      const contact = await upsertContactByEmail({ email, name, source: "csv_import" });
+      const user = await prisma.user.create({
+        data: { email, name, password, tags, role: "USER", contactId: contact.id },
       });
+      await logEvent(contact.id, "register", { userId: user.id, via: "csv_import" });
       results.created++;
     } catch {
       results.errors.push(`생성 실패: ${email}`);

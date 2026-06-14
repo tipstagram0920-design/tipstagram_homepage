@@ -21,6 +21,7 @@ model User {
   image         String?
   role          Role      @default(USER)
   tags          String[]  @default([])
+  contactId     String?   @unique
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -29,6 +30,7 @@ model User {
   purchases  Purchase[]
   progresses Progress[]
   posts      Post[]
+  contact    Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   @@map("users")
 }
@@ -259,9 +261,13 @@ model LiveSignup {
   name      String
   email     String    @unique
   sentAt    DateTime?
+  contactId String?
   createdAt DateTime  @default(now())
 
+  contact   Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
   @@index([createdAt])
+  @@index([contactId])
   @@map("live_signups")
 }
 
@@ -271,4 +277,119 @@ model Setting {
   updatedAt DateTime @updatedAt
 
   @@map("settings")
+}
+
+// ============================================================================
+// CRM (Phase 1)
+// ============================================================================
+
+model Contact {
+  id              String     @id @default(cuid())
+  email           String     @unique
+  phone           String?
+  name            String?
+  source          String?
+  firstSeenAt     DateTime   @default(now())
+  lastSeenAt     DateTime   @updatedAt
+  consentEmail    Boolean    @default(true)
+  consentSms      Boolean    @default(false)
+  unsubscribedAt  DateTime?
+  note            String?    @db.Text
+
+  // 카운터 캐시 (집계 빠른 조회)
+  liveSignupCount Int        @default(0)
+  purchaseCount   Int        @default(0)
+  totalSpent      Int        @default(0)
+
+  user            User?
+  liveSignups     LiveSignup[]
+  events          Event[]
+  workflowRuns    WorkflowRun[]
+
+  @@index([lastSeenAt])
+  @@index([source])
+  @@map("contacts")
+}
+
+model Event {
+  id         String   @id @default(cuid())
+  contactId  String
+  type       String
+  payload    Json?
+  occurredAt DateTime @default(now())
+
+  contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([contactId, occurredAt])
+  @@index([type, occurredAt])
+  @@map("events")
+}
+
+model MessageLog {
+  id                 String   @id @default(cuid())
+  contactId          String?
+  channel            String
+  provider           String
+  to                 String
+  templateKey        String?
+  templateExternalId String?
+  subject            String?
+  body               String   @db.Text
+  status             String
+  error              String?  @db.Text
+  externalId         String?
+  sentAt             DateTime @default(now())
+
+  @@index([contactId, sentAt])
+  @@index([status])
+  @@map("message_logs")
+}
+
+model Workflow {
+  id         String   @id @default(cuid())
+  name       String
+  trigger    String
+  conditions Json?
+  steps      Json
+  isActive   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  runs       WorkflowRun[]
+
+  @@map("workflows")
+}
+
+model WorkflowRun {
+  id          String    @id @default(cuid())
+  workflowId  String
+  contactId   String
+  currentStep Int       @default(0)
+  nextRunAt   DateTime?
+  status      String    @default("pending")
+  context     Json?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  workflow    Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextRunAt])
+  @@map("workflow_runs")
+}
+
+model BroadcastDraft {
+  id          String    @id @default(cuid())
+  channel     String
+  title       String
+  body        String    @db.Text
+  scheduledAt DateTime
+  status      String    @default("scheduled")
+  notifiedAt  DateTime?
+  doneAt      DateTime?
+  notes       String?   @db.Text
+  createdAt   DateTime  @default(now())
+
+  @@index([scheduledAt, status])
+  @@map("broadcast_drafts")
 }

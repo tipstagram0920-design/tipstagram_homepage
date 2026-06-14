@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Resend } from "resend";
 import { formatPrice } from "@/lib/utils";
+import { sendMessage } from "@/lib/messaging";
+import { upsertContactByEmail } from "@/lib/crm/contact";
+import { logEvent } from "@/lib/crm/events";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const resend = new Resend(process.env.RESEND_API_KEY);
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -62,16 +63,38 @@ export async function POST(req: NextRequest) {
       }).catch(() => { });
     }
 
+    // CRM: Contact 연결 + purchase 이벤트
+    let contactId: string | null = null;
+    if (user) {
+      const contact = await upsertContactByEmail({
+        email: user.email,
+        name: user.name,
+        source: "register",
+      });
+      contactId = contact.id;
+      // User에 contactId 없으면 연결
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { contactId: contact.id },
+      }).catch(() => { });
+      await logEvent(contact.id, "purchase", {
+        purchaseId: purchase.id,
+        productId,
+        productTitle: product?.title,
+        amount,
+        orderId,
+      });
+    }
+
     // 구매 완료 자동 이메일 발송
     if (user && product) {
-      // 상품별 템플릿 우선, 없으면 공통 템플릿 사용
       const template = await prisma.emailTemplate.findFirst({
         where: {
           type: "purchase_confirmation",
           isActive: true,
           OR: [{ productId }, { productId: null }],
         },
-        orderBy: { productId: "desc" }, // productId 있는 것(상품별) 우선
+        orderBy: { productId: "desc" },
       }).catch(() => null);
 
       if (template) {
@@ -90,17 +113,19 @@ export async function POST(req: NextRequest) {
           template.subject
         );
 
-        await resend.emails.send({
-          from: `팁스타그램 <${process.env.ADMIN_EMAIL || "noreply@tipstagram.com"}>`,
+        await sendMessage({
           to: user.email,
+          contactId: contactId ?? undefined,
           subject,
-          html,
+          body: html,
+          templateKey: "purchase_confirmation",
+          transactional: true,
         }).catch(() => { }); // 이메일 실패해도 결제는 성공 처리
       }
     }
 
     return NextResponse.json({ success: true, purchaseId: purchase.id });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "구매 정보 저장 실패" }, { status: 500 });
   }
 }
