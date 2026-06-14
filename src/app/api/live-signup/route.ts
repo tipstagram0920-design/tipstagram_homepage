@@ -6,7 +6,31 @@ import { getSetting, SETTING_KEYS } from "@/lib/settings";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function buildEmailHtml({ name, chatUrl }: { name: string; chatUrl: string }) {
+function buildEmailHtml({
+  name,
+  chatUrl,
+  ebookUrl,
+}: {
+  name: string;
+  chatUrl: string;
+  ebookUrl: string | null;
+}) {
+  const ebookBlock = ebookUrl
+    ? `
+  <div style="background:#FFF8EB;border:1px solid #FCE6C2;border-radius:14px;padding:18px 20px;margin:28px 0;">
+    <p style="font-size:13px;font-weight:800;color:#B45309;letter-spacing:2px;margin:0 0 6px;">🎁 LIVE 참여자 전용 선물</p>
+    <h2 style="font-size:17px;font-weight:800;color:#111;margin:0 0 6px;">인스타그램 수익화 10가지 핵심 Q&amp;A</h2>
+    <p style="font-size:13px;color:#555;margin:0 0 14px;line-height:1.65;">
+      라이브에서 다루는 내용을 미리 정리한 e-Book입니다. 비매품.
+    </p>
+    <p style="margin:0;">
+      <a href="${ebookUrl}" target="_blank" style="display:inline-block;padding:12px 22px;border-radius:10px;background:#111;color:#fff;font-weight:800;text-decoration:none;font-size:14px;">
+        📥 10가지 질문 다운로드
+      </a>
+    </p>
+  </div>`
+    : "";
+
   return `
 <div style="font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans CJK KR',sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#111;line-height:1.7;">
   <div style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);height:6px;border-radius:6px;margin-bottom:28px;"></div>
@@ -20,10 +44,11 @@ function buildEmailHtml({ name, chatUrl }: { name: string; chatUrl: string }) {
       ▶ 무료 라이브 대기방 입장하기
     </a>
   </p>
-  <p style="font-size:13px;color:#666;margin:24px 0 0;">
+  <p style="font-size:13px;color:#666;margin:0 0 8px;">
     버튼이 안 열리면 아래 주소를 복사해서 브라우저에 붙여넣어 주세요.<br/>
     <a href="${chatUrl}" style="color:#FD1D1D;word-break:break-all;">${chatUrl}</a>
   </p>
+  ${ebookBlock}
   <hr style="border:none;border-top:1px solid #EEE;margin:32px 0 16px;"/>
   <p style="font-size:12px;color:#999;margin:0;">
     본 메일은 ${COMPANY.serviceName} 무료 라이브 신청자에게 자동 발송됩니다.<br/>
@@ -58,6 +83,7 @@ export async function POST(req: NextRequest) {
       { status: 503 }
     );
   }
+  const ebookUrl = await getSetting(SETTING_KEYS.ebookUrl);
 
   // 중복이면 업데이트, 아니면 생성
   const signup = await prisma.liveSignup.upsert({
@@ -73,7 +99,7 @@ export async function POST(req: NextRequest) {
       from: `${COMPANY.serviceName} <${process.env.ADMIN_EMAIL || "noreply@tipstagram.co.kr"}>`,
       to: email,
       subject: `[${COMPANY.serviceName}] 무료 라이브 대기방 입장 안내`,
-      html: buildEmailHtml({ name, chatUrl }),
+      html: buildEmailHtml({ name, chatUrl, ebookUrl }),
     });
     await prisma.liveSignup.update({
       where: { id: signup.id },
