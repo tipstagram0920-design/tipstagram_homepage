@@ -4,30 +4,66 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard, ShoppingBag, BookOpen, Users,
-  Megaphone, FileText, SlidersHorizontal, Tag,
-  Mail, MailOpen, BarChart3, MessageSquare, PanelTop, Radio, Sparkles, Workflow, Calendar,
+  FileText, SlidersHorizontal, Tag,
+  Mail, MailOpen, MessageSquare, PanelTop, Radio, Sparkles, Workflow, Calendar,
 } from "lucide-react";
 
-const navItems = [
-  { label: "대시보드", href: "/admin", icon: LayoutDashboard },
-  { label: "CRM 대시보드", href: "/admin/crm", icon: Sparkles },
-  { label: "컨택트", href: "/admin/crm/contacts", icon: Users },
-  { label: "워크플로우", href: "/admin/crm/workflows", icon: Workflow },
-  { label: "예약 메시지", href: "/admin/crm/broadcast", icon: Calendar },
-  { label: "홈페이지 편집", href: "/admin/homepage", icon: PanelTop },
-  { label: "상품 관리", href: "/admin/products", icon: ShoppingBag },
-  { label: "교육과정 관리", href: "/admin/courses", icon: BookOpen },
-  { label: "슬라이드 관리", href: "/admin/slides", icon: SlidersHorizontal },
-  { label: "페이지 관리", href: "/admin/pages", icon: FileText },
-  { label: "게시판 관리", href: "/admin/board", icon: MessageSquare },
-  { label: "쿠폰 관리", href: "/admin/coupons", icon: Tag },
-  { label: "회원 관리", href: "/admin/users", icon: Users },
-  { label: "메일 발송", href: "/admin/mail", icon: Mail },
-  { label: "이메일 템플릿", href: "/admin/email-templates", icon: MailOpen },
-  { label: "라이브 설정", href: "/admin/live-settings", icon: Radio },
+type NavItem = { label: string; href: string; icon: LucideIcon };
+type NavGroup = { title: string; items: NavItem[] };
+
+const groups: NavGroup[] = [
+  {
+    title: "개요",
+    items: [
+      { label: "대시보드", href: "/admin", icon: LayoutDashboard },
+      { label: "CRM 대시보드", href: "/admin/crm", icon: Sparkles },
+    ],
+  },
+  {
+    title: "고객",
+    items: [
+      { label: "컨택트 (통합 뷰)", href: "/admin/crm/contacts", icon: Users },
+      { label: "회원 관리", href: "/admin/users", icon: Users },
+    ],
+  },
+  {
+    title: "자동화 · 메시징",
+    items: [
+      { label: "워크플로우", href: "/admin/crm/workflows", icon: Workflow },
+      { label: "예약 메시지", href: "/admin/crm/broadcast", icon: Calendar },
+      { label: "메일 발송", href: "/admin/mail", icon: Mail },
+      { label: "이메일 템플릿", href: "/admin/email-templates", icon: MailOpen },
+    ],
+  },
+  {
+    title: "콘텐츠",
+    items: [
+      { label: "홈페이지 편집", href: "/admin/homepage", icon: PanelTop },
+      { label: "상품 관리", href: "/admin/products", icon: ShoppingBag },
+      { label: "교육과정 관리", href: "/admin/courses", icon: BookOpen },
+      { label: "슬라이드 관리", href: "/admin/slides", icon: SlidersHorizontal },
+      { label: "페이지 관리", href: "/admin/pages", icon: FileText },
+      { label: "게시판 관리", href: "/admin/board", icon: MessageSquare },
+    ],
+  },
+  {
+    title: "운영",
+    items: [
+      { label: "쿠폰 관리", href: "/admin/coupons", icon: Tag },
+      { label: "라이브 설정", href: "/admin/live-settings", icon: Radio },
+    ],
+  },
 ];
+
+function isItemActive(href: string, pathname: string): boolean {
+  if (href === "/admin") return pathname === "/admin";
+  if (href === "/admin/crm") return pathname === "/admin/crm";
+  // /admin/users는 /admin/crm/contacts 등과 prefix 안 충돌
+  return pathname === href || pathname.startsWith(href + "/");
+}
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -41,25 +77,34 @@ export function AdminSidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {navItems.map(({ label, href, icon: Icon }) => {
-          const isActive = href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-white/10 text-white"
-                  : "text-neutral-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+        {groups.map((group) => (
+          <div key={group.title}>
+            <p className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-[1.5px] text-neutral-500">
+              {group.title}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map(({ label, href, icon: Icon }) => {
+                const isActive = isItemActive(href, pathname);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-white/10 text-white"
+                        : "text-neutral-400 hover:text-white hover:bg-white/5"
+                    )}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    {label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Footer */}
