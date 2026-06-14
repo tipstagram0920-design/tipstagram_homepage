@@ -30,7 +30,7 @@ export default function LiveSignupPage() {
       <Navbar />
       <main className="bg-neutral-950 overflow-hidden">
         {/* ===== HERO + 신청 폼 ===== */}
-        <section className="relative pt-24 pb-16 sm:pb-20">
+        <section id="signup" className="relative pt-24 pb-16 sm:pb-20">
           <div className="absolute -top-32 -left-32 w-[420px] h-[420px] sm:w-[520px] sm:h-[520px] rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #833ab4, transparent 70%)" }} />
           <div className="absolute top-1/3 -right-24 w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #fd1d1d, transparent 70%)" }} />
           <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] sm:w-[360px] sm:h-[360px] rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #fcaf45, transparent 70%)" }} />
@@ -166,8 +166,7 @@ export default function LiveSignupPage() {
               위 폼으로 1분만에 신청 완료. 즉시 이메일로 입장 링크 발송.
             </p>
             <a
-              href="#top"
-              onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              href="#signup"
               className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl ig-gradient text-white font-bold text-sm shadow-lg shadow-pink-900/30 active:opacity-90"
             >
               ↑ 신청 폼으로 이동
