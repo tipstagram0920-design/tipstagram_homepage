@@ -301,10 +301,11 @@ model Contact {
   purchaseCount   Int        @default(0)
   totalSpent      Int        @default(0)
 
-  user            User?
-  liveSignups     LiveSignup[]
-  events          Event[]
-  workflowRuns    WorkflowRun[]
+  user             User?
+  liveSignups      LiveSignup[]
+  events           Event[]
+  workflowRuns     WorkflowRun[]
+  ebookSubmissions EbookSubmission[]
 
   @@index([lastSeenAt])
   @@index([source])
@@ -392,4 +393,22 @@ model BroadcastDraft {
 
   @@index([scheduledAt, status])
   @@map("broadcast_drafts")
+}
+
+model EbookSubmission {
+  id            String    @id @default(cuid())
+  level         Int       // 1 = 신청, 2 = 인증 제출
+  name          String?
+  email         String
+  screenshotUrl String?
+  contactId     String?
+  sentAt        DateTime?
+  createdAt     DateTime  @default(now())
+
+  contact       Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([level, createdAt])
+  @@index([contactId])
+  @@map("ebook_submissions")
 }

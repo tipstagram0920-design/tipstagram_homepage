@@ -36,7 +36,8 @@ const groups: NavGroup[] = [
       { label: "예약 메시지", href: "/admin/crm/broadcast", icon: Calendar },
       { label: "메일 발송", href: "/admin/mail", icon: Mail },
       { label: "이메일 템플릿", href: "/admin/email-templates", icon: MailOpen },
-      { label: "라이브 설정", href: "/admin/live-settings", icon: Radio },
+      { label: "라이브 / 전자책 설정", href: "/admin/live-settings", icon: Radio },
+      { label: "전자책 신청 현황", href: "/admin/crm/ebook", icon: BookOpen },
     ],
   },
   {
