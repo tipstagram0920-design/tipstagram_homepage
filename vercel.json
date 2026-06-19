@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/broadcast-notifier",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/webinar-runner",
+      "schedule": "0 * * * *"
     }
   ]
 }

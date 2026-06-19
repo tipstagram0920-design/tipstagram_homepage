@@ -33,6 +33,7 @@ const groups: NavGroup[] = [
     title: "자동화 · 메시징",
     items: [
       { label: "워크플로우", href: "/admin/crm/workflows", icon: Workflow },
+      { label: "웨비나 캠페인", href: "/admin/crm/webinar", icon: Calendar },
       { label: "예약 메시지", href: "/admin/crm/broadcast", icon: Calendar },
       { label: "메일 발송", href: "/admin/mail", icon: Mail },
       { label: "이메일 템플릿", href: "/admin/email-templates", icon: MailOpen },

@@ -434,3 +434,36 @@ model ConsultationRequest {
   @@index([contactId])
   @@map("consultation_requests")
 }
+
+model WebinarCampaign {
+  id          String   @id @default(cuid())
+  name        String
+  webinarDate DateTime
+  endDate     DateTime?
+  audience    Json
+  steps       Json
+  isActive    Boolean  @default(false)
+  skipPast    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sends       WebinarCampaignSend[]
+
+  @@map("webinar_campaigns")
+}
+
+model WebinarCampaignSend {
+  id         String   @id @default(cuid())
+  campaignId String
+  stepIndex  Int
+  contactId  String
+  status     String
+  error      String?
+  sentAt     DateTime @default(now())
+
+  campaign   WebinarCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, stepIndex, contactId])
+  @@index([campaignId, sentAt])
+  @@map("webinar_campaign_sends")
+}

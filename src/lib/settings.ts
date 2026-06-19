@@ -11,6 +11,12 @@ export const SETTING_KEYS = {
   ebook2Url: "ebook2_url",
   /** 인스타 스토리 인증용 태그 (예: @tipstagram2023) */
   ebook2VerifyTag: "ebook2_verify_tag",
+  /** 웨비나 입장 줌 URL */
+  webinarZoomUrl: "webinar_zoom_url",
+  /** 사전 질문 폼 URL */
+  webinarPreQuestionUrl: "webinar_pre_question_url",
+  /** 진단 신청 URL (메일 변수용) */
+  consultationUrl: "consultation_url",
 } as const;
 
 export async function getSetting(key: string): Promise<string | null> {
