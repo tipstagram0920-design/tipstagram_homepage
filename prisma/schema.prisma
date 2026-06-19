@@ -301,11 +301,12 @@ model Contact {
   purchaseCount   Int        @default(0)
   totalSpent      Int        @default(0)
 
-  user             User?
-  liveSignups      LiveSignup[]
-  events           Event[]
-  workflowRuns     WorkflowRun[]
-  ebookSubmissions EbookSubmission[]
+  user                 User?
+  liveSignups          LiveSignup[]
+  events               Event[]
+  workflowRuns         WorkflowRun[]
+  ebookSubmissions     EbookSubmission[]
+  consultationRequests ConsultationRequest[]
 
   @@index([lastSeenAt])
   @@index([source])
@@ -411,4 +412,25 @@ model EbookSubmission {
   @@index([level, createdAt])
   @@index([contactId])
   @@map("ebook_submissions")
+}
+
+model ConsultationRequest {
+  id               String   @id @default(cuid())
+  name             String
+  email            String
+  phone            String?
+  instagramHandle  String?
+  followerCount    String?  // 자유 텍스트 (정확한 숫자 안 받음)
+  painPoint        String   @db.Text
+  contactId        String?
+  status           String   @default("pending") // pending | selected | done | rejected
+  sentAt           DateTime?
+  createdAt        DateTime @default(now())
+
+  contact          Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([status])
+  @@index([contactId])
+  @@map("consultation_requests")
 }

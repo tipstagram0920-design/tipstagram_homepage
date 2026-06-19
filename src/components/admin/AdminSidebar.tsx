@@ -38,6 +38,7 @@ const groups: NavGroup[] = [
       { label: "이메일 템플릿", href: "/admin/email-templates", icon: MailOpen },
       { label: "라이브 / 전자책 설정", href: "/admin/live-settings", icon: Radio },
       { label: "전자책 신청 현황", href: "/admin/crm/ebook", icon: BookOpen },
+      { label: "진단 세션 신청", href: "/admin/crm/consultation", icon: Sparkles },
     ],
   },
   {

@@ -32,6 +32,7 @@ export const STATIC_PAGES: StaticPage[] = [
   { path: "/live", title: "무료 라이브 신청", desc: "라이브 대기방 신청 폼·강사 실적·라이브 토픽·혜택", category: "마케팅 랜딩", source: "src/app/live/page.tsx" },
   { path: "/ebook", title: "1차 전자책 신청", desc: "이름·이메일 입력 → 1차 전자책 메일 발송", category: "마케팅 랜딩", source: "src/app/ebook/page.tsx" },
   { path: "/ebook/step2", title: "2차 전자책 인증", desc: "인스타 스토리 스크린샷 업로드 → 2차 전자책 메일", category: "마케팅 랜딩", source: "src/app/ebook/step2/page.tsx" },
+  { path: "/consultation", title: "1:1 진단 세션 신청", desc: "무료 라이브 한정, 단 5분 선정 1:1 계정 진단 신청 페이지", category: "마케팅 랜딩", source: "src/app/consultation/page.tsx" },
 
   // 강의
   { path: "/courses", title: "강의 목록", desc: "전체 강의 카드 그리드", category: "강의", source: "src/app/courses/page.tsx" },
