@@ -67,6 +67,7 @@ export function WebinarEditor({
     (initial?.audience as Audience) ?? { hasLiveSignup: true }
   );
   const [steps, setSteps] = useState<Step[]>((initial?.steps as Step[]) ?? []);
+  const [seedOperatorTasks, setSeedOperatorTasks] = useState(!initial);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -114,6 +115,7 @@ export function WebinarEditor({
           steps,
           isActive,
           skipPast,
+          seedOperatorTasks: !initial && seedOperatorTasks,
         }),
       });
       if (!res.ok) {
@@ -181,6 +183,12 @@ export function WebinarEditor({
             <input type="checkbox" checked={skipPast} onChange={(e) => setSkipPast(e.target.checked)} className="w-4 h-4 rounded accent-pink-500" />
             <span className="text-sm text-neutral-700">24시간 이상 지난 step은 건너뛰기</span>
           </label>
+          {!initial && (
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={seedOperatorTasks} onChange={(e) => setSeedOperatorTasks(e.target.checked)} className="w-4 h-4 rounded accent-pink-500" />
+              <span className="text-sm text-neutral-700">운영 to-do 자동 생성 (12개)</span>
+            </label>
+          )}
         </div>
       </section>
 

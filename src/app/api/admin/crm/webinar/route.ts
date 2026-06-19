@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { seedOperatorTasksForCampaign } from "@/lib/crm/operator-tasks";
 
 async function requireAdmin() {
   const session = await auth();
@@ -38,5 +39,14 @@ export async function POST(req: NextRequest) {
       skipPast: !!body.skipPast,
     },
   });
-  return NextResponse.json({ campaign });
+  // 운영 task 자동 시드 (옵션)
+  let seededTasks = 0;
+  if (body.seedOperatorTasks) {
+    seededTasks = await seedOperatorTasksForCampaign(
+      campaign.id,
+      campaign.webinarDate,
+      campaign.endDate
+    );
+  }
+  return NextResponse.json({ campaign, seededTasks });
 }

@@ -467,3 +467,20 @@ model WebinarCampaignSend {
   @@index([campaignId, sentAt])
   @@map("webinar_campaign_sends")
 }
+
+model OperatorTask {
+  id          String    @id @default(cuid())
+  title       String
+  detail      String?   @db.Text
+  scheduledAt DateTime
+  campaignId  String?   // 캠페인 자동 시드 시
+  status      String    @default("pending") // pending | notified | done | skipped
+  notifiedAt  DateTime?
+  doneAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([scheduledAt, status])
+  @@index([campaignId])
+  @@map("operator_tasks")
+}

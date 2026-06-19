@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/webinar-runner",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/operator-task-notifier",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
