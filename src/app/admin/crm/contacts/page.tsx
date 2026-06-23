@@ -26,7 +26,7 @@ async function getContacts() {
     unsubscribed: !!c.unsubscribedAt,
     hasUser: !!c.user,
     userRole: c.user?.role ?? null,
-    userTags: c.user?.tags ?? [],
+    userTags: Array.from(new Set([...(c.tags ?? []), ...(c.user?.tags ?? [])])),
     eventCount: c._count.events,
   }));
 }

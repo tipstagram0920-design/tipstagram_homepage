@@ -40,12 +40,11 @@ export async function resolveAudience(a: AudienceCriteria): Promise<string[]> {
   if (a.hasConsultation) where.consultationRequests = { some: {} };
 
   if (a.tagsAny && a.tagsAny.length > 0) {
-    // hasUser=false 인 경우 무시 (회원 아닌 컨택트는 태그가 없음)
-    const userFilter =
-      typeof where.user === "object" && where.user !== null
-        ? (where.user as Prisma.UserWhereInput)
-        : ({} as Prisma.UserWhereInput);
-    where.user = { ...userFilter, tags: { hasSome: a.tagsAny } };
+    // Contact.tags 또는 User.tags 둘 중 어느 쪽에라도 있으면 매칭 (OR)
+    where.OR = [
+      { tags: { hasSome: a.tagsAny } },
+      { user: { tags: { hasSome: a.tagsAny } } },
+    ];
   }
 
   const contacts = await prisma.contact.findMany({

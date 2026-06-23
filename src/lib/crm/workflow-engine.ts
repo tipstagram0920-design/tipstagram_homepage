@@ -190,13 +190,27 @@ async function executeStep(
 
   if (action === "add_tag") {
     if (!step.tags || step.tags.length === 0) return;
+    // Contact.tags 우선 부여 (회원·비회원 모두). 회원이면 User.tags도 동기화.
+    const c = await prisma.contact.findUnique({
+      where: { id: contact.id },
+      select: { tags: true },
+    });
+    if (c) {
+      const newTags = Array.from(new Set([...c.tags, ...step.tags]));
+      if (newTags.length !== c.tags.length) {
+        await prisma.contact.update({ where: { id: contact.id }, data: { tags: newTags } });
+      }
+    }
     const user = await prisma.user.findUnique({
       where: { contactId: contact.id },
       select: { id: true, tags: true },
     });
-    if (!user) return;
-    const newTags = Array.from(new Set([...user.tags, ...step.tags]));
-    await prisma.user.update({ where: { id: user.id }, data: { tags: newTags } });
+    if (user) {
+      const newUserTags = Array.from(new Set([...user.tags, ...step.tags]));
+      if (newUserTags.length !== user.tags.length) {
+        await prisma.user.update({ where: { id: user.id }, data: { tags: newUserTags } });
+      }
+    }
     await logEvent(contact.id, "tag_added", { tags: step.tags, via: "workflow" });
     return;
   }

@@ -288,6 +288,7 @@ model Contact {
   email           String     @unique
   phone           String?
   name            String?
+  tags            String[]   @default([])
   source          String?
   firstSeenAt     DateTime   @default(now())
   lastSeenAt     DateTime   @updatedAt

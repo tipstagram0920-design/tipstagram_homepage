@@ -42,9 +42,15 @@ export async function POST(req: NextRequest) {
     data: { level: 2, name: name || null, email, screenshotUrl, contactId: contact.id },
   });
 
-  // 회원이면 User.tags에도 자동 부여
+  // Contact.tags에 자동 부여 (단일 소스). 회원이면 User.tags도 동기화.
+  if (!contact.tags.includes(EBOOK2_TAG)) {
+    await prisma.contact.update({
+      where: { id: contact.id },
+      data: { tags: { set: Array.from(new Set([...contact.tags, EBOOK2_TAG])) } },
+    });
+  }
   const user = await prisma.user.findUnique({ where: { contactId: contact.id } });
-  if (user) {
+  if (user && !user.tags.includes(EBOOK2_TAG)) {
     const newTags = Array.from(new Set([...user.tags, EBOOK2_TAG]));
     await prisma.user.update({ where: { id: user.id }, data: { tags: newTags } });
   }
