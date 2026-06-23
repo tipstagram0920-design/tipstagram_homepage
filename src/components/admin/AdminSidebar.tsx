@@ -9,6 +9,7 @@ import {
   LayoutDashboard, ShoppingBag, BookOpen, Users,
   FileText, SlidersHorizontal, Tag,
   Mail, MailOpen, MessageSquare, PanelTop, Radio, Sparkles, Workflow, Calendar, CreditCard,
+  TrendingUp, Gift,
 } from "lucide-react";
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
@@ -19,6 +20,7 @@ const groups: NavGroup[] = [
     title: "개요",
     items: [
       { label: "대시보드", href: "/admin", icon: LayoutDashboard },
+      { label: "자동화 신청 현황", href: "/admin/crm/funnel", icon: TrendingUp },
     ],
   },
   {
@@ -39,6 +41,7 @@ const groups: NavGroup[] = [
       { label: "메일 발송", href: "/admin/mail", icon: Mail },
       { label: "이메일 템플릿", href: "/admin/email-templates", icon: MailOpen },
       { label: "라이브 / 전자책 설정", href: "/admin/live-settings", icon: Radio },
+      { label: "무료 자료 (리드 마그넷)", href: "/admin/crm/freebies", icon: Gift },
       { label: "전자책 신청 현황", href: "/admin/crm/ebook", icon: BookOpen },
       { label: "진단 세션 신청", href: "/admin/crm/consultation", icon: Sparkles },
     ],

@@ -5,6 +5,7 @@ import { getSetting, SETTING_KEYS } from "@/lib/settings";
 import { sendMessage } from "@/lib/messaging";
 import { upsertContactByEmail } from "@/lib/crm/contact";
 import { logEvent } from "@/lib/crm/events";
+import { triggerWorkflow } from "@/lib/crm/workflow-engine";
 import { buildEbookStep1Email } from "../_email";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -35,6 +36,11 @@ export async function POST(req: NextRequest) {
 
   await logEvent(contact.id, "manual_note", {
     type: "ebook_step1",
+    submissionId: submission.id,
+  });
+
+  // 1차 신청자 후속 자동화 (예: 1분 뒤 무료 라이브 초대 메일)
+  await triggerWorkflow("ebook_step1", contact.id, {
     submissionId: submission.id,
   });
 

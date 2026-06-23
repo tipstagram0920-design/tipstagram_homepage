@@ -52,6 +52,95 @@ export function buildEbookStep1Email({
   `.trim();
 }
 
+/**
+ * 1차 전자책 신청 후 1분 뒤 자동 발송되는 무료 라이브 초대 메일.
+ * 워크플로우 엔진의 built-in templateKey "ebook1_live_promo"에서 사용.
+ */
+export function buildEbookLivePromoEmail({ name }: { name: string }) {
+  return `
+<div style="font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans CJK KR',sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#111;line-height:1.7;">
+  <div style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);height:6px;border-radius:6px;margin-bottom:24px;"></div>
+
+  <p style="display:inline-block;background:#FFF1F1;color:#FD1D1D;font-size:12px;font-weight:800;letter-spacing:1px;padding:6px 12px;border-radius:999px;margin:0 0 16px;">🔴 무료 LIVE · 선착순 초대장</p>
+
+  <h1 style="font-size:24px;font-weight:900;line-height:1.32;margin:0 0 14px;">
+    ${name} 님, 전자책으로<br/>
+    첫 단추는 잘 끼우셨어요.<br/>
+    이제 <span style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);-webkit-background-clip:text;background-clip:text;color:transparent;">진짜 결과</span>를 만들 차례예요.
+  </h1>
+  <p style="font-size:15px;color:#444;margin:0 0 8px;">
+    전자책으로 큰 그림을 잡으셨다면, <strong>무료 라이브</strong>에선 그 내용을
+    <strong>내 계정에 직접 적용하는 실전</strong>까지 보여드립니다.
+  </p>
+  <p style="font-size:15px;color:#444;margin:0 0 24px;">
+    <strong>1년 만에 팔로워 0 → 12만</strong>, <strong>인스타 한 채널로 누적 6억</strong>을 만든
+    전 과정을 숨김없이 공개합니다.
+  </p>
+
+  <!-- 실적 -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;border-collapse:separate;border-spacing:8px 0;">
+    <tr>
+      <td width="33%" style="background:#FAFAFA;border:1px solid #EEE;border-radius:14px;padding:16px 8px;text-align:center;">
+        <div style="font-size:20px;font-weight:900;color:#111;">12만+</div>
+        <div style="font-size:11px;color:#888;margin-top:2px;">팔로워 · 1년</div>
+      </td>
+      <td width="33%" style="background:#FAFAFA;border:1px solid #EEE;border-radius:14px;padding:16px 8px;text-align:center;">
+        <div style="font-size:20px;font-weight:900;color:#111;">6억</div>
+        <div style="font-size:11px;color:#888;margin-top:2px;">누적 수익</div>
+      </td>
+      <td width="33%" style="background:#FAFAFA;border:1px solid #EEE;border-radius:14px;padding:16px 8px;text-align:center;">
+        <div style="font-size:20px;font-weight:900;color:#111;">0원</div>
+        <div style="font-size:11px;color:#888;margin-top:2px;">참가비</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- 타겟 -->
+  <div style="border:1px solid #EEE;border-radius:14px;padding:18px 20px;margin:0 0 24px;">
+    <p style="font-size:14px;font-weight:800;color:#111;margin:0 0 10px;">이런 분이라면 꼭 오세요 👇</p>
+    <p style="font-size:14px;color:#444;margin:0 0 7px;">· 전자책은 읽었는데 <strong>막상 뭘 올려야 할지</strong> 막막한 분</p>
+    <p style="font-size:14px;color:#444;margin:0 0 7px;">· 팔로워가 <strong>몇 달째 제자리</strong>라 답답한 분</p>
+    <p style="font-size:14px;color:#444;margin:0 0 7px;">· <strong>광고비 없이</strong> 인스타로 수익을 만들고 싶은 분</p>
+    <p style="font-size:14px;color:#444;margin:0;">· 직장·육아·본업과 <strong>병행</strong>하며 N잡을 키우고 싶은 분</p>
+  </div>
+
+  <!-- 다루는 내용 -->
+  <p style="font-size:14px;font-weight:800;color:#111;margin:0 0 12px;">라이브에서 더 깊이 가져가실 것</p>
+  <p style="font-size:14px;color:#444;margin:0 0 8px;">✅ <strong>노출 알고리즘</strong> — 왜 누구는 1만 명이 보고 누구는 30명이 볼까</p>
+  <p style="font-size:14px;color:#444;margin:0 0 8px;">✅ <strong>광고 없이</strong> 평범한 계정이 12만까지 가는 콘텐츠 루틴</p>
+  <p style="font-size:14px;color:#444;margin:0 0 8px;">✅ 팔로워를 <strong>매출로 바꾸는</strong> 세일즈 퍼널 설계</p>
+  <p style="font-size:14px;color:#444;margin:0 0 24px;">✅ <strong>오늘 밤부터</strong> 바로 바꿀 수 있는 3가지 액션</p>
+
+  <!-- 한정 혜택 -->
+  <div style="background:#FFF8EB;border:1px solid #FCE6C2;border-radius:14px;padding:18px 20px;margin:0 0 28px;">
+    <p style="font-size:12px;font-weight:800;color:#B45309;letter-spacing:1px;margin:0 0 10px;">🎁 라이브 참여자에게만 드리는 혜택</p>
+    <p style="font-size:14px;color:#7c4a02;margin:0 0 7px;">① 비매품 <strong>‘수익화 핵심 10가지 Q&amp;A’ e-Book</strong> 무료 증정</p>
+    <p style="font-size:14px;color:#7c4a02;margin:0 0 7px;">② <strong>실시간 Q&amp;A</strong> — 내 계정 고민을 직접 질문하고 답변받기</p>
+    <p style="font-size:14px;color:#7c4a02;margin:0;">③ 라이브 당일 바로 쓰는 <strong>실전 적용 체크리스트</strong></p>
+  </div>
+
+  <!-- CTA -->
+  <p style="text-align:center;margin:0 0 12px;">
+    <a href="${SITE_URL}/live" target="_blank" style="display:inline-block;padding:16px 34px;border-radius:14px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);color:#fff;font-weight:900;text-decoration:none;font-size:16px;box-shadow:0 8px 20px rgba(253,29,29,0.25);">
+      🎟️ 무료 라이브 자리 받기
+    </a>
+  </p>
+  <p style="font-size:13px;color:#888;margin:0 0 8px;text-align:center;">
+    신청 1분 · 즉시 입장 링크 발송 · 좌석 한정이라 조기 마감될 수 있어요.
+  </p>
+  <p style="font-size:12px;color:#aaa;margin:0;text-align:center;">
+    버튼이 안 열리면 <a href="${SITE_URL}/live" style="color:#FD1D1D;word-break:break-all;">${SITE_URL}/live</a>
+  </p>
+
+  <hr style="border:none;border-top:1px solid #EEE;margin:28px 0 16px;"/>
+  <p style="font-size:12px;color:#999;margin:0;">
+    본 메일은 ${COMPANY.serviceName} 전자책 신청자에게 자동 발송됩니다.<br/>
+    문의: ${COMPANY.email}
+  </p>
+</div>
+  `.trim();
+}
+
 export function buildEbookStep2Email({
   name,
   ebook2Url,

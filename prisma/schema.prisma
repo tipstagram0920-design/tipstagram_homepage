@@ -307,6 +307,7 @@ model Contact {
   workflowRuns         WorkflowRun[]
   ebookSubmissions     EbookSubmission[]
   consultationRequests ConsultationRequest[]
+  freebieSubmissions   FreebieSubmission[]
 
   @@index([lastSeenAt])
   @@index([source])
@@ -483,4 +484,42 @@ model OperatorTask {
   @@index([scheduledAt, status])
   @@index([campaignId])
   @@map("operator_tasks")
+}
+
+model Freebie {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  title           String
+  subtitle        String?
+  description     String?   @db.Text
+  fileUrl         String?
+  thumbnail       String?
+  category        String?
+  customEmailBody String?   @db.Text
+  showLivePromo   Boolean   @default(true)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  submissions     FreebieSubmission[]
+
+  @@map("freebies")
+}
+
+model FreebieSubmission {
+  id         String   @id @default(cuid())
+  freebieId  String
+  name       String?
+  email      String
+  contactId  String?
+  sentAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  freebie    Freebie  @relation(fields: [freebieId], references: [id], onDelete: Cascade)
+  contact    Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([freebieId, createdAt])
+  @@index([email])
+  @@index([contactId])
+  @@map("freebie_submissions")
 }

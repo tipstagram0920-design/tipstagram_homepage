@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { sendMessage } from "@/lib/messaging";
 import { logEvent } from "./events";
+import { COMPANY } from "@/lib/company";
+import { buildEbookLivePromoEmail } from "@/app/api/ebook/_email";
 import type { Channel } from "@/lib/messaging/types";
 import type { Prisma } from "@prisma/client";
 
@@ -8,7 +10,24 @@ export type Trigger =
   | "live_signup"
   | "register"
   | "purchase"
-  | "lesson_complete";
+  | "lesson_complete"
+  | "ebook_step1"
+  | "freebie_signup";
+
+/**
+ * 코드로 관리하는 내장 메일 템플릿. step.templateKey가 여기 매칭되면
+ * EmailTemplate DB 조회 대신 이 본문을 사용한다. {{name}} 등 변수는
+ * executeStep의 치환 로직이 발송 직전에 처리한다.
+ */
+const BUILTIN_TEMPLATES: Record<
+  string,
+  () => { subject: string; html: string }
+> = {
+  ebook1_live_promo: () => ({
+    subject: `[${COMPANY.serviceName}] {{name}}님, 무료 라이브에 초대합니다 🔴`,
+    html: buildEbookLivePromoEmail({ name: "{{name}}" }),
+  }),
+};
 
 export interface WorkflowStep {
   /** 직전 step부터의 지연 시간(분) */
@@ -187,7 +206,11 @@ async function executeStep(
   let subject = step.subject ?? "";
   let body = step.body ?? "";
 
-  if (step.templateKey) {
+  if (step.templateKey && BUILTIN_TEMPLATES[step.templateKey]) {
+    const builtin = BUILTIN_TEMPLATES[step.templateKey]();
+    subject = builtin.subject;
+    body = builtin.html;
+  } else if (step.templateKey) {
     const tpl = await prisma.emailTemplate.findFirst({
       where: { type: step.templateKey, isActive: true },
       orderBy: { productId: "desc" },

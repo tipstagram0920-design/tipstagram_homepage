@@ -4,7 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, Loader2, Save } from "lucide-react";
 
-type Trigger = "live_signup" | "register" | "purchase" | "lesson_complete";
+type Trigger =
+  | "live_signup"
+  | "register"
+  | "purchase"
+  | "lesson_complete"
+  | "ebook_step1"
+  | "freebie_signup";
 type Channel = "email" | "kakao_alimtalk" | "sms";
 
 interface Step {
@@ -31,6 +37,8 @@ const TRIGGER_OPTIONS: { value: Trigger; label: string }[] = [
   { value: "register", label: "회원가입" },
   { value: "purchase", label: "구매 완료" },
   { value: "lesson_complete", label: "강의 완강" },
+  { value: "ebook_step1", label: "전자책 1차 신청" },
+  { value: "freebie_signup", label: "무료 자료 신청" },
 ];
 
 const CHANNEL_OPTIONS: { value: Channel; label: string }[] = [
