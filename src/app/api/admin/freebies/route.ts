@@ -11,12 +11,19 @@ async function requireAdmin() {
 }
 
 function slugify(s: string) {
+  // URL-safe: 영문·숫자·하이픈만 허용. 한글이 포함된 제목은 유효 문자가 비어
+  // 자동으로 fallback(timestamp) slug가 생성됨 — production 동적 라우트의
+  // 한글 매칭 이슈 회피.
   return s
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9가-힣\-_]+/g, "-")
+    .replace(/[^a-z0-9\-_]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
+}
+
+function fallbackSlug() {
+  return `f-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
 export async function GET() {
@@ -36,7 +43,8 @@ export async function POST(req: NextRequest) {
   if (!body.title) {
     return NextResponse.json({ error: "title 필요" }, { status: 400 });
   }
-  let slug = (body.slug || slugify(body.title)).trim();
+  let slug = (body.slug ? slugify(body.slug) : slugify(body.title)).trim();
+  if (!slug) slug = fallbackSlug();
   // 중복 회피
   const exists = await prisma.freebie.findUnique({ where: { slug } });
   if (exists) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;

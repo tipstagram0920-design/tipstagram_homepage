@@ -137,15 +137,20 @@ export function FreebieEditor({ initial }: { initial?: Initial }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-semibold text-neutral-800 mb-1.5">
-              URL slug {initial ? "(주소가 바뀌면 기존 링크 깨짐 주의)" : "(비워두면 제목에서 자동 생성)"}
+              URL slug <span className="text-xs font-normal text-neutral-400">(영문·숫자·하이픈만, 한글 ✕)</span>
             </label>
             <input
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              placeholder="예: 1k-ebook"
+              placeholder="예: 1k-ebook (비우면 자동 생성)"
               className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-mono focus:outline-none focus:border-pink-400"
             />
+            {slug && /[^a-z0-9\-_]/.test(slug) && (
+              <p className="text-xs text-amber-600 mt-1.5">
+                ⚠ 영문 소문자·숫자·하이픈만 사용해주세요. 저장하면 자동 정리됩니다.
+              </p>
+            )}
             {publicUrl && (
               <p className="text-xs text-neutral-500 mt-1.5 inline-flex items-center gap-1">
                 <ExternalLink className="w-3 h-3" />

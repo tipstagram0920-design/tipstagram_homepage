@@ -20,7 +20,21 @@ export async function PUT(
   const body = await req.json();
   const data: Record<string, unknown> = {};
   if (typeof body.title === "string") data.title = body.title;
-  if (typeof body.slug === "string") data.slug = body.slug;
+  if (typeof body.slug === "string") {
+    const normalized = body.slug
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\-_]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80);
+    if (!normalized) {
+      return NextResponse.json(
+        { error: "slug는 영문/숫자/하이픈만 가능합니다." },
+        { status: 400 }
+      );
+    }
+    data.slug = normalized;
+  }
   if (body.subtitle !== undefined) data.subtitle = body.subtitle;
   if (body.description !== undefined) data.description = body.description;
   if (body.fileUrl !== undefined) data.fileUrl = body.fileUrl;
