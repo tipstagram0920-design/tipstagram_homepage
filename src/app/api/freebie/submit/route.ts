@@ -34,6 +34,12 @@ export async function POST(req: NextRequest) {
   if (!freebie || !freebie.isActive) {
     return NextResponse.json({ error: "자료를 찾을 수 없습니다." }, { status: 404 });
   }
+  if (!freebie.fileUrl) {
+    return NextResponse.json(
+      { error: "자료가 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요." },
+      { status: 400 }
+    );
+  }
 
   const contact = await upsertContactByEmail({ email, name, source: `freebie:${freebie.slug}` });
   const submission = await prisma.freebieSubmission.create({

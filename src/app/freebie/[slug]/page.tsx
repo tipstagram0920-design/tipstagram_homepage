@@ -72,7 +72,19 @@ export default async function FreebiePage({
             )}
 
             <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl">
-              <FreebieSignupForm slug={freebie.slug} />
+              {freebie.fileUrl ? (
+                <FreebieSignupForm slug={freebie.slug} />
+              ) : (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-bold mb-4">
+                    🛠 자료 준비 중
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-black text-white mb-2">곧 공개될 예정입니다</h2>
+                  <p className="text-sm text-white/55 leading-relaxed">
+                    파일 업로드가 완료되면 이 페이지에서 바로 신청하실 수 있습니다.
+                  </p>
+                </div>
+              )}
             </div>
 
             <ul className="mt-6 space-y-2 text-[13px] sm:text-sm text-white/55">

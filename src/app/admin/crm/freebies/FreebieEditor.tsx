@@ -281,9 +281,14 @@ export function FreebieEditor({ initial }: { initial?: Initial }) {
         </div>
         <div className="flex gap-3">
           <button onClick={() => router.back()} className="px-5 py-2.5 rounded-xl border border-neutral-200 text-sm font-semibold text-neutral-700">취소</button>
-          <button onClick={save} disabled={saving} className="px-5 py-2.5 rounded-xl ig-gradient text-white text-sm font-bold disabled:opacity-50 inline-flex items-center gap-1.5">
+          <button
+            onClick={save}
+            disabled={saving || uploadingKey !== null}
+            title={uploadingKey ? "업로드가 끝난 뒤에 저장해주세요" : ""}
+            className="px-5 py-2.5 rounded-xl ig-gradient text-white text-sm font-bold disabled:opacity-50 inline-flex items-center gap-1.5"
+          >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {initial ? "저장" : "만들기"}
+            {uploadingKey ? "업로드 중..." : initial ? "저장" : "만들기"}
           </button>
         </div>
       </div>
