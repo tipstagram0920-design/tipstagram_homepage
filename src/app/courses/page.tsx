@@ -1,8 +1,12 @@
+import { notFound } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
+
+// 강의 페이지 임시 숨김. 다시 켜려면 COURSES_HIDDEN = false 로 변경.
+const COURSES_HIDDEN = true;
 
 async function getProducts() {
   try {
@@ -16,6 +20,7 @@ async function getProducts() {
 }
 
 export default async function CoursesPage() {
+  if (COURSES_HIDDEN) notFound();
   const products = await getProducts();
 
   return (

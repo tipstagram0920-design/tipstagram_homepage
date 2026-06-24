@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { label: "홈", href: "/" },
-  { label: "강의", href: "/courses" },
+  // { label: "강의", href: "/courses" }, // 임시 숨김
   { label: "게시판", href: "/board" },
 ];
 

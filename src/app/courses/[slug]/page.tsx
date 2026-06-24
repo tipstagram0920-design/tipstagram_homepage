@@ -24,11 +24,16 @@ async function getProduct(slug: string) {
   });
 }
 
+// 강의 페이지 임시 숨김. 다시 켜려면 COURSES_HIDDEN = false 로 변경.
+const COURSES_HIDDEN = true;
+
 export default async function CourseDetailPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  if (COURSES_HIDDEN) notFound();
+
   const { slug } = await params;
   const product = await getProduct(slug).catch(() => null);
 
