@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, ShoppingBag, Radio, UserPlus, Ban, Settings2 } from "lucide-react";
+import { Search, ShoppingBag, Radio, UserPlus, Ban, Settings2, ArrowUpDown } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/utils";
 
 interface Contact {
@@ -24,21 +24,68 @@ interface Contact {
 }
 
 type Filter = "all" | "live" | "user" | "buyer";
+type Sort =
+  | "recent_desc"
+  | "recent_asc"
+  | "joined_desc"
+  | "joined_asc"
+  | "name_asc"
+  | "name_desc"
+  | "spent_desc"
+  | "spent_asc";
 
-export function ContactsClient({ initial }: { initial: Contact[] }) {
+const SORT_OPTIONS: { value: Sort; label: string }[] = [
+  { value: "recent_desc", label: "최근 활동 ↓" },
+  { value: "recent_asc", label: "최근 활동 ↑" },
+  { value: "joined_desc", label: "가입일 ↓ (최신)" },
+  { value: "joined_asc", label: "가입일 ↑ (오래된 순)" },
+  { value: "name_asc", label: "이름 ㄱ→ㅎ" },
+  { value: "name_desc", label: "이름 ㅎ→ㄱ" },
+  { value: "spent_desc", label: "결제액 ↓" },
+  { value: "spent_asc", label: "결제액 ↑" },
+];
+
+export function ContactsClient({ initial, totalCount }: { initial: Contact[]; totalCount: number }) {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [sort, setSort] = useState<Sort>("recent_desc");
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    return initial.filter((c) => {
+    const arr = initial.filter((c) => {
       if (ql && !(c.email.includes(ql) || c.name?.toLowerCase().includes(ql))) return false;
       if (filter === "live" && c.liveSignupCount === 0) return false;
       if (filter === "user" && !c.hasUser) return false;
       if (filter === "buyer" && c.purchaseCount === 0) return false;
       return true;
     });
-  }, [initial, q, filter]);
+
+    const sorted = [...arr];
+    const nameKey = (c: Contact) => c.name || c.email;
+    sorted.sort((a, b) => {
+      switch (sort) {
+        case "recent_desc":
+          return b.lastSeenAt.localeCompare(a.lastSeenAt);
+        case "recent_asc":
+          return a.lastSeenAt.localeCompare(b.lastSeenAt);
+        case "joined_desc":
+          return b.firstSeenAt.localeCompare(a.firstSeenAt);
+        case "joined_asc":
+          return a.firstSeenAt.localeCompare(b.firstSeenAt);
+        case "name_asc":
+          return nameKey(a).localeCompare(nameKey(b), "ko");
+        case "name_desc":
+          return nameKey(b).localeCompare(nameKey(a), "ko");
+        case "spent_desc":
+          return b.totalSpent - a.totalSpent;
+        case "spent_asc":
+          return a.totalSpent - b.totalSpent;
+        default:
+          return 0;
+      }
+    });
+    return sorted;
+  }, [initial, q, filter, sort]);
 
   return (
     <div>
@@ -53,19 +100,33 @@ export function ContactsClient({ initial }: { initial: Contact[] }) {
         </Link>
       </div>
 
-      {/* 검색 + 필터 */}
-      <div className="bg-white rounded-2xl border border-neutral-100 p-4 mb-5 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-          <input
-            type="text"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="이름·이메일로 검색"
-            className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
-          />
+      {/* 검색 + 필터 + 정렬 */}
+      <div className="bg-white rounded-2xl border border-neutral-100 p-4 mb-3 space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+            <input
+              type="text"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="이름·이메일로 검색"
+              className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
+            />
+          </div>
+          <div className="relative sm:w-56">
+            <ArrowUpDown className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as Sort)}
+              className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-700 bg-white appearance-none focus:outline-none focus:border-pink-400 cursor-pointer"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {([
             ["all", "전체"],
             ["live", "라이브 신청"],
@@ -86,6 +147,18 @@ export function ContactsClient({ initial }: { initial: Contact[] }) {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* 카운트 요약 */}
+      <div className="mb-4 text-sm text-neutral-500">
+        {filtered.length === totalCount ? (
+          <>전체 <strong className="text-neutral-800">{totalCount.toLocaleString()}명</strong></>
+        ) : (
+          <>
+            <strong className="text-neutral-800">{filtered.length.toLocaleString()}명</strong>
+            <span className="text-neutral-400"> · 전체 {totalCount.toLocaleString()}명 중</span>
+          </>
+        )}
       </div>
 
       {/* 리스트 */}
