@@ -524,3 +524,27 @@ model FreebieSubmission {
   @@index([contactId])
   @@map("freebie_submissions")
 }
+
+model TrackEvent {
+  id           String   @id @default(cuid())
+  sessionId    String
+  type         String
+  path         String
+  referrer     String?
+  utmSource    String?
+  utmMedium    String?
+  utmCampaign  String?
+  utmTerm      String?
+  utmContent   String?
+  country      String?
+  userAgent    String?
+  contactId    String?
+  props        Json?
+  createdAt    DateTime @default(now())
+
+  @@index([type, path, createdAt])
+  @@index([sessionId])
+  @@index([path, createdAt])
+  @@index([contactId])
+  @@map("track_events")
+}

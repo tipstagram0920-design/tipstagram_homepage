@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CheckCircle2, Mail, User as UserIcon, Loader2 } from "lucide-react";
+import { track } from "@/lib/track";
 
 export function LiveSignupForm() {
   const [name, setName] = useState("");
@@ -10,11 +11,25 @@ export function LiveSignupForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+  const startedRef = useRef(false);
+
+  const markStarted = () => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    track("form_start", { form: "live_signup" });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    track("form_submit", {
+      form: "live_signup",
+      hasName: !!name,
+      hasEmail: !!email,
+      agreed: agree,
+    });
     if (!agree) {
       setError("개인정보 수집·이용에 동의해주세요.");
+      track("form_block", { form: "live_signup", reason: "no_consent" });
       return;
     }
     setError("");
@@ -28,11 +43,14 @@ export function LiveSignupForm() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error || "신청 중 오류가 발생했습니다.");
+        track("form_fail", { form: "live_signup", error: data.error || "unknown" });
         return;
       }
       setDone(true);
+      track("form_success", { form: "live_signup" });
     } catch {
       setError("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      track("form_fail", { form: "live_signup", error: "network" });
     } finally {
       setLoading(false);
     }
@@ -66,6 +84,7 @@ export function LiveSignupForm() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onFocus={markStarted}
             required
             placeholder="홍길동"
             autoComplete="name"
@@ -82,6 +101,7 @@ export function LiveSignupForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onFocus={markStarted}
             required
             inputMode="email"
             placeholder="example@email.com"

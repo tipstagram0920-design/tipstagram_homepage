@@ -3,6 +3,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { COMPANY } from "@/lib/company";
 import { LiveSignupForm } from "./LiveSignupForm";
+import { TrackerPixel } from "@/components/TrackerPixel";
 import { TrendingUp, Users as UsersIcon, Banknote, BookOpen, Sparkles } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ const LIVE_TOPICS = [
 export default function LiveSignupPage() {
   return (
     <>
+      <TrackerPixel page="live" />
       <Navbar />
       <main className="bg-neutral-950 overflow-hidden">
         {/* ===== HERO + 신청 폼 ===== */}

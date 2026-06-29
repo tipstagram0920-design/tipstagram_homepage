@@ -9,7 +9,7 @@ import {
   LayoutDashboard, ShoppingBag, BookOpen, Users,
   FileText, SlidersHorizontal, Tag,
   Mail, MailOpen, MessageSquare, PanelTop, Radio, Sparkles, Workflow, Calendar, CreditCard,
-  TrendingUp, Gift,
+  TrendingUp, Gift, BarChart3,
 } from "lucide-react";
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
@@ -21,6 +21,7 @@ const groups: NavGroup[] = [
     items: [
       { label: "대시보드", href: "/admin", icon: LayoutDashboard },
       { label: "자동화 신청 현황", href: "/admin/crm/funnel", icon: TrendingUp },
+      { label: "라이브 페이지 분석", href: "/admin/crm/analytics/live", icon: BarChart3 },
     ],
   },
   {
