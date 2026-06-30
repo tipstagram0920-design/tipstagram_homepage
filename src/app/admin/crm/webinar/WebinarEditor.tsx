@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Loader2, Save, Sparkles, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Loader2, Save, Sparkles, ChevronUp, ChevronDown, MessageCircle, Video, ShoppingBag, HelpCircle } from "lucide-react";
 
 type StepKind = "webinar" | "endDate";
 
@@ -31,6 +31,9 @@ interface Initial {
   name: string;
   webinarDate: string;
   endDate: string | null;
+  zoomUrl: string | null;
+  salesUrl: string | null;
+  preQuestionUrl: string | null;
   audience: Record<string, unknown>;
   steps: unknown[];
   isActive: boolean;
@@ -61,8 +64,13 @@ export function WebinarEditor({
   const [endDate, setEndDate] = useState(
     initial?.endDate ? toLocalDateTime(initial.endDate) : ""
   );
+  const [zoomUrl, setZoomUrl] = useState(initial?.zoomUrl ?? "");
+  const [salesUrl, setSalesUrl] = useState(initial?.salesUrl ?? "");
+  const [preQuestionUrl, setPreQuestionUrl] = useState(initial?.preQuestionUrl ?? "");
   const [isActive, setIsActive] = useState(initial?.isActive ?? false);
   const [skipPast, setSkipPast] = useState(initial?.skipPast ?? false);
+  const [seedingKakao, setSeedingKakao] = useState(false);
+  const [seedResult, setSeedResult] = useState<string>("");
   const [audience, setAudience] = useState<Audience>(
     (initial?.audience as Audience) ?? { hasLiveSignup: true }
   );
@@ -111,6 +119,9 @@ export function WebinarEditor({
           name,
           webinarDate: new Date(webinarDate).toISOString(),
           endDate: endDate ? new Date(endDate).toISOString() : null,
+          zoomUrl: zoomUrl.trim() || null,
+          salesUrl: salesUrl.trim() || null,
+          preQuestionUrl: preQuestionUrl.trim() || null,
           audience,
           steps,
           isActive,
@@ -127,6 +138,25 @@ export function WebinarEditor({
       router.refresh();
     } finally {
       setSaving(false);
+    }
+  };
+
+  const seedKakao = async () => {
+    if (!initial) return;
+    setSeedingKakao(true);
+    setSeedResult("");
+    try {
+      const res = await fetch(`/api/admin/crm/webinar/${initial.id}/seed-broadcasts`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSeedResult(`❌ ${data.error || "시드 실패"}`);
+        return;
+      }
+      setSeedResult(`✅ ${data.created}개 생성, ${data.skipped}개 스킵 (이미 있음)`);
+    } finally {
+      setSeedingKakao(false);
     }
   };
 
@@ -191,6 +221,83 @@ export function WebinarEditor({
           )}
         </div>
       </section>
+
+      {/* URL·링크 — 캠페인별 입력값 */}
+      <section className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-4">
+        <div>
+          <h2 className="text-base font-bold text-neutral-900 mb-1">캠페인 URL·링크</h2>
+          <p className="text-xs text-neutral-500">메일·카톡 메시지의 변수에 자동 치환됩니다. 비우면 Setting 또는 자체 페이지로 fallback.</p>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-semibold text-neutral-800 mb-1.5 inline-flex items-center gap-1.5">
+              <Video className="w-3.5 h-3.5 text-blue-500" />
+              Zoom 라이브 URL
+              <span className="text-xs text-neutral-400 font-normal">→ 변수 {`{{zoomUrl}}`}</span>
+            </label>
+            <input
+              type="url"
+              value={zoomUrl}
+              onChange={(e) => setZoomUrl(e.target.value)}
+              placeholder="https://us02web.zoom.us/j/..."
+              className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-neutral-800 mb-1.5 inline-flex items-center gap-1.5">
+              <ShoppingBag className="w-3.5 h-3.5 text-amber-500" />
+              라이브 후 강의 신청 URL
+              <span className="text-xs text-neutral-400 font-normal">→ 변수 {`{{salesUrl}}`}</span>
+            </label>
+            <input
+              type="url"
+              value={salesUrl}
+              onChange={(e) => setSalesUrl(e.target.value)}
+              placeholder="외부 결제 페이지 또는 강의 상세 페이지 URL"
+              className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-neutral-800 mb-1.5 inline-flex items-center gap-1.5">
+              <HelpCircle className="w-3.5 h-3.5 text-purple-500" />
+              사전 질문 페이지 URL
+              <span className="text-xs text-neutral-400 font-normal">→ 변수 {`{{preQuestionUrl}}`}</span>
+            </label>
+            <input
+              type="url"
+              value={preQuestionUrl}
+              onChange={(e) => setPreQuestionUrl(e.target.value)}
+              placeholder={initial ? `비우면 자체 페이지: /webinar/ask/${initial.id}` : "비우면 캠페인 저장 후 /webinar/ask/<id>"}
+              className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* 카톡방 메시지 자동 시드 */}
+      {initial && (
+        <section className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-2xl border border-amber-200 p-5">
+          <div className="flex items-start gap-3">
+            <MessageCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <h2 className="text-base font-bold text-neutral-900 mb-1">카톡방 메시지 자동 시드</h2>
+              <p className="text-xs text-neutral-600 mb-3">위에 입력한 일시·URL을 변수 치환해 12개의 카톡방 메시지가 BroadcastDraft에 자동 생성됩니다. 예약 시각이 도래하면 운영자에게 메일이 갑니다.</p>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={seedKakao}
+                  disabled={seedingKakao}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
+                >
+                  {seedingKakao ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  카톡 메시지 12개 시드
+                </button>
+                {seedResult && <p className="text-sm font-semibold text-neutral-700">{seedResult}</p>}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 세그먼트 (audience) */}
       <section className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-3">
@@ -392,7 +499,7 @@ function StepCard({
           placeholder="<p>안녕하세요 {{name}}님...</p>"
           className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-xs font-mono focus:outline-none focus:border-pink-400 resize-y"
         />
-        <p className="text-[11px] text-neutral-400 mt-1">변수: {`{{name}}`} {`{{daysToWebinar}}`} {`{{daysToEnd}}`} {`{{webinarDate}}`} {`{{zoomUrl}}`} {`{{preQuestionUrl}}`} {`{{ebook1Url}}`} {`{{ebook2Url}}`} {`{{consultationUrl}}`}</p>
+        <p className="text-[11px] text-neutral-400 mt-1">변수: {`{{name}}`} {`{{daysToWebinar}}`} {`{{daysToEnd}}`} {`{{webinarDate}}`} {`{{zoomUrl}}`} {`{{salesUrl}}`} {`{{preQuestionUrl}}`} {`{{ebook1Url}}`} {`{{ebook2Url}}`} {`{{consultationUrl}}`}</p>
       </div>
       <label className="inline-flex items-center gap-2 cursor-pointer">
         <input type="checkbox" checked={!!step.transactional} onChange={(e) => onPatch({ transactional: e.target.checked })} className="w-4 h-4 rounded accent-pink-500" />

@@ -73,16 +73,26 @@ interface ContactRow {
 
 async function buildVars(
   contact: ContactRow,
-  campaign: { webinarDate: Date; endDate: Date | null }
+  campaign: {
+    id: string;
+    webinarDate: Date;
+    endDate: Date | null;
+    zoomUrl?: string | null;
+    salesUrl?: string | null;
+    preQuestionUrl?: string | null;
+  }
 ): Promise<Record<string, string>> {
   const now = new Date();
-  const [zoomUrl, preQUrl, consultationUrl, ebook1Url, ebook2Url] = await Promise.all([
+  const [zoomUrl, preQUrl, consultationUrl, ebook1Url, ebook2Url, externalCheckoutUrl] = await Promise.all([
     getSetting(SETTING_KEYS.webinarZoomUrl),
     getSetting(SETTING_KEYS.webinarPreQuestionUrl),
     getSetting(SETTING_KEYS.consultationUrl),
     getSetting(SETTING_KEYS.ebook1Url),
     getSetting(SETTING_KEYS.ebook2Url),
+    getSetting(SETTING_KEYS.externalCheckoutUrl),
   ]);
+
+  const SITE = "https://tipstagram-homepage.vercel.app";
 
   return {
     "{{name}}": contact.name || "회원",
@@ -91,9 +101,13 @@ async function buildVars(
     "{{daysToEnd}}": campaign.endDate ? String(diffDays(now, campaign.endDate)) : "-",
     "{{webinarDate}}": formatKstDate(campaign.webinarDate),
     "{{endDate}}": campaign.endDate ? formatKstDate(campaign.endDate) : "-",
-    "{{zoomUrl}}": zoomUrl || "",
-    "{{preQuestionUrl}}": preQUrl || "",
-    "{{consultationUrl}}": consultationUrl || "https://tipstagram-homepage.vercel.app/consultation",
+    // 캠페인 컬럼 > Setting > 기본값
+    "{{zoomUrl}}": campaign.zoomUrl || zoomUrl || "",
+    "{{preQuestionUrl}}":
+      campaign.preQuestionUrl || preQUrl || `${SITE}/webinar/ask/${campaign.id}`,
+    "{{salesUrl}}":
+      campaign.salesUrl || externalCheckoutUrl || `${SITE}/courses`,
+    "{{consultationUrl}}": consultationUrl || `${SITE}/consultation`,
     "{{ebook1Url}}": ebook1Url || "",
     "{{ebook2Url}}": ebook2Url || "",
   };

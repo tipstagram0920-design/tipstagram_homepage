@@ -11,13 +11,13 @@ const FOOTER = `
 
 /**
  * 편지 톤 메일 — 강사가 직접 쓴 1인칭 편지. 그라디언트 헤더선만 얇게.
- * 좌측 정렬 본문, 큰 카드/표 없음. 사인오프 "호근 드림" 포함.
+ * 좌측 정렬 본문, 큰 카드/표 없음. 사인오프 "팁스타그램 드림" 포함.
  */
 const LETTER = (innerHtml: string) => `
 <div style="font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans CJK KR',sans-serif;max-width:540px;margin:0 auto;padding:32px 24px;color:#222;line-height:1.85;font-size:15px;">
   <div style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);height:3px;border-radius:3px;margin-bottom:28px;"></div>
   ${innerHtml}
-  <p style="font-size:14px;color:#555;margin:28px 0 0;">— 호근 드림</p>
+  <p style="font-size:14px;color:#555;margin:28px 0 0;">— 팁스타그램 드림</p>
   ${FOOTER}
 </div>`.trim();
 
@@ -45,7 +45,7 @@ export const PRESET_STEPS: WebinarStep[] = [
     subject: "{{name}}님, 만나서 반갑습니다 (라이브까지 D-{{daysToWebinar}})",
     body: LETTER(`
       <p>{{name}}님, 안녕하세요.</p>
-      <p>먼저 무료 라이브에 신청해 주셔서 감사해요. 저는 이 메일을 쓰는 호근이라고 합니다.</p>
+      <p>먼저 무료 라이브에 신청해 주셔서 감사해요. 저는 팁스타그램입니다.</p>
       <p>요즘 메일함을 열면 광고가 너무 많죠. 그래서 저는 이번 시리즈를 <strong>제 입으로 직접 말씀드리듯</strong> 짧게 짧게 보내려고 해요. 부담 갖지 마시고 편하게 읽어주세요.</p>
       <p>{{webinarDate}}에 있을 라이브에서, 제가 인스타 한 채널로 어떻게 결과를 만들어왔는지 그 <strong>전 과정</strong>을 공개합니다. 광고비는 0원이었습니다.</p>
       <p>라이브까지 10일 남았어요. 그 사이에 9통 정도 메일이 더 갈 거예요. 모두 라이브 안에서 더 잘 받아가실 수 있도록 준비하는 내용이에요.</p>
@@ -209,7 +209,7 @@ export const PRESET_STEPS: WebinarStep[] = [
         <li>팔로워를 빠르게 늘리는 4단계 루틴.</li>
         <li>팔로워 → 매출로 가는 세일즈 퍼널.</li>
       </ol>
-      <p>여기서 멈추지 않게, 다음 단계를 함께 가고 싶으신 분은 <a href="${SITE}/courses/marketing-booster" style="color:#FD1D1D;">강의 페이지</a>도 열어두었어요.</p>
+      <p>여기서 멈추지 않게, 다음 단계를 함께 가고 싶으신 분은 <a href="{{salesUrl}}" style="color:#FD1D1D;">강의 페이지</a>도 열어두었어요.</p>
     `),
   },
 
@@ -225,7 +225,7 @@ export const PRESET_STEPS: WebinarStep[] = [
       <p>3일 후에 모집을 닫고, 다음 기수는 한 달 후예요. <strong>다음 기수부터는 수강료가 인상</strong>됩니다.</p>
       <p>아직 망설이고 계시다면, 남은 자리만 한 번 확인해 보세요. 결정은 그 다음에 하셔도 돼요.</p>
       <p style="text-align:center;margin:24px 0;">
-        <a href="${SITE}/courses/marketing-booster" style="display:inline-block;padding:12px 22px;border-radius:10px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);color:#fff;font-weight:700;text-decoration:none;font-size:14px;">남은 자리 확인 →</a>
+        <a href="{{salesUrl}}" style="display:inline-block;padding:12px 22px;border-radius:10px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);color:#fff;font-weight:700;text-decoration:none;font-size:14px;">남은 자리 확인 →</a>
       </p>
     `),
   },
@@ -242,7 +242,7 @@ export const PRESET_STEPS: WebinarStep[] = [
       <p>이번 기수를 놓치면 <strong>한 달을 더 기다리셔야 하고, 그땐 가격이 오릅니다.</strong> 그 사이 인스타는 또 알고리즘이 바뀔 거예요.</p>
       <p>한 달 후 같은 자리에서 다시 망설이는 자신을 보고 싶지 않으시다면, 오늘이 마지막이에요.</p>
       <p style="text-align:center;margin:24px 0;">
-        <a href="${SITE}/courses/marketing-booster" style="display:inline-block;padding:12px 22px;border-radius:10px;background:#FD1D1D;color:#fff;font-weight:700;text-decoration:none;font-size:14px;">오늘 자정 전 신청 →</a>
+        <a href="{{salesUrl}}" style="display:inline-block;padding:12px 22px;border-radius:10px;background:#FD1D1D;color:#fff;font-weight:700;text-decoration:none;font-size:14px;">오늘 자정 전 신청 →</a>
       </p>
       <p>결정은 {{name}}님의 것이에요. 응원합니다.</p>
     `),

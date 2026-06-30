@@ -309,6 +309,7 @@ model Contact {
   ebookSubmissions     EbookSubmission[]
   consultationRequests ConsultationRequest[]
   freebieSubmissions   FreebieSubmission[]
+  webinarQuestions     WebinarQuestion[]
 
   @@index([lastSeenAt])
   @@index([source])
@@ -438,20 +439,42 @@ model ConsultationRequest {
 }
 
 model WebinarCampaign {
-  id          String   @id @default(cuid())
-  name        String
-  webinarDate DateTime
-  endDate     DateTime?
-  audience    Json
-  steps       Json
-  isActive    Boolean  @default(false)
-  skipPast    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String    @id @default(cuid())
+  name           String
+  webinarDate    DateTime
+  endDate        DateTime?
+  zoomUrl        String?
+  salesUrl       String?
+  preQuestionUrl String?
+  audience       Json
+  steps          Json
+  isActive       Boolean   @default(false)
+  skipPast       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  sends       WebinarCampaignSend[]
+  sends          WebinarCampaignSend[]
+  questions      WebinarQuestion[]
 
   @@map("webinar_campaigns")
+}
+
+model WebinarQuestion {
+  id         String   @id @default(cuid())
+  campaignId String
+  name       String?
+  email      String
+  question   String   @db.Text
+  contactId  String?
+  createdAt  DateTime @default(now())
+
+  campaign   WebinarCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact    Contact?        @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId, createdAt])
+  @@index([email])
+  @@index([contactId])
+  @@map("webinar_questions")
 }
 
 model WebinarCampaignSend {
