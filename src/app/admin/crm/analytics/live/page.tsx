@@ -67,22 +67,26 @@ export default async function LiveAnalyticsPage({
     ...(since ? { createdAt: { gte: since } } : {}),
   };
 
-  const events = await prisma.trackEvent.findMany({
-    where,
-    select: {
-      sessionId: true,
-      type: true,
-      referrer: true,
-      utmSource: true,
-      utmMedium: true,
-      utmCampaign: true,
-      country: true,
-      props: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: "desc" },
-    take: 5000,
-  });
+  const [events, liveSignupTotal, liveSignupInRange] = await Promise.all([
+    prisma.trackEvent.findMany({
+      where,
+      select: {
+        sessionId: true,
+        type: true,
+        referrer: true,
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
+        country: true,
+        props: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 5000,
+    }),
+    prisma.liveSignup.count(),
+    prisma.liveSignup.count({ where: since ? { createdAt: { gte: since } } : {} }),
+  ]);
 
   // 세션별 funnel 집계
   type SessionState = {
@@ -112,7 +116,9 @@ export default async function LiveAnalyticsPage({
   const viewCount = [...sessions.values()].filter((s) => s.view).length;
   const startCount = [...sessions.values()].filter((s) => s.start).length;
   const submitCount = [...sessions.values()].filter((s) => s.submit).length;
-  const successCount = [...sessions.values()].filter((s) => s.success).length;
+  const pixelSuccessCount = [...sessions.values()].filter((s) => s.success).length;
+  // "신청 완료" 지표는 DB(LiveSignup) 기준 — 픽셀 누락 신청도 정확히 집계
+  const successCount = liveSignupInRange;
   const blockedNoConsent = [...sessions.values()].filter((s) => s.blockedNoConsent && !s.success).length;
   const failedSubmit = [...sessions.values()].filter((s) => s.failed && !s.success).length;
   const abandonedAfterStart = [...sessions.values()].filter((s) => s.start && !s.submit).length;
@@ -138,7 +144,7 @@ export default async function LiveAnalyticsPage({
     "k"
   );
 
-  // 일별 추이
+  // 일별 추이 (페이지뷰는 픽셀, 신청은 DB 기준)
   const daily = new Map<string, { v: number; s: number }>();
   for (const e of views) {
     const day = e.createdAt.toISOString().slice(0, 10);
@@ -146,21 +152,21 @@ export default async function LiveAnalyticsPage({
     d.v += 1;
     daily.set(day, d);
   }
-  for (const sid of successSessionIds) {
-    const day = events
-      .filter((e) => e.sessionId === sid && e.type === "form_success")[0]
-      ?.createdAt.toISOString().slice(0, 10);
-    if (day) {
-      const d = daily.get(day) || { v: 0, s: 0 };
-      d.s += 1;
-      daily.set(day, d);
-    }
+  const liveSignupsDaily = await prisma.liveSignup.findMany({
+    where: since ? { createdAt: { gte: since } } : {},
+    select: { createdAt: true },
+  });
+  for (const ls of liveSignupsDaily) {
+    const day = ls.createdAt.toISOString().slice(0, 10);
+    const d = daily.get(day) || { v: 0, s: 0 };
+    d.s += 1;
+    daily.set(day, d);
   }
   const dailyArr = [...daily.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
         <div>
           <h1 className="text-2xl font-black text-neutral-900">무료 라이브 페이지 분석</h1>
           <p className="text-sm text-neutral-500 mt-1">
@@ -185,7 +191,13 @@ export default async function LiveAnalyticsPage({
         </div>
       </div>
 
-      {viewCount === 0 ? (
+      {/* 데이터 소스 안내 */}
+      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-xs text-blue-700 leading-relaxed">
+        <strong>💡 데이터 소스 안내</strong> · <strong>신청 완료</strong>는 LiveSignup DB 기준이라 자동화 신청 현황과 같은 숫자(누적 {liveSignupTotal.toLocaleString()}명).
+        반면 <strong>페이지 조회·폼 시작·이탈</strong>은 방문자 픽셀 기반이라 픽셀 도입(2026-06-29) 이전 신청은 잡히지 않습니다.
+      </div>
+
+      {viewCount === 0 && successCount === 0 ? (
         <div className="bg-white rounded-2xl border border-neutral-100 p-12 text-center">
           <Eye className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
           <p className="text-neutral-600 mb-1">선택한 기간에 페이지뷰가 없어요.</p>
@@ -214,7 +226,11 @@ export default async function LiveAnalyticsPage({
               label="신청 완료"
               value={successCount}
               icon={CheckCircle2}
-              sub={`${pct(successCount, viewCount)}% 전환율`}
+              sub={
+                viewCount > 0
+                  ? `${pct(successCount, viewCount)}% 전환율 · 픽셀 캡처 ${pixelSuccessCount}`
+                  : "DB 기준 신청 수"
+              }
               highlight
             />
           </div>
