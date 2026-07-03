@@ -71,6 +71,8 @@ export function WebinarEditor({
   const [skipPast, setSkipPast] = useState(initial?.skipPast ?? false);
   const [seedingKakao, setSeedingKakao] = useState(false);
   const [seedResult, setSeedResult] = useState<string>("");
+  const [previewSending, setPreviewSending] = useState(false);
+  const [previewResult, setPreviewResult] = useState<string>("");
   const [audience, setAudience] = useState<Audience>(
     (initial?.audience as Audience) ?? { hasLiveSignup: true }
   );
@@ -157,6 +159,25 @@ export function WebinarEditor({
       setSeedResult(`✅ ${data.created}개 생성, ${data.skipped}개 스킵 (이미 있음)`);
     } finally {
       setSeedingKakao(false);
+    }
+  };
+
+  const sendKakaoPreview = async () => {
+    if (!initial) return;
+    setPreviewSending(true);
+    setPreviewResult("");
+    try {
+      const res = await fetch(`/api/admin/crm/webinar/${initial.id}/send-kakao-preview`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPreviewResult(`❌ ${data.error || "발송 실패"}`);
+        return;
+      }
+      setPreviewResult(`✅ ${data.sentTo}로 12개 메시지 발송됨`);
+    } finally {
+      setPreviewSending(false);
     }
   };
 
@@ -282,7 +303,7 @@ export function WebinarEditor({
             <div className="flex-1">
               <h2 className="text-base font-bold text-neutral-900 mb-1">카톡방 메시지 자동 시드</h2>
               <p className="text-xs text-neutral-600 mb-3">위에 입력한 일시·URL을 변수 치환해 12개의 카톡방 메시지가 BroadcastDraft에 자동 생성됩니다. 예약 시각이 도래하면 운영자에게 메일이 갑니다.</p>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={seedKakao}
@@ -290,9 +311,19 @@ export function WebinarEditor({
                   className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
                 >
                   {seedingKakao ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                  카톡 메시지 12개 시드
+                  12개 예약 시드
                 </button>
-                {seedResult && <p className="text-sm font-semibold text-neutral-700">{seedResult}</p>}
+                <button
+                  type="button"
+                  onClick={sendKakaoPreview}
+                  disabled={previewSending}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl border border-amber-400 text-amber-700 bg-white hover:bg-amber-50 disabled:opacity-50"
+                >
+                  {previewSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
+                  미리보기 메일 받기
+                </button>
+                {seedResult && <p className="text-xs font-semibold text-neutral-700">{seedResult}</p>}
+                {previewResult && <p className="text-xs font-semibold text-neutral-700">{previewResult}</p>}
               </div>
             </div>
           </div>

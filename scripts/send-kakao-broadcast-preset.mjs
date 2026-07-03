@@ -1,11 +1,12 @@
 /**
- * 웨비나 캠페인 일정에 맞춘 카톡방 메시지 12종 운영 가이드를
- * hogny1@naver.com 으로 한 통 발송.
+ * 웨비나 캠페인 카톡방 메시지 12종 미리보기 메일을 hogny1@naver.com 으로 발송.
  *
- * 실행: node scripts/send-kakao-broadcast-preset.mjs
+ * 실행:
+ *   node scripts/send-kakao-broadcast-preset.mjs              # 캠페인 없이 placeholder 값
+ *   node scripts/send-kakao-broadcast-preset.mjs <campaignId> # 특정 캠페인의 실제 값으로 치환
  *
- * Setting에서 ebook1Url / zoomUrl / preQuestionUrl 자동 치환.
- * webinarDate는 실제 캠페인 일정으로 직접 수정해서 사용.
+ * 카피 원본: src/lib/crm/kakao-broadcast-preset.ts (진정성 톤 12개)
+ * 변경 시 이 파일도 함께 갱신.
  */
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
@@ -15,217 +16,272 @@ import { Resend } from "resend";
 
 const TO = "hogny1@naver.com";
 const FROM = "팁스타그램 <noreply@tipstagram.co.kr>";
-const SUBJECT = "[운영 가이드] 웨비나 캠페인 카톡방 메시지 12종";
+const SITE = "https://tipstagram-homepage.vercel.app";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
-// Setting 일괄 로드
+const campaignId = process.argv[2] || null;
+
+// Setting 로드
 const settingRows = await prisma.setting.findMany();
 const settings = Object.fromEntries(settingRows.map((s) => [s.key, s.value]));
 
+let campaign = null;
+if (campaignId) {
+  campaign = await prisma.webinarCampaign.findUnique({ where: { id: campaignId } });
+  if (!campaign) {
+    console.error("캠페인을 찾을 수 없어요:", campaignId);
+    process.exit(1);
+  }
+}
+
+function formatKstDate(d) {
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  const m = kst.getUTCMonth() + 1;
+  const day = kst.getUTCDate();
+  const dow = ["일","월","화","수","목","금","토"][kst.getUTCDay()];
+  const h = kst.getUTCHours();
+  const ampm = h < 12 ? "오전" : "오후";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${m}월 ${day}일(${dow}) ${ampm} ${h12}시`;
+}
+
 const VARS = {
-  webinarDate: "[라이브 날짜를 직접 채워주세요]",
+  webinarDate: campaign ? formatKstDate(campaign.webinarDate) : "[라이브 날짜 · 캠페인 등록 시 자동 채워짐]",
+  zoomUrl:
+    (campaign && campaign.zoomUrl) ||
+    settings.webinar_zoom_url ||
+    "[Zoom URL · 캠페인 또는 Setting에서 지정]",
   ebook1Url: settings.ebook1_url || settings.ebook_url || "[1차 전자책 URL 미설정]",
-  preQuestionUrl: settings.webinar_pre_question_url || "[사전 질문 URL 미설정]",
-  zoomUrl: settings.webinar_zoom_url || "[Zoom URL 미설정]",
+  preQuestionUrl:
+    (campaign && campaign.preQuestionUrl) ||
+    (campaign ? `${SITE}/webinar/ask/${campaign.id}` : null) ||
+    settings.webinar_pre_question_url ||
+    "[사전 질문 URL · 캠페인 등록 시 자동]",
+  salesUrl:
+    (campaign && campaign.salesUrl) ||
+    settings.external_checkout_url ||
+    "[강의 신청 URL · 캠페인 등록 시 지정]",
 };
 
 function applyVars(body) {
   let s = body;
-  for (const [k, v] of Object.entries(VARS)) {
-    s = s.replaceAll(`{{${k}}}`, v);
-  }
+  for (const [k, v] of Object.entries(VARS)) s = s.replaceAll(`{{${k}}}`, v);
   return s;
 }
 
+// ─── 진정성 톤 12개 메시지 (lib/crm/kakao-broadcast-preset.ts 와 동일) ───
 const MESSAGES = [
   {
-    label: "D-10",
-    timing: "라이브 10일 전 · 아침 9시",
-    body: `안녕하세요! 호근입니다 👋
+    label: "D-10 · 환영",
+    timing: "라이브 10일 전 · 오전 9시",
+    body: `안녕하세요. 팁스타그램입니다.
 
-이번 무료 라이브 신청해 주셔서 진심으로 감사해요.
+이번 무료 라이브에 신청해 주신 분들께 먼저 감사드립니다.
 
-📅 라이브 일정: {{webinarDate}}
-📍 장소: Zoom (당일 1시간 전 링크 다시 보내드릴게요)
-💰 참가비: 0원
+라이브 일정 안내드립니다.
+📅 일시 {{webinarDate}}
+📍 장소 Zoom
+💰 참가비 0원
 
-라이브 직전까지 인스타 성장에 도움 되는 짧은 메시지들 하나씩 풀어드릴게요.
+라이브까지 약 열흘. 그 사이에 짧은 메시지 몇 번 더 드릴 예정입니다. 모두 라이브에서 더 잘 받아가실 수 있도록 준비하는 내용이에요.
 
-오늘은 워밍업으로 1차 전자책 한 권 두고 갈게요 👇
+오늘은 워밍업으로 1차 전자책 한 권 두고 갑니다.
 {{ebook1Url}}
 
-기대해주세요!`,
+팁스타그램 드림`,
   },
   {
-    label: "D-7",
-    timing: "라이브 7일 전 · 아침 9시",
-    body: `"이거 진짜 무료 맞아요?" 라는 메시지를 받았어요 😅
+    label: "D-7 · 무료 여부 명시",
+    timing: "라이브 7일 전 · 오전 9시",
+    body: `팁스타그램입니다.
 
-확실히 말씀드릴게요.
-✅ 결제 없음
-✅ 카드 등록 없음
-✅ 그냥 들으시면 끝
+"이거 진짜로 무료가 맞느냐"는 질문을 자주 받습니다.
 
-광고비 없이도 인스타로 결과 내는 법을 보여드리는 자리라, 자체가 광고비 0원이거든요.
+명확히 말씀드리겠습니다.
+· 결제 절차 없습니다.
+· 카드 등록 없습니다.
+· 시간을 내어 들어와 주시면 그것으로 충분합니다.
 
-라이브에서 1차 전자책의 인기 챕터 "왜 내 게시물은 30명만 보는가"를 풀어드릴게요.
+광고비 없이 인스타로 결과 내는 방법을 보여드리는 자리이기에, 이 자리 자체에도 비용을 부과하지 않습니다.
 
-D-7 ⏰`,
+라이브에서는 1차 전자책의 가장 많이 캡처되는 챕터 "왜 내 게시물은 30명만 보는가"를 직접 풀어드립니다.
+
+팁스타그램 드림`,
   },
   {
-    label: "D-5",
-    timing: "라이브 5일 전 · 아침 9시",
-    body: `오늘은 짧게 제 이야기 하나 🙋‍♂️
+    label: "D-5 · 강사 스토리",
+    timing: "라이브 5일 전 · 오전 9시",
+    body: `팁스타그램입니다.
 
-저도 처음엔 팔로워 0이었어요. 첫 6개월 동안 200명 늘었어요. 한 달에 33명... 진짜 답답했어요.
+오늘은 짧은 이야기 하나만 두고 가겠습니다.
 
-그러다 우연히 한 가지를 바꿨더니, 한 달 만에 1만 명이 늘었어요.
+저도 처음 인스타를 시작했을 때 팔로워는 0이었습니다. 첫 6개월 동안 200명. 한 달에 33명씩 늘어나는 속도였습니다.
 
-바로 콘텐츠 "구조"를 바꿨거든요.
+그러다 한 가지를 바꿨습니다. 콘텐츠의 "구조"입니다. 그 다음 한 달 만에 1만 명이 늘었고, 그 흐름이 1년 동안 이어졌습니다.
 
-그 다음은 알고리즘이 일을 했고, 1년 만에 12만 팔로워가 됐어요.
+라이브에서는 그 변곡점을 시간 순서대로 풀어드립니다.
 
-라이브에서 그 변곡점을 시간 순서대로 다 풀어드릴게요.
-
-D-5 📌`,
+팁스타그램 드림`,
   },
   {
-    label: "D-4",
-    timing: "라이브 4일 전 · 아침 9시",
-    body: `"저는 인플루언서도 아니고 그냥 평범한 직장인이에요. 저 같은 사람도 될까요?"
+    label: "D-4 · 페르소나 사례",
+    timing: "라이브 4일 전 · 오전 9시",
+    body: `팁스타그램입니다.
 
-이 질문 정말 자주 받아요. 사례 몇 개만 적어볼게요 👇
+"저는 인플루언서도 아니고 평범한 사람이에요. 저 같은 사람도 되나요?"
 
-🍼 워킹맘 — 아이 재운 밤 1시간만 써서 6개월 만에 1만 팔로워
-💅 동네 네일샵 사장님 — 한 게시물로 매출 5배
-📊 현직 회계사 — N잡으로 월 300
-🎵 음악학원 원장님 — 학생 모집 줄이 안 끊김
+자주 받는 질문입니다. 짧게 사례만 적어드리겠습니다.
 
-공통점은 한 가지예요. 모두 "저는 안 될 것 같은데..."로 시작하셨어요.
+· 워킹맘 — 아이 재운 밤 한 시간만 써서 6개월에 1만 팔로워
+· 동네 네일샵 사장님 — 게시물 하나로 매출 5배
+· 현직 회계사 — N잡으로 월 300
+· 음악학원 원장님 — 학생 모집 줄이 끊긴 적 없음
 
-D-4`,
+공통점은 한 가지입니다. 모두 "저는 안 될 것 같은데..."로 시작하셨습니다.
+
+라이브에서 더 보여드리겠습니다.
+
+팁스타그램 드림`,
   },
   {
-    label: "D-3",
-    timing: "라이브 3일 전 · 아침 9시",
-    body: `"그날 바빠서 못 들어갈 것 같아요." 그러지 마세요 🙏
+    label: "D-3 · 시간 부담 해소",
+    timing: "라이브 3일 전 · 오전 9시",
+    body: `팁스타그램입니다.
 
-두 가지만 말씀드릴게요.
+"그날 바빠서 들어가지 못할 것 같다"는 메시지를 종종 받습니다. 두 가지만 말씀드리겠습니다.
 
-1️⃣ 라이브는 1시간 30분이지만, 30분만 들으셔도 핵심은 다 가져가실 수 있어요. 첫 30분에 다 담아둬요.
+첫째, 라이브는 1시간 30분이지만, 첫 30분에 핵심을 다 담아둡니다. 30분만 들으셔도 가져가실 게 충분합니다.
 
-2️⃣ 참여자분들께만 72시간 동안 다시보기 링크를 보내드려요. 출근길에, 자기 전에 들으셔도 됩니다.
+둘째, 참여자분들께만 72시간 동안 다시보기 링크를 보내드립니다. 출근길에, 잠들기 전에 들으셔도 됩니다.
 
-신청 취소하지 마시고 그냥 두세요. 그게 가장 안전한 선택이에요.
+신청 취소하지 마시고 그대로 두세요. 그게 가장 안전한 선택입니다.
 
-D-3 🎯`,
+팁스타그램 드림`,
   },
   {
-    label: "D-2",
-    timing: "라이브 2일 전 · 아침 9시",
-    body: `48시간 남았어요! ⏰
+    label: "D-2 · 사전 질문 받기",
+    timing: "라이브 2일 전 · 오전 9시",
+    body: `팁스타그램입니다.
 
-지금까지 받은 질문 중 가장 많은 셋이에요.
-1. "콘텐츠 매일 올리는 게 정답인가요?"
-2. "릴스 vs 피드, 뭐 먼저?"
-3. "팔로워는 느는데 매출은 그대로예요"
+라이브까지 48시간 남았습니다.
 
-라이브에서 다 답해드릴 거예요.
+지금까지 받은 질문 중 가장 많은 세 가지를 공유드립니다.
+1. 콘텐츠를 매일 올리는 것이 정답인가요?
+2. 릴스와 피드 중 어느 쪽을 먼저 해야 하나요?
+3. 팔로워는 느는데 매출이 그대로입니다.
 
-근데 여러분 본인 상황은 또 다르실 거잖아요?
+라이브에서 모두 답해드릴 예정입니다.
 
-👇 가장 궁금한 거 하나만 알려주세요
+다만 각자의 상황은 또 다르실 겁니다. 본인이 가장 궁금한 것 하나만 미리 보내주시면, 라이브 중에 익명으로 직접 답해드리겠습니다.
+
+▶ 사전 질문 보내기
 {{preQuestionUrl}}
 
-라이브 중에 익명으로 직접 답해드릴게요!`,
+팁스타그램 드림`,
   },
   {
-    label: "D-1",
-    timing: "라이브 1일 전 · 아침 9시",
-    body: `드디어 내일이에요! 🎉
+    label: "D-1 · 입장 안내",
+    timing: "라이브 1일 전 · 오전 9시",
+    body: `팁스타그램입니다.
 
-📌 일시: {{webinarDate}}
-📌 장소: Zoom (당일 1시간 전 입장 링크 다시 보내드려요)
-📌 준비물: 노트와 펜 (영상은 꺼도 OK)
+내일이 라이브 당일입니다.
 
-아직 사전 질문 안 보내신 분 👇
+📅 일시 {{webinarDate}}
+📍 장소 Zoom (입장 링크는 당일 1시간 전 다시 안내드립니다)
+🖊 준비물 노트와 펜 (영상은 끄셔도 무방합니다)
+
+사전 질문 아직 보내지 않으신 분 계시면 아래로 한 줄만 적어주세요.
 {{preQuestionUrl}}
 
-내일 만나요! 🙋‍♂️`,
+내일 뵙겠습니다.
+
+팁스타그램 드림`,
   },
   {
-    label: "LIVE 당일 아침",
+    label: "LIVE 당일 아침 · 리마인드",
     timing: "라이브 당일 · 오전 9시",
-    body: `오늘 저녁이에요! ✨
+    body: `팁스타그램입니다.
 
-오늘 라이브 잊지 마세요. 시작 1시간 전에 입장 링크 다시 보내드릴게요.
+오늘 저녁이 라이브 당일입니다.
 
-🎯 오늘 가져가실 것 세 가지
+1시간 전에 입장 링크를 다시 안내드리겠습니다.
+
+오늘 가져가실 것 세 가지를 다시 한 번 정리해 드립니다.
 1. 노출 알고리즘의 진짜 원리
-2. 팔로워가 빠르게 늘어나는 4단계 루틴
-3. 팔로워 → 매출 전환 공식
+2. 팔로워를 빠르게 늘리는 4단계 루틴
+3. 팔로워를 매출로 바꾸는 세일즈 퍼널
 
-저녁에 만나요! 🙏`,
+저녁에 뵙겠습니다.
+
+팁스타그램 드림`,
   },
   {
-    label: "LIVE −1h",
-    timing: "라이브 당일 · 시작 1시간 전",
-    body: `🔴 곧 시작합니다!
-
-지금부터 1시간 후 라이브 시작이에요.
+    label: "LIVE −1h · 입장 링크",
+    timing: "라이브 당일 · 시작 1시간 전 (오후 7시)",
+    body: `🔴 라이브가 한 시간 후에 시작됩니다.
 
 ▶ 입장 링크
 {{zoomUrl}}
 
-노트와 펜 옆에 두세요. 채팅으로 질문 자유롭게 받습니다!`,
+노트와 펜 준비해 주세요. 채팅으로 질문 자유롭게 받습니다.
+
+팁스타그램`,
   },
   {
-    label: "D+1",
-    timing: "라이브 다음날 · 아침 9시",
-    body: `어제 와주신 모든 분께 ✨ 진심으로 감사했어요.
+    label: "D+1 · 다시보기 + 강의 안내",
+    timing: "라이브 다음날 · 오전 9시",
+    body: `팁스타그램입니다.
 
-채팅이 끝까지 살아 있어서 저도 신났어요. 사진처럼 남는 시간이었어요.
+어제 라이브에 함께해 주신 모든 분께 진심으로 감사드립니다.
 
-📺 다시보기는 72시간만 열어둘게요 👇
+📺 다시보기는 72시간만 열어둡니다.
 {{zoomUrl}}
 
-핵심 3가지 다시 한 번 정리:
-1. 노출은 알고리즘이 아니라 콘텐츠 구조
-2. 팔로워 빠르게 늘리는 4단계 루틴
-3. 매출로 가는 세일즈 퍼널
+라이브에서 다룬 핵심 세 가지를 다시 정리해 드립니다.
+1. 노출은 알고리즘이 아니라 콘텐츠 구조가 결정합니다.
+2. 팔로워를 빠르게 늘리는 4단계 루틴.
+3. 팔로워를 매출로 바꾸는 세일즈 퍼널 설계.
 
-다음 단계 궁금하신 분, 강의 페이지도 열어두었어요.`,
+여기서 멈추지 않고 다음 단계를 함께 가고 싶으신 분께 강의 페이지를 안내드립니다.
+{{salesUrl}}
+
+팁스타그램 드림`,
   },
   {
-    label: "마감 D-3",
-    timing: "모집 마감 3일 전 · 아침 9시",
-    body: `모집 마감까지 3일 남았어요 📌
+    label: "마감 D-3 · 정원 한정",
+    timing: "모집 마감 3일 전 · 오전 9시",
+    body: `팁스타그램입니다.
 
-이번 기수는 100명 한정이에요. 제가 직접 진도 확인하고 피드백 드리는 구조라 더 못 늘려요.
+이번 기수 모집 마감까지 3일 남았습니다.
 
-3일 후 모집 닫고, 다음 기수는 한 달 후. 그때부턴 수강료 인상돼요.
+이번 기수는 100명 한정으로 받고 있습니다. 진도 확인과 피드백을 직접 드리는 구조라 더 늘리기 어렵습니다.
 
-망설이고 계신 분, 남은 자리만 한 번 확인해 보세요.
-👉 강의 페이지
+다음 기수는 한 달 후이며, 그때부터 수강료가 인상됩니다.
 
-결정은 그 다음에 하셔도 돼요.`,
+망설이고 계시다면 남은 자리만 한 번 확인해 보세요. 결정은 그 다음에 하셔도 됩니다.
+{{salesUrl}}
+
+팁스타그램 드림`,
   },
   {
-    label: "마감 D-1",
-    timing: "모집 마감 1일 전 · 아침 9시",
-    body: `🔴 오늘 자정까지예요
+    label: "마감 D-1 · 24h 임박",
+    timing: "모집 마감 1일 전 · 오전 9시",
+    body: `팁스타그램입니다.
 
-이런 메시지 자주 드리지 않는데, 한 번만 말씀드릴게요.
+오늘 자정까지 모집을 받습니다.
 
-이번 기수 놓치면 한 달 더 기다리셔야 하고, 그땐 가격이 올라가요.
+이런 메시지는 자주 드리지 않습니다. 그럼에도 한 번 말씀드리는 이유는 한 가지입니다. 이번 기수를 놓치시면 한 달을 더 기다리셔야 하고, 그때는 수강료가 인상되어 있을 것이기 때문입니다.
 
-한 달 후 똑같은 자리에서 망설이는 자신을 보고 싶지 않으시다면, 오늘이 마지막이에요.
+한 달 뒤 같은 자리에서 다시 망설이는 자신을 마주하고 싶지 않으시다면, 오늘이 마지막입니다.
 
-👉 강의 페이지 (오늘 자정 마감)
+👉 신청 페이지
+{{salesUrl}}
 
-결정은 여러분의 것이에요. 응원합니다 🙏`,
+결정은 여러분의 것입니다. 응원하겠습니다.
+
+팁스타그램 드림`,
   },
 ];
 
@@ -233,27 +289,26 @@ const cardHtml = MESSAGES.map((m, i) => `
   <div style="border:1px solid #EEE;border-radius:14px;padding:18px 20px;margin:14px 0;background:#FFF;">
     <div style="display:inline-block;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);color:#fff;font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;letter-spacing:1px;">${i + 1} · ${m.label}</div>
     <p style="font-size:12px;color:#777;margin:8px 0 12px;">⏰ ${m.timing}</p>
-    <pre style="background:#F7F7F7;border:1px solid #EEE;border-radius:10px;padding:14px 16px;margin:0;white-space:pre-wrap;word-break:break-word;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans CJK KR',sans-serif;font-size:14px;line-height:1.7;color:#222;">${applyVars(m.body).replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>
+    <pre style="background:#F7F7F7;border:1px solid #EEE;border-radius:10px;padding:14px 16px;margin:0;white-space:pre-wrap;word-break:break-word;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans CJK KR',sans-serif;font-size:14px;line-height:1.75;color:#222;">${applyVars(m.body).replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>
   </div>
 `).join("");
+
+const summary = campaign
+  ? `<strong>${campaign.name}</strong> 캠페인의 실제 값으로 치환됨.<br/>라이브 일시 · ${VARS.webinarDate}`
+  : `아직 캠페인이 없어 <strong>placeholder 값</strong>으로 채웠어요. 어드민에서 캠페인을 만든 뒤 편집 화면의 "미리보기 메일 받기" 버튼을 누르면 실제 URL·일시로 치환된 미리보기가 다시 옵니다.`;
 
 const html = `
 <div style="font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans CJK KR',sans-serif;max-width:680px;margin:0 auto;padding:32px 24px;color:#222;line-height:1.75;background:#FAFAFA;">
   <div style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);height:6px;border-radius:6px;margin-bottom:24px;"></div>
-  <h1 style="font-size:24px;font-weight:900;margin:0 0 8px;">웨비나 캠페인 · 카톡방 메시지 12종</h1>
-  <p style="font-size:14px;color:#666;margin:0 0 24px;">각 시점에 맞춰 카톡방에 그대로 복사·붙여넣기 하실 메시지예요. 메일과 같은 흐름이지만 카톡 톤(짧게·이모지·줄바꿈)으로 다듬어 두었어요.</p>
+  <h1 style="font-size:24px;font-weight:900;margin:0 0 8px;">웨비나 캠페인 · 카톡방 메시지 12종 미리보기</h1>
+  <p style="font-size:14px;color:#666;margin:0 0 20px;">진정성 톤으로 다시 다듬은 카톡방 메시지입니다. 각 시점에 카톡방에 그대로 복사·붙여넣기 하시면 됩니다.</p>
 
-  <div style="background:#FFF8EB;border:1px solid #FCE6C2;border-radius:12px;padding:14px 16px;margin:0 0 20px;">
-    <p style="font-size:12px;font-weight:800;color:#B45309;margin:0 0 8px;letter-spacing:1px;">📌 현재 자동 치환된 값</p>
-    <p style="font-size:13px;color:#7c4a02;margin:0 0 4px;"><strong>라이브 날짜</strong>: ${VARS.webinarDate}</p>
-    <p style="font-size:13px;color:#7c4a02;margin:0 0 4px;"><strong>1차 전자책 URL</strong>: ${VARS.ebook1Url}</p>
-    <p style="font-size:13px;color:#7c4a02;margin:0 0 4px;"><strong>사전 질문 URL</strong>: ${VARS.preQuestionUrl}</p>
-    <p style="font-size:13px;color:#7c4a02;margin:0;"><strong>Zoom URL</strong>: ${VARS.zoomUrl}</p>
-    <p style="font-size:12px;color:#9a6b1f;margin:10px 0 0;">⚠ "[…미설정]"으로 나오는 값은 어드민 <code>/admin/live-settings</code>에서 설정 후 다시 보내시면 자동으로 채워져요.</p>
+  <div style="background:#FFF8EB;border:1px solid #FCE6C2;border-radius:12px;padding:14px 16px;margin:0 0 20px;font-size:13px;color:#7c4a02;">
+    ${summary}
   </div>
 
   <div style="background:#F0F8FF;border:1px solid #C7E0F4;border-radius:12px;padding:14px 16px;margin:0 0 24px;">
-    <p style="font-size:13px;color:#1e4e8c;margin:0;">💡 <strong>사용법</strong>: 각 메시지 회색 박스 안의 텍스트를 길게 눌러 선택 → 전체 복사 → 오픈채팅방에 붙여넣기. 라이브 날짜만 ${VARS.webinarDate.includes("채워") ? "직접 수정 후 " : ""}올리시면 됩니다.</p>
+    <p style="font-size:13px;color:#1e4e8c;margin:0;">💡 <strong>사용법</strong>: 각 카드 회색 박스 안 텍스트를 길게 눌러 선택 → 전체 복사 → 오픈채팅방에 붙여넣기.</p>
   </div>
 
   ${cardHtml}
@@ -267,7 +322,9 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const { data, error } = await resend.emails.send({
   from: FROM,
   to: TO,
-  subject: SUBJECT,
+  subject: campaign
+    ? `[미리보기] ${campaign.name} · 카톡 메시지 12종`
+    : "[미리보기] 웨비나 캠페인 · 카톡 메시지 12종 (진정성 톤)",
   html,
 });
 
@@ -277,7 +334,10 @@ if (error) {
 }
 console.log("✅ 발송 성공:", data?.id);
 console.log("📧 받는 사람:", TO);
-console.log("📨 12개 카톡방 메시지 운영 가이드가 발송되었습니다.");
+console.log("📨 12개 카톡 메시지 미리보기가 발송되었습니다.");
+if (!campaign) {
+  console.log("ℹ️  캠페인이 없어 placeholder 값으로 채웠어요. 어드민에서 캠페인 만든 뒤 다시 실행하시면 실제 값으로 치환됩니다.");
+}
 
 await prisma.$disconnect();
 await pool.end();
