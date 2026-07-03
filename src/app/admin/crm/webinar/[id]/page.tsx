@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
-import { ArrowLeft, Calendar, Send, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Calendar, Send, CheckCircle2, XCircle, BarChart3 } from "lucide-react";
 import { computeFireAt, type WebinarStep } from "@/lib/crm/webinar-engine";
 import { PreQuestionCard } from "./PreQuestionCard";
 
@@ -66,9 +66,20 @@ export default async function WebinarDetailPage({
               <span>· 총 발송 {sends.length}건</span>
             </div>
           </div>
-          <Link href={`/admin/crm/webinar/${id}/edit`} className="px-4 py-2 rounded-xl ig-gradient text-white text-sm font-bold">
-            편집
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/admin/crm/webinar/${id}/activity`}
+              className="px-4 py-2 rounded-xl border border-pink-200 text-pink-600 hover:bg-pink-50 text-sm font-bold inline-flex items-center gap-1.5"
+            >
+              <BarChart3 className="w-4 h-4" /> 활동 현황
+            </Link>
+            <Link
+              href={`/admin/crm/webinar/${id}/edit`}
+              className="px-4 py-2 rounded-xl ig-gradient text-white text-sm font-bold"
+            >
+              편집
+            </Link>
+          </div>
         </div>
       </div>
 
