@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
   if (!body.name || !body.webinarDate) {
     return NextResponse.json({ error: "name, webinarDate 필요" }, { status: 400 });
   }
-  const campaign = await prisma.webinarCampaign.create({
+  const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://tipstagram-homepage.vercel.app";
+  const created = await prisma.webinarCampaign.create({
     data: {
       name: body.name,
       webinarDate: new Date(body.webinarDate),
@@ -42,6 +43,13 @@ export async function POST(req: NextRequest) {
       skipPast: !!body.skipPast,
     },
   });
+  // 사전 질문 페이지 URL이 지정되지 않았으면 자체 페이지 경로로 자동 채움
+  const campaign = created.preQuestionUrl
+    ? created
+    : await prisma.webinarCampaign.update({
+        where: { id: created.id },
+        data: { preQuestionUrl: `${SITE}/webinar/ask/${created.id}` },
+      });
   // 운영 task 자동 시드 (옵션)
   let seededTasks = 0;
   if (body.seedOperatorTasks) {

@@ -2,8 +2,11 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
-import { ArrowLeft, Calendar, Send, CheckCircle2, XCircle, MessageSquare } from "lucide-react";
+import { ArrowLeft, Calendar, Send, CheckCircle2, XCircle } from "lucide-react";
 import { computeFireAt, type WebinarStep } from "@/lib/crm/webinar-engine";
+import { PreQuestionCard } from "./PreQuestionCard";
+
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://tipstagram-homepage.vercel.app";
 
 export const dynamic = "force-dynamic";
 
@@ -69,22 +72,12 @@ export default async function WebinarDetailPage({
         </div>
       </div>
 
-      {/* 사전 질문 카드 */}
-      <Link
-        href={`/admin/crm/webinar/${id}/questions`}
-        className="flex items-center justify-between bg-white rounded-2xl border border-neutral-100 p-5 mb-5 hover:border-pink-300 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white">
-            <MessageSquare className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-neutral-900">사전 질문 {questionCount}건</p>
-            <p className="text-xs text-neutral-500">신청자들이 라이브 전에 보낸 질문</p>
-          </div>
-        </div>
-        <span className="text-xs font-semibold text-pink-600">→</span>
-      </Link>
+      {/* 사전 질문 페이지 카드 (URL + 복사 + 열기 + 리스트 링크) */}
+      <PreQuestionCard
+        campaignId={id}
+        questionCount={questionCount}
+        url={c.preQuestionUrl || `${SITE}/webinar/ask/${id}`}
+      />
 
       {/* Step 별 발송 현황 */}
       <h2 className="text-lg font-bold text-neutral-900 mb-3">Step별 발송 현황</h2>
