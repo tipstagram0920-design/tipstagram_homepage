@@ -41,13 +41,21 @@ interface Initial {
   skipPast: boolean;
 }
 
-function toLocalDateTime(iso: string): string {
+// UTC ISO → KST datetime-local (YYYY-MM-DDTHH:mm). 사용자 브라우저 timezone 무관.
+function toKstLocalDateTime(iso: string): string {
   const d = new Date(iso);
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
   const pad = (n: number) => n.toString().padStart(2, "0");
   return (
-    d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) +
-    "T" + pad(d.getHours()) + ":" + pad(d.getMinutes())
+    kst.getUTCFullYear() + "-" + pad(kst.getUTCMonth() + 1) + "-" + pad(kst.getUTCDate()) +
+    "T" + pad(kst.getUTCHours()) + ":" + pad(kst.getUTCMinutes())
   );
+}
+
+// KST datetime-local (YYYY-MM-DDTHH:mm) → UTC ISO. 브라우저 timezone 무관.
+function kstLocalToUtcISO(local: string): string {
+  // "2026-07-08T20:00" 을 KST로 강제 해석 → "2026-07-08T20:00:00+09:00"
+  return new Date(local + "+09:00").toISOString();
 }
 
 export function WebinarEditor({
@@ -60,10 +68,10 @@ export function WebinarEditor({
   const router = useRouter();
   const [name, setName] = useState(initial?.name ?? "");
   const [webinarDate, setWebinarDate] = useState(
-    initial ? toLocalDateTime(initial.webinarDate) : toLocalDateTime(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString())
+    initial ? toKstLocalDateTime(initial.webinarDate) : toKstLocalDateTime(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString())
   );
   const [endDate, setEndDate] = useState(
-    initial?.endDate ? toLocalDateTime(initial.endDate) : ""
+    initial?.endDate ? toKstLocalDateTime(initial.endDate) : ""
   );
   const [zoomUrl, setZoomUrl] = useState(initial?.zoomUrl ?? "");
   const [salesUrl, setSalesUrl] = useState(initial?.salesUrl ?? "");
@@ -124,8 +132,8 @@ export function WebinarEditor({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          webinarDate: new Date(webinarDate).toISOString(),
-          endDate: endDate ? new Date(endDate).toISOString() : null,
+          webinarDate: kstLocalToUtcISO(webinarDate),
+          endDate: endDate ? kstLocalToUtcISO(endDate) : null,
           zoomUrl: zoomUrl.trim() || null,
           salesUrl: salesUrl.trim() || null,
           preQuestionUrl: preQuestionUrl.trim() || null,

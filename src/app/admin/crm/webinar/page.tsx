@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { formatDate } from "@/lib/utils";
+import { formatDateTimeKst } from "@/lib/utils";
 import { Plus, Calendar, Send, BarChart3 } from "lucide-react";
 import { WebinarToggle } from "./WebinarToggle";
 
@@ -55,9 +55,9 @@ export default async function WebinarListPage() {
                   </div>
                   <div className="flex items-center gap-3 text-xs text-neutral-500 flex-wrap">
                     <span className="inline-flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> 라이브 {formatDate(c.webinarDate)}
+                      <Calendar className="w-3 h-3" /> 라이브 {formatDateTimeKst(c.webinarDate)}
                     </span>
-                    {c.endDate && <span>· 마감 {formatDate(c.endDate)}</span>}
+                    {c.endDate && <span>· 마감 {formatDateTimeKst(c.endDate)}</span>}
                     <span>· {stepsCount} step</span>
                     <span className="inline-flex items-center gap-1">
                       <Send className="w-3 h-3" /> {c._count.sends}건 발송

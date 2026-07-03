@@ -17,6 +17,20 @@ export function formatDate(date: Date | string) {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "Asia/Seoul",
+  }).format(new Date(date));
+}
+
+export function formatDateTimeKst(date: Date | string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Seoul",
+    hour12: true,
   }).format(new Date(date));
 }
 
