@@ -22,6 +22,28 @@ const LETTER = (innerHtml: string) => `
 </div>`.trim();
 
 /**
+ * CTA 버튼 — 라이브 전(대기방 입장)과 라이브 후(강의 신청)에 다르게 사용.
+ */
+const KAKAO_CTA = `
+  <p style="text-align:center;margin:22px 0 4px;">
+    <a href="{{kakaoChatUrl}}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:11px;background:#FEE500;color:#3C1E1E;font-weight:800;text-decoration:none;font-size:14px;">
+      💬 무료 라이브 대기방 입장하기
+    </a>
+  </p>
+  <p style="text-align:center;font-size:12px;color:#999;margin:0 0 4px;">
+    라이브 전 안내는 모두 오픈 카톡방에서 드립니다.
+  </p>
+`.trim();
+
+const SALES_CTA = `
+  <p style="text-align:center;margin:22px 0 4px;">
+    <a href="{{salesUrl}}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:11px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);color:#fff;font-weight:800;text-decoration:none;font-size:14px;">
+      🛒 강의 신청 페이지 보기
+    </a>
+  </p>
+`.trim();
+
+/**
  * 정보형 카드 톤 — 라이브 직전·다시보기 등 명확한 행동 유도가 필요한 메일에만.
  */
 const CARD = (innerHtml: string) => `
@@ -53,6 +75,7 @@ export const PRESET_STEPS: WebinarStep[] = [
       <p style="text-align:center;margin:24px 0;">
         <a href="{{ebook1Url}}" style="display:inline-block;padding:12px 22px;border-radius:10px;background:#111;color:#fff;font-weight:700;text-decoration:none;font-size:14px;">1차 전자책 받기 →</a>
       </p>
+      ${KAKAO_CTA}
     `),
   },
 
@@ -71,6 +94,7 @@ export const PRESET_STEPS: WebinarStep[] = [
       <p><strong>라이브는 결제도, 카드 등록도, 어떤 비용도 없습니다.</strong> 광고비를 들이지 않고도 충분히 결과가 나온다는 걸 보여드리는 자리라, 그 자체가 광고비 없는 자리예요.</p>
       <p>그리고 한 가지 더. 1차 전자책에서 가장 많이 캡처되는 페이지가 어딘 줄 아세요? <strong>"왜 내 게시물은 30명만 보는가"</strong> 챕터예요.</p>
       <p>거기 한 줄로 적혀 있어요. <strong>"노출은 알고리즘이 아니라 콘텐츠 구조가 정한다"</strong>고요. 이 한 줄이 왜 그렇게 많은 분들 마음에 남았는지, 라이브에서 직접 풀어드릴게요.</p>
+      ${KAKAO_CTA}
     `),
   },
 
@@ -87,6 +111,7 @@ export const PRESET_STEPS: WebinarStep[] = [
       <p>그러다 우연히 한 가지를 바꿨어요. <strong>"내가 좋아하는 콘텐츠"가 아니라 "사람들이 멈춰서는 콘텐츠"의 구조</strong>로요. 그날 이후 한 달 만에 1만 명이 늘었습니다.</p>
       <p>그 다음은 알고리즘이 일을 했어요. 1년 만에 12만 팔로워. 그리고 누적 6억의 매출. 라이브에선 그 변곡점을 시간 순서대로 다 풀어드려요.</p>
       <p>{{webinarDate}}에 만나요. 사진은 라이브 들어오시면 그때 직접 보여드릴게요.</p>
+      ${KAKAO_CTA}
     `),
   },
 
@@ -109,6 +134,7 @@ export const PRESET_STEPS: WebinarStep[] = [
         <li><strong>음악학원 원장님</strong> — 인스타로 학생 모집 줄이 끊긴 적 없음.</li>
       </ul>
       <p>공통점은 한 가지예요. 모두 처음엔 "저는 안 될 것 같은데..."로 시작하셨어요. 라이브에서 더 보여드릴게요.</p>
+      ${KAKAO_CTA}
     `),
   },
 
@@ -127,6 +153,7 @@ export const PRESET_STEPS: WebinarStep[] = [
       <p><strong>하나</strong>. 라이브는 1시간 30분이지만, 사실 <strong>30분만 들으셔도 핵심은 다 가져가십니다.</strong> 첫 30분에 알고리즘·구조·실행 액션을 다 담아둬요. 뒤는 Q&amp;A와 사례예요.</p>
       <p><strong>둘</strong>. 못 들어오셔도 괜찮아요. <strong>참여자분들께만 다시보기 링크</strong>를 72시간 동안 보내드립니다. 자기 전에, 출근길에 들으셔도 돼요.</p>
       <p>그러니까 일단 신청만 살아 있게 두세요. 그게 가장 안전한 선택이에요.</p>
+      ${KAKAO_CTA}
     `),
   },
 
@@ -169,6 +196,7 @@ export const PRESET_STEPS: WebinarStep[] = [
       </ul>
       <p>아직 사전 질문 안 보내셨다면 <a href="{{preQuestionUrl}}" style="color:#FD1D1D;">여기서</a> 한 줄만 적어주세요. 라이브 중에 직접 답해드려요.</p>
       <p>내일 만나요.</p>
+      ${KAKAO_CTA}
     `),
   },
 

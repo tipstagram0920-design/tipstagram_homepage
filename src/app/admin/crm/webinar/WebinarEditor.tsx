@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Loader2, Save, Sparkles, ChevronUp, ChevronDown, MessageCircle, Video, ShoppingBag, HelpCircle } from "lucide-react";
+import { Plus, Trash2, Loader2, Save, Sparkles, ChevronUp, ChevronDown, MessageCircle, Video, ShoppingBag, HelpCircle, MessagesSquare } from "lucide-react";
 
 type StepKind = "webinar" | "endDate";
 
@@ -34,6 +34,7 @@ interface Initial {
   zoomUrl: string | null;
   salesUrl: string | null;
   preQuestionUrl: string | null;
+  kakaoChatUrl: string | null;
   audience: Record<string, unknown>;
   steps: unknown[];
   isActive: boolean;
@@ -67,12 +68,15 @@ export function WebinarEditor({
   const [zoomUrl, setZoomUrl] = useState(initial?.zoomUrl ?? "");
   const [salesUrl, setSalesUrl] = useState(initial?.salesUrl ?? "");
   const [preQuestionUrl, setPreQuestionUrl] = useState(initial?.preQuestionUrl ?? "");
+  const [kakaoChatUrl, setKakaoChatUrl] = useState(initial?.kakaoChatUrl ?? "");
   const [isActive, setIsActive] = useState(initial?.isActive ?? false);
-  const [skipPast, setSkipPast] = useState(initial?.skipPast ?? false);
+  const [skipPast, setSkipPast] = useState(initial?.skipPast ?? true);
   const [seedingKakao, setSeedingKakao] = useState(false);
   const [seedResult, setSeedResult] = useState<string>("");
   const [previewSending, setPreviewSending] = useState(false);
   const [previewResult, setPreviewResult] = useState<string>("");
+  const [mailPreviewSending, setMailPreviewSending] = useState(false);
+  const [mailPreviewResult, setMailPreviewResult] = useState<string>("");
   const [audience, setAudience] = useState<Audience>(
     (initial?.audience as Audience) ?? { hasLiveSignup: true }
   );
@@ -110,6 +114,7 @@ export function WebinarEditor({
     setError("");
     if (!name.trim()) { setError("이름을 입력해주세요."); return; }
     if (!webinarDate) { setError("라이브 날짜를 입력해주세요."); return; }
+    if (!kakaoChatUrl.trim()) { setError("무료 라이브 대기방(오픈 카톡방) URL을 입력해주세요."); return; }
     setSaving(true);
     try {
       const url = initial ? `/api/admin/crm/webinar/${initial.id}` : "/api/admin/crm/webinar";
@@ -124,6 +129,7 @@ export function WebinarEditor({
           zoomUrl: zoomUrl.trim() || null,
           salesUrl: salesUrl.trim() || null,
           preQuestionUrl: preQuestionUrl.trim() || null,
+          kakaoChatUrl: kakaoChatUrl.trim() || null,
           audience,
           steps,
           isActive,
@@ -159,6 +165,26 @@ export function WebinarEditor({
       setSeedResult(`✅ ${data.created}개 생성, ${data.skipped}개 스킵 (이미 있음)`);
     } finally {
       setSeedingKakao(false);
+    }
+  };
+
+  const sendEmailPreview = async () => {
+    if (!initial) return;
+    if (!confirm("12통이 순차로 발송됩니다. 진행할까요?")) return;
+    setMailPreviewSending(true);
+    setMailPreviewResult("");
+    try {
+      const res = await fetch(`/api/admin/crm/webinar/${initial.id}/send-email-preview`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMailPreviewResult(`❌ ${data.error || "발송 실패"}`);
+        return;
+      }
+      setMailPreviewResult(`✅ ${data.sentTo}로 ${data.okCount}/${data.total}통 발송됨${data.failCount ? ` (실패 ${data.failCount})` : ""}`);
+    } finally {
+      setMailPreviewSending(false);
     }
   };
 
@@ -230,9 +256,9 @@ export function WebinarEditor({
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4 rounded accent-pink-500" />
             <span className="text-sm text-neutral-700">활성화 (cron이 발송)</span>
           </label>
-          <label className="inline-flex items-center gap-2 cursor-pointer">
+          <label className="inline-flex items-center gap-2 cursor-pointer" title="예: 라이브 4일 전에 캠페인을 만들면 D-10/-7/-5는 안 보내고 D-4부터 예정대로 발송됩니다.">
             <input type="checkbox" checked={skipPast} onChange={(e) => setSkipPast(e.target.checked)} className="w-4 h-4 rounded accent-pink-500" />
-            <span className="text-sm text-neutral-700">24시간 이상 지난 step은 건너뛰기</span>
+            <span className="text-sm text-neutral-700">이미 지난 시각의 step은 건너뛰기 <span className="text-xs text-neutral-400">(기본 켜짐 · 안전)</span></span>
           </label>
           {!initial && (
             <label className="inline-flex items-center gap-2 cursor-pointer">
@@ -250,6 +276,22 @@ export function WebinarEditor({
           <p className="text-xs text-neutral-500">메일·카톡 메시지의 변수에 자동 치환됩니다. 비우면 Setting 또는 자체 페이지로 fallback.</p>
         </div>
         <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-semibold text-neutral-800 mb-1.5 inline-flex items-center gap-1.5">
+              <MessagesSquare className="w-3.5 h-3.5 text-yellow-500" />
+              무료 라이브 대기방(오픈 카톡방) URL
+              <span className="text-xs text-red-500 font-bold">*필수</span>
+              <span className="text-xs text-neutral-400 font-normal">→ 변수 {`{{kakaoChatUrl}}`}</span>
+            </label>
+            <input
+              type="url"
+              value={kakaoChatUrl}
+              onChange={(e) => setKakaoChatUrl(e.target.value)}
+              placeholder="https://open.kakao.com/o/..."
+              className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
+            />
+            <p className="text-xs text-neutral-500 mt-1.5">라이브 전 메일·카톡 메시지 모두에 이 URL로 가는 대기방 입장 버튼이 자동 삽입됩니다.</p>
+          </div>
           <div>
             <label className="block text-sm font-semibold text-neutral-800 mb-1.5 inline-flex items-center gap-1.5">
               <Video className="w-3.5 h-3.5 text-blue-500" />
@@ -294,6 +336,31 @@ export function WebinarEditor({
           </div>
         </div>
       </section>
+
+      {/* 메일 시퀀스 미리보기 발송 */}
+      {initial && (
+        <section className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-5">
+          <div className="flex items-start gap-3">
+            <MessageCircle className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <h2 className="text-base font-bold text-neutral-900 mb-1">메일 시퀀스 12통 미리보기</h2>
+              <p className="text-xs text-neutral-600 mb-3">현재 캠페인의 URL·일시로 치환된 메일 12통을 운영자 이메일에 순차 발송해 실제 도착 모습을 확인.</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={sendEmailPreview}
+                  disabled={mailPreviewSending}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {mailPreviewSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  12통 미리보기 발송
+                </button>
+                {mailPreviewResult && <p className="text-xs font-semibold text-neutral-700">{mailPreviewResult}</p>}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 카톡방 메시지 자동 시드 */}
       {initial && (
@@ -530,7 +597,7 @@ function StepCard({
           placeholder="<p>안녕하세요 {{name}}님...</p>"
           className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-xs font-mono focus:outline-none focus:border-pink-400 resize-y"
         />
-        <p className="text-[11px] text-neutral-400 mt-1">변수: {`{{name}}`} {`{{daysToWebinar}}`} {`{{daysToEnd}}`} {`{{webinarDate}}`} {`{{zoomUrl}}`} {`{{salesUrl}}`} {`{{preQuestionUrl}}`} {`{{ebook1Url}}`} {`{{ebook2Url}}`} {`{{consultationUrl}}`}</p>
+        <p className="text-[11px] text-neutral-400 mt-1">변수: {`{{name}}`} {`{{daysToWebinar}}`} {`{{daysToEnd}}`} {`{{webinarDate}}`} {`{{zoomUrl}}`} {`{{kakaoChatUrl}}`} {`{{salesUrl}}`} {`{{preQuestionUrl}}`} {`{{ebook1Url}}`} {`{{ebook2Url}}`} {`{{consultationUrl}}`}</p>
       </div>
       <label className="inline-flex items-center gap-2 cursor-pointer">
         <input type="checkbox" checked={!!step.transactional} onChange={(e) => onPatch({ transactional: e.target.checked })} className="w-4 h-4 rounded accent-pink-500" />

@@ -24,6 +24,7 @@ export async function PUT(
   if (body.endDate !== undefined) data.endDate = body.endDate ? new Date(body.endDate) : null;
   if (body.zoomUrl !== undefined) data.zoomUrl = body.zoomUrl || null;
   if (body.salesUrl !== undefined) data.salesUrl = body.salesUrl || null;
+  if (body.kakaoChatUrl !== undefined) data.kakaoChatUrl = body.kakaoChatUrl || null;
   if (body.preQuestionUrl !== undefined) {
     const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://tipstagram-homepage.vercel.app";
     data.preQuestionUrl = body.preQuestionUrl?.trim() || `${SITE}/webinar/ask/${id}`;

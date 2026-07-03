@@ -45,16 +45,22 @@ export async function GET(req: NextRequest) {
   for (const d of drafts) {
     const adminUrl = `${adminBase}/admin/crm/broadcast`;
     const html = `
-<div style="font-family:-apple-system,'Apple SD Gothic Neo',sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#111;">
-  <p style="font-size:13px;font-weight:700;color:#FD1D1D;letter-spacing:3px;margin:0 0 6px;">📢 BROADCAST DUE</p>
-  <h2 style="font-size:20px;font-weight:800;margin:0 0 8px;">"${escapeHtml(d.title)}" 발송 시간입니다</h2>
-  <p style="font-size:14px;color:#555;margin:0 0 16px;">
-    채널: <strong>${CHANNEL_LABEL[d.channel] ?? d.channel}</strong> · 예약: ${d.scheduledAt.toISOString()}
+<div style="font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans CJK KR',sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#111;line-height:1.7;">
+  <p style="font-size:12px;font-weight:800;color:#FD1D1D;letter-spacing:3px;margin:0 0 6px;">📢 BROADCAST DUE</p>
+  <h2 style="font-size:20px;font-weight:800;margin:0 0 6px;">${escapeHtml(d.title)}</h2>
+  <p style="font-size:13px;color:#666;margin:0 0 14px;">
+    ${CHANNEL_LABEL[d.channel] ?? d.channel} · 예약 ${d.scheduledAt.toISOString()}
   </p>
-  <div style="background:#F7F7F7;border:1px solid #EEE;border-radius:12px;padding:16px;white-space:pre-wrap;font-size:14px;color:#333;margin-bottom:18px;">${escapeHtml(d.body)}</div>
-  <p style="text-align:center;margin:18px 0;">
-    <a href="${adminUrl}" style="display:inline-block;padding:12px 24px;border-radius:10px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);color:#fff;font-weight:800;text-decoration:none;font-size:14px;">
-      어드민에서 복사·발송 처리
+
+  <div style="background:#FFF8EB;border:1px solid #FCE6C2;border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:12px;color:#7c4a02;">
+    💡 <strong>아래 회색 박스</strong>를 길게 눌러 전체 선택 → 복사 → 카톡방에 붙여넣기 (전체가 한 번에 선택돼요).
+  </div>
+
+  <pre style="background:#F7F7F7;border:1px solid #EEE;border-radius:12px;padding:16px 18px;margin:0 0 18px;white-space:pre-wrap;word-break:break-word;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans CJK KR',sans-serif;font-size:14px;line-height:1.75;color:#222;-webkit-user-select:all;-moz-user-select:all;-ms-user-select:all;user-select:all;cursor:copy;">${escapeHtml(d.body)}</pre>
+
+  <p style="text-align:center;margin:18px 0 0;">
+    <a href="${adminUrl}" style="display:inline-block;padding:11px 22px;border-radius:10px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);color:#fff;font-weight:800;text-decoration:none;font-size:13px;">
+      어드민 예약 보드에서 완료 처리
     </a>
   </p>
 </div>`.trim();

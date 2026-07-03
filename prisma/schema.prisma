@@ -446,10 +446,11 @@ model WebinarCampaign {
   zoomUrl        String?
   salesUrl       String?
   preQuestionUrl String?
+  kakaoChatUrl   String?
   audience       Json
   steps          Json
   isActive       Boolean   @default(false)
-  skipPast       Boolean   @default(false)
+  skipPast       Boolean   @default(true)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

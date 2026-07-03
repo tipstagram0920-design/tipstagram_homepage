@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
       zoomUrl: body.zoomUrl ?? null,
       salesUrl: body.salesUrl ?? null,
       preQuestionUrl: body.preQuestionUrl ?? null,
+      kakaoChatUrl: body.kakaoChatUrl ?? null,
       audience: body.audience ?? {},
       steps: body.steps ?? [],
       isActive: !!body.isActive,

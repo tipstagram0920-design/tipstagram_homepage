@@ -80,16 +80,18 @@ async function buildVars(
     zoomUrl?: string | null;
     salesUrl?: string | null;
     preQuestionUrl?: string | null;
+    kakaoChatUrl?: string | null;
   }
 ): Promise<Record<string, string>> {
   const now = new Date();
-  const [zoomUrl, preQUrl, consultationUrl, ebook1Url, ebook2Url, externalCheckoutUrl] = await Promise.all([
+  const [zoomUrl, preQUrl, consultationUrl, ebook1Url, ebook2Url, externalCheckoutUrl, kakaoChatUrl] = await Promise.all([
     getSetting(SETTING_KEYS.webinarZoomUrl),
     getSetting(SETTING_KEYS.webinarPreQuestionUrl),
     getSetting(SETTING_KEYS.consultationUrl),
     getSetting(SETTING_KEYS.ebook1Url),
     getSetting(SETTING_KEYS.ebook2Url),
     getSetting(SETTING_KEYS.externalCheckoutUrl),
+    getSetting(SETTING_KEYS.kakaoChatUrl),
   ]);
 
   const SITE = "https://tipstagram-homepage.vercel.app";
@@ -109,7 +111,7 @@ async function buildVars(
       campaign.salesUrl || externalCheckoutUrl || `${SITE}/courses`,
     "{{consultationUrl}}": consultationUrl || `${SITE}/consultation`,
     "{{ebook1Url}}": ebook1Url || "",
-    "{{ebook2Url}}": ebook2Url || "",
+    "{{ebook2Url}}": ebook2Url || "",    "{{kakaoChatUrl}}": campaign.kakaoChatUrl || kakaoChatUrl || "",
   };
 }
 
