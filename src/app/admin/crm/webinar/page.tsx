@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
-import { Plus, Calendar, Send } from "lucide-react";
+import { Plus, Calendar, Send, BarChart3 } from "lucide-react";
 import { WebinarToggle } from "./WebinarToggle";
 
 export const dynamic = "force-dynamic";
@@ -65,6 +65,12 @@ export default async function WebinarListPage() {
                   </div>
                 </div>
                 <WebinarToggle id={c.id} initial={c.isActive} />
+                <Link
+                  href={`/admin/crm/webinar/${c.id}/activity`}
+                  className="px-3.5 py-2 rounded-xl border border-pink-200 text-xs font-semibold text-pink-600 hover:bg-pink-50 inline-flex items-center gap-1.5"
+                >
+                  <BarChart3 className="w-3.5 h-3.5" /> 활동 현황
+                </Link>
                 <Link
                   href={`/admin/crm/webinar/${c.id}/edit`}
                   className="px-3.5 py-2 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-700 hover:border-pink-300 hover:text-pink-500"
