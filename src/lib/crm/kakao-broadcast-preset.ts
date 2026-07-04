@@ -348,9 +348,10 @@ function applyVars(body: string, vars: Record<string, string>): string {
  */
 export async function seedBroadcastsForCampaign(
   campaignId: string
-): Promise<{ created: number; skipped: number }> {
+): Promise<{ created: number; skipped: number; skippedPast: number }> {
   const campaign = await prisma.webinarCampaign.findUnique({ where: { id: campaignId } });
   if (!campaign) throw new Error("campaign not found");
+  const now = new Date();
 
   const settings = Object.fromEntries(
     (await prisma.setting.findMany()).map((s) => [s.key, s.value])
@@ -370,12 +371,18 @@ export async function seedBroadcastsForCampaign(
 
   let created = 0;
   let skipped = 0;
+  let skippedPast = 0;
 
   for (let i = 0; i < KAKAO_BROADCAST_MESSAGES.length; i++) {
     const msg = KAKAO_BROADCAST_MESSAGES[i];
     const fireAt = computeFireAt(msg, campaign);
     if (!fireAt) {
       skipped++;
+      continue;
+    }
+    // 이미 지난 시각(24시간 이상 전)은 스킵 — 신규 캠페인 시드 시 지난 메시지 몰아 발송 방지
+    if (now.getTime() - fireAt.getTime() > 24 * 60 * 60 * 1000) {
+      skippedPast++;
       continue;
     }
     const tag = `[campaign:${campaign.id}:step:${i}]`;
@@ -400,5 +407,5 @@ export async function seedBroadcastsForCampaign(
     created++;
   }
 
-  return { created, skipped };
+  return { created, skipped, skippedPast };
 }

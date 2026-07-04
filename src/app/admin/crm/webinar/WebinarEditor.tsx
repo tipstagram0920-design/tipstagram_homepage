@@ -35,6 +35,7 @@ interface Initial {
   salesUrl: string | null;
   preQuestionUrl: string | null;
   kakaoChatUrl: string | null;
+  replayUrl: string | null;
   audience: Record<string, unknown>;
   steps: unknown[];
   isActive: boolean;
@@ -77,6 +78,7 @@ export function WebinarEditor({
   const [salesUrl, setSalesUrl] = useState(initial?.salesUrl ?? "");
   const [preQuestionUrl, setPreQuestionUrl] = useState(initial?.preQuestionUrl ?? "");
   const [kakaoChatUrl, setKakaoChatUrl] = useState(initial?.kakaoChatUrl ?? "");
+  const [replayUrl, setReplayUrl] = useState(initial?.replayUrl ?? "");
   const [isActive, setIsActive] = useState(initial?.isActive ?? false);
   const [skipPast, setSkipPast] = useState(initial?.skipPast ?? true);
   const [seedingKakao, setSeedingKakao] = useState(false);
@@ -138,6 +140,7 @@ export function WebinarEditor({
           salesUrl: salesUrl.trim() || null,
           preQuestionUrl: preQuestionUrl.trim() || null,
           kakaoChatUrl: kakaoChatUrl.trim() || null,
+          replayUrl: replayUrl.trim() || null,
           audience,
           steps,
           isActive,
@@ -170,7 +173,11 @@ export function WebinarEditor({
         setSeedResult(`❌ ${data.error || "시드 실패"}`);
         return;
       }
-      setSeedResult(`✅ ${data.created}개 생성, ${data.skipped}개 스킵 (이미 있음)`);
+      setSeedResult(
+        `✅ ${data.created}개 생성` +
+          (data.skippedPast ? ` · 지난 시각 ${data.skippedPast}개 자동 스킵` : "") +
+          (data.skipped ? ` · 이미 있음 ${data.skipped}개` : "")
+      );
     } finally {
       setSeedingKakao(false);
     }
@@ -339,6 +346,20 @@ export function WebinarEditor({
               value={preQuestionUrl}
               onChange={(e) => setPreQuestionUrl(e.target.value)}
               placeholder={initial ? `비우면 자체 페이지: /webinar/ask/${initial.id}` : "비우면 캠페인 저장 후 /webinar/ask/<id>"}
+              className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-neutral-800 mb-1.5 inline-flex items-center gap-1.5">
+              <Video className="w-3.5 h-3.5 text-red-500" />
+              라이브 다시보기 URL <span className="text-xs text-neutral-400 font-normal">(라이브 후 등록)</span>
+              <span className="text-xs text-neutral-400 font-normal">→ 변수 {`{{replayUrl}}`}</span>
+            </label>
+            <input
+              type="url"
+              value={replayUrl}
+              onChange={(e) => setReplayUrl(e.target.value)}
+              placeholder="라이브 종료 후 유튜브 unlisted URL 등을 입력. D+1 메일 다시보기 버튼에 연결."
               className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
             />
           </div>
@@ -605,7 +626,7 @@ function StepCard({
           placeholder="<p>안녕하세요 {{name}}님...</p>"
           className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-xs font-mono focus:outline-none focus:border-pink-400 resize-y"
         />
-        <p className="text-[11px] text-neutral-400 mt-1">변수: {`{{name}}`} {`{{daysToWebinar}}`} {`{{daysToEnd}}`} {`{{webinarDate}}`} {`{{zoomUrl}}`} {`{{kakaoChatUrl}}`} {`{{salesUrl}}`} {`{{preQuestionUrl}}`} {`{{ebook1Url}}`} {`{{ebook2Url}}`} {`{{consultationUrl}}`}</p>
+        <p className="text-[11px] text-neutral-400 mt-1">변수: {`{{name}}`} {`{{daysToWebinar}}`} {`{{daysToEnd}}`} {`{{webinarDate}}`} {`{{zoomUrl}}`} {`{{kakaoChatUrl}}`} {`{{replayUrl}}`} {`{{salesUrl}}`} {`{{preQuestionUrl}}`} {`{{ebook1Url}}`} {`{{ebook2Url}}`} {`{{consultationUrl}}`}</p>
       </div>
       <label className="inline-flex items-center gap-2 cursor-pointer">
         <input type="checkbox" checked={!!step.transactional} onChange={(e) => onPatch({ transactional: e.target.checked })} className="w-4 h-4 rounded accent-pink-500" />

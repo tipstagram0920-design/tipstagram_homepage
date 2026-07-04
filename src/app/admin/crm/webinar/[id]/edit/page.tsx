@@ -28,6 +28,7 @@ export default async function EditWebinarPage({
           salesUrl: c.salesUrl,
           preQuestionUrl: c.preQuestionUrl,
           kakaoChatUrl: c.kakaoChatUrl,
+          replayUrl: c.replayUrl,
           audience: (c.audience as Record<string, unknown>) ?? {},
           steps: (c.steps as unknown[]) ?? [],
           isActive: c.isActive,

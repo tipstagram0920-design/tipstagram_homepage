@@ -81,6 +81,7 @@ async function buildVars(
     salesUrl?: string | null;
     preQuestionUrl?: string | null;
     kakaoChatUrl?: string | null;
+    replayUrl?: string | null;
   }
 ): Promise<Record<string, string>> {
   const now = new Date();
@@ -112,6 +113,7 @@ async function buildVars(
     "{{consultationUrl}}": consultationUrl || `${SITE}/consultation`,
     "{{ebook1Url}}": ebook1Url || "",
     "{{ebook2Url}}": ebook2Url || "",    "{{kakaoChatUrl}}": campaign.kakaoChatUrl || kakaoChatUrl || "",
+    "{{replayUrl}}": campaign.replayUrl || campaign.zoomUrl || "",
   };
 }
 

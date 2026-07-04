@@ -447,6 +447,7 @@ model WebinarCampaign {
   salesUrl       String?
   preQuestionUrl String?
   kakaoChatUrl   String?
+  replayUrl      String?
   audience       Json
   steps          Json
   isActive       Boolean   @default(false)

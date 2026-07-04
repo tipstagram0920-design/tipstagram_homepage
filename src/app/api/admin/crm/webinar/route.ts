@@ -29,15 +29,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "name, webinarDate 필요" }, { status: 400 });
   }
   const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://tipstagram-homepage.vercel.app";
+  // Zoom 초대장 텍스트가 통째로 들어와도 첫 URL만 추출
+  const extractFirstUrl = (v: string | null | undefined): string | null => {
+    if (!v) return null;
+    const m = v.match(/https?:\/\/\S+/);
+    return m ? m[0] : v.trim() || null;
+  };
   const created = await prisma.webinarCampaign.create({
     data: {
       name: body.name,
       webinarDate: new Date(body.webinarDate),
       endDate: body.endDate ? new Date(body.endDate) : null,
-      zoomUrl: body.zoomUrl ?? null,
-      salesUrl: body.salesUrl ?? null,
-      preQuestionUrl: body.preQuestionUrl ?? null,
-      kakaoChatUrl: body.kakaoChatUrl ?? null,
+      zoomUrl: extractFirstUrl(body.zoomUrl),
+      salesUrl: extractFirstUrl(body.salesUrl),
+      preQuestionUrl: extractFirstUrl(body.preQuestionUrl),
+      kakaoChatUrl: extractFirstUrl(body.kakaoChatUrl),
+      replayUrl: extractFirstUrl(body.replayUrl),
       audience: body.audience ?? {},
       steps: body.steps ?? [],
       isActive: !!body.isActive,

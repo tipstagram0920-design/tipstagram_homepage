@@ -22,9 +22,15 @@ export async function PUT(
   if (typeof body.name === "string") data.name = body.name;
   if (body.webinarDate) data.webinarDate = new Date(body.webinarDate);
   if (body.endDate !== undefined) data.endDate = body.endDate ? new Date(body.endDate) : null;
-  if (body.zoomUrl !== undefined) data.zoomUrl = body.zoomUrl || null;
-  if (body.salesUrl !== undefined) data.salesUrl = body.salesUrl || null;
-  if (body.kakaoChatUrl !== undefined) data.kakaoChatUrl = body.kakaoChatUrl || null;
+  const extractFirstUrl = (v: string | null | undefined): string | null => {
+    if (!v) return null;
+    const m = v.match(/https?:\/\/\S+/);
+    return m ? m[0] : v.trim() || null;
+  };
+  if (body.zoomUrl !== undefined) data.zoomUrl = extractFirstUrl(body.zoomUrl);
+  if (body.salesUrl !== undefined) data.salesUrl = extractFirstUrl(body.salesUrl);
+  if (body.kakaoChatUrl !== undefined) data.kakaoChatUrl = extractFirstUrl(body.kakaoChatUrl);
+  if (body.replayUrl !== undefined) data.replayUrl = extractFirstUrl(body.replayUrl);
   if (body.preQuestionUrl !== undefined) {
     const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://tipstagram-homepage.vercel.app";
     data.preQuestionUrl = body.preQuestionUrl?.trim() || `${SITE}/webinar/ask/${id}`;
