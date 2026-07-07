@@ -28,6 +28,7 @@ interface Product {
   title: string;
   subtitle?: string | null;
   description: string;
+  descriptionDesign?: string | null;
   price: number;
   thumbnail?: string | null;
   highlights: string[];
@@ -243,13 +244,22 @@ export function CourseDetailClient({
               </div>
             )}
 
-            {/* Description */}
+            {/* Description — descriptionDesign(HTML 랜딩) 우선, 없으면 short description */}
             <div className="mt-10">
-              <h3 className="text-xl font-bold text-neutral-900 mb-4">강의 소개</h3>
-              <div
-                className="tiptap-content text-neutral-600 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: product.description }}
-              />
+              {product.descriptionDesign ? (
+                <div
+                  className="product-detail-html"
+                  dangerouslySetInnerHTML={{ __html: product.descriptionDesign }}
+                />
+              ) : (
+                <>
+                  <h3 className="text-xl font-bold text-neutral-900 mb-4">강의 소개</h3>
+                  <div
+                    className="tiptap-content text-neutral-600 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: product.description }}
+                  />
+                </>
+              )}
             </div>
           </div>
 
