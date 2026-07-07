@@ -63,7 +63,7 @@ export default async function HomePage() {
           painPoints={hb.painPoints.length > 0 ? hb.painPoints : undefined}
           solutions={hb.solutions.length > 0 ? hb.solutions : undefined}
         />
-        {/* <FeaturedCourses products={products} /> 임시 숨김 */}
+        <FeaturedCourses products={products} />
         <InterviewSection
           videos={hb.videos.length > 0 ? hb.videos : undefined}
           reviews={hb.reviews.length > 0 ? hb.reviews : undefined}

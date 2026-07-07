@@ -24,8 +24,7 @@ async function getProduct(slug: string) {
   });
 }
 
-// 강의 페이지 임시 숨김. 다시 켜려면 COURSES_HIDDEN = false 로 변경.
-const COURSES_HIDDEN = true;
+const COURSES_HIDDEN = false;
 
 export default async function CourseDetailPage({
   params,
