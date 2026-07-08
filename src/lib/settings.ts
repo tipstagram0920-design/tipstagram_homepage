@@ -17,6 +17,8 @@ export const SETTING_KEYS = {
   webinarPreQuestionUrl: "webinar_pre_question_url",
   /** 진단 신청 URL (메일 변수용) */
   consultationUrl: "consultation_url",
+  /** 강의 요약본 파일 URL (스토리 인증 후 이메일로 발송) */
+  webinarSummaryUrl: "webinar_summary_url",
 } as const;
 
 export async function getSetting(key: string): Promise<string | null> {

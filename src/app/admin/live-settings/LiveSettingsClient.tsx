@@ -11,6 +11,7 @@ interface Props {
     ebook1Url: string;
     ebook2Url: string;
     ebook2VerifyTag: string;
+    webinarSummaryUrl: string;
   };
 }
 
@@ -21,6 +22,7 @@ export function LiveSettingsClient({ initial }: Props) {
   const [ebook1Url, setEbook1Url] = useState(initial.ebook1Url);
   const [ebook2Url, setEbook2Url] = useState(initial.ebook2Url);
   const [verifyTag, setVerifyTag] = useState(initial.ebook2VerifyTag);
+  const [summaryUrl, setSummaryUrl] = useState(initial.webinarSummaryUrl);
   const [loading, setLoading] = useState(false);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [savedKey, setSavedKey] = useState<string | null>(null);
@@ -28,6 +30,7 @@ export function LiveSettingsClient({ initial }: Props) {
   const fileLiveRef = useRef<HTMLInputElement>(null);
   const file1Ref = useRef<HTMLInputElement>(null);
   const file2Ref = useRef<HTMLInputElement>(null);
+  const fileSummaryRef = useRef<HTMLInputElement>(null);
 
   const validateUrl = (v: string) => !v || /^https?:\/\//.test(v);
 
@@ -212,6 +215,25 @@ export function LiveSettingsClient({ initial }: Props) {
           onSave={() => saveOne("ebook2_verify_tag", verifyTag)}
           loading={loading}
           saved={savedKey === "ebook2_verify_tag"}
+        />
+      </section>
+
+      {/* 강의 요약본 (스토리 인증 후 발송) */}
+      <section className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-4">
+        <FileUrlField
+          label="강의 요약본 파일 URL"
+          desc="/live/summary 페이지에서 스토리 인증 완료 시 이메일로 발송되는 파일 링크."
+          value={summaryUrl}
+          onChange={setSummaryUrl}
+          onUpload={(f) => upload(f, setSummaryUrl, "webinar_summary_url")}
+          uploading={uploadingKey === "webinar_summary_url"}
+          inputRef={fileSummaryRef}
+          accept="application/pdf,application/epub+zip,application/zip"
+        />
+        <SaveRow
+          onSave={() => saveOne("webinar_summary_url", summaryUrl)}
+          loading={loading}
+          saved={savedKey === "webinar_summary_url"}
         />
       </section>
 
