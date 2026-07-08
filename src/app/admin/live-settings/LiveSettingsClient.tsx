@@ -12,6 +12,7 @@ interface Props {
     ebook2Url: string;
     ebook2VerifyTag: string;
     webinarSummaryUrl: string;
+    webinarFaqUrl: string;
   };
 }
 
@@ -23,6 +24,7 @@ export function LiveSettingsClient({ initial }: Props) {
   const [ebook2Url, setEbook2Url] = useState(initial.ebook2Url);
   const [verifyTag, setVerifyTag] = useState(initial.ebook2VerifyTag);
   const [summaryUrl, setSummaryUrl] = useState(initial.webinarSummaryUrl);
+  const [faqUrl, setFaqUrl] = useState(initial.webinarFaqUrl);
   const [loading, setLoading] = useState(false);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [savedKey, setSavedKey] = useState<string | null>(null);
@@ -31,6 +33,7 @@ export function LiveSettingsClient({ initial }: Props) {
   const file1Ref = useRef<HTMLInputElement>(null);
   const file2Ref = useRef<HTMLInputElement>(null);
   const fileSummaryRef = useRef<HTMLInputElement>(null);
+  const fileFaqRef = useRef<HTMLInputElement>(null);
 
   const validateUrl = (v: string) => !v || /^https?:\/\//.test(v);
 
@@ -234,6 +237,25 @@ export function LiveSettingsClient({ initial }: Props) {
           onSave={() => saveOne("webinar_summary_url", summaryUrl)}
           loading={loading}
           saved={savedKey === "webinar_summary_url"}
+        />
+      </section>
+
+      {/* 인스타그램 자주 묻는 질문 10 (요약본과 함께 발송) */}
+      <section className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-4">
+        <FileUrlField
+          label="인스타그램 자주 묻는 질문 10 URL"
+          desc="/live/summary 스토리 인증 시 강의 요약본과 함께 두 번째 버튼으로 첨부되는 파일 링크."
+          value={faqUrl}
+          onChange={setFaqUrl}
+          onUpload={(f) => upload(f, setFaqUrl, "webinar_faq_url")}
+          uploading={uploadingKey === "webinar_faq_url"}
+          inputRef={fileFaqRef}
+          accept="application/pdf,application/epub+zip,application/zip"
+        />
+        <SaveRow
+          onSave={() => saveOne("webinar_faq_url", faqUrl)}
+          loading={loading}
+          saved={savedKey === "webinar_faq_url"}
         />
       </section>
 

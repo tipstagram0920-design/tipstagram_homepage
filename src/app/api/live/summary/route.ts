@@ -10,19 +10,31 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SUMMARY_TAG = "강의요약본_신청";
 const SITE = "https://tipstagram-homepage.vercel.app";
 
-function buildSummaryEmail({ name, url }: { name: string; url: string | null }) {
-  const btn = url
+function buildSummaryEmail({
+  name,
+  url,
+  faqUrl,
+}: {
+  name: string;
+  url: string | null;
+  faqUrl: string | null;
+}) {
+  const summaryBtn = url
     ? `<a href="${url}" target="_blank" style="display:inline-block;padding:14px 28px;border-radius:12px;background:#111;color:#fff;font-weight:800;text-decoration:none;font-size:15px;">📥 강의 요약본 다운로드</a>`
     : `<span style="display:inline-block;padding:14px 28px;border-radius:12px;background:#999;color:#fff;font-weight:800;font-size:15px;">자료 준비 중 (곧 발송)</span>`;
+  const faqBtn = faqUrl
+    ? `<a href="${faqUrl}" target="_blank" style="display:inline-block;padding:14px 28px;border-radius:12px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);color:#fff;font-weight:800;text-decoration:none;font-size:15px;">🎁 인스타그램 자주 묻는 질문 10</a>`
+    : "";
   return `
 <div style="font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans CJK KR',sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#111;line-height:1.7;">
   <div style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);height:6px;border-radius:6px;margin-bottom:28px;"></div>
-  <h1 style="font-size:22px;font-weight:800;margin:0 0 12px;">${name} 님, 요약본 보내드려요 📩</h1>
+  <h1 style="font-size:22px;font-weight:800;margin:0 0 12px;">${name} 님, 자료 두 가지 보내드려요 📩</h1>
   <p style="font-size:15px;color:#444;margin:0 0 22px;">
     강의를 인증해 주셔서 감사합니다.<br/>
-    아래 버튼으로 강의 요약본을 바로 받아 가세요.
+    아래 두 자료를 함께 받아 가세요. 오늘 바로 활용해 보시면 좋아요.
   </p>
-  <p style="text-align:center;margin:22px 0;">${btn}</p>
+  <p style="text-align:center;margin:22px 0;">${summaryBtn}</p>
+  ${faqBtn ? `<p style="text-align:center;margin:14px 0 22px;">${faqBtn}</p>` : ""}
   <p style="font-size:14px;color:#666;margin:24px 0 0;">
     다운로드가 안 되면 답장 주세요. 다른 방법으로 안내해 드리겠습니다.
   </p>
@@ -55,7 +67,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "스토리 스크린샷을 업로드해주세요." }, { status: 400 });
   }
 
-  const summaryUrl = await getSetting(SETTING_KEYS.webinarSummaryUrl);
+  const [summaryUrl, faqUrl] = await Promise.all([
+    getSetting(SETTING_KEYS.webinarSummaryUrl),
+    getSetting(SETTING_KEYS.webinarFaqUrl),
+  ]);
 
   // Contact 통합 + level=3(요약본 신청)으로 EbookSubmission 기록 재사용
   const contact = await upsertContactByEmail({ email, name, source: "webinar_summary" });
@@ -95,7 +110,7 @@ export async function POST(req: NextRequest) {
       to: email,
       contactId: contact.id,
       subject: `[${COMPANY.serviceName}] 강의 요약본 다운로드 안내`,
-      body: buildSummaryEmail({ name, url: summaryUrl }),
+      body: buildSummaryEmail({ name, url: summaryUrl, faqUrl }),
       templateKey: "webinar_summary_immediate",
       transactional: true,
     });
