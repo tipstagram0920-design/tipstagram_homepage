@@ -12,8 +12,21 @@ function SuccessContent() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
+    const external = searchParams.get("external");
+    const orderIdParam = searchParams.get("orderId");
+    const slugParam = searchParams.get("slug");
+
+    // 외부 결제(ReelSpy 페이플 대행) 완료 후 도착 — Toss confirm 스킵
+    // ReelSpy 서버가 이미 webhook으로 Purchase를 만들어 두었음 (idempotent)
+    if (external === "1") {
+      setStatus("success");
+      const dest = slugParam ? `/classroom/${slugParam}` : "/classroom";
+      setTimeout(() => router.push(dest), 3000);
+      return;
+    }
+
     const paymentKey = searchParams.get("paymentKey");
-    const orderId = searchParams.get("orderId");
+    const orderId = orderIdParam;
     const amount = searchParams.get("amount");
     const productId = searchParams.get("productId");
     const couponId = searchParams.get("couponId");

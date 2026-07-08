@@ -106,13 +106,31 @@ export function CourseDetailClient({
       router.push("/classroom");
       return;
     }
-    // 외부 결제 URL이 설정돼 있으면 그쪽으로 보냄 (로그인 불필요)
-    if (externalCheckoutUrl) {
-      window.open(externalCheckoutUrl, "_blank", "noopener");
-      return;
-    }
     if (!isLoggedIn) {
       router.push("/login?redirect=" + encodeURIComponent("/courses/" + product.slug));
+      return;
+    }
+
+    // 외부 결제(ReelSpy 페이플 PG 대행)이 활성이면 signed URL로 리다이렉트
+    if (externalCheckoutUrl) {
+      setIsProcessing(true);
+      try {
+        const res = await fetch("/api/payment/prepare-external", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId: product.id, couponId }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.redirectUrl) {
+          throw new Error(data.error || `결제 준비 실패 (${res.status})`);
+        }
+        window.location.href = data.redirectUrl;
+      } catch (err) {
+        console.error("external payment error:", err);
+        const msg = err instanceof Error ? err.message : String(err);
+        alert(msg || "결제 처리 중 오류가 발생했습니다.");
+        setIsProcessing(false);
+      }
       return;
     }
 
