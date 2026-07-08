@@ -34,17 +34,27 @@ export async function resolveAudience(a: AudienceCriteria): Promise<string[]> {
   if (a.hasUser === true) where.user = { isNot: null };
   if (a.hasUser === false) where.user = null;
 
-  if (a.hasLiveSignup) where.liveSignups = { some: {} };
-  if (a.hasEbookStep1) where.ebookSubmissions = { some: { level: 1 } };
-  if (a.hasEbookStep2) where.ebookSubmissions = { some: { level: 2 } };
-  if (a.hasConsultation) where.consultationRequests = { some: {} };
+  // 여러 리드 채널(라이브·전자책·진단) 조건은 OR — 하나라도 해당되면 대상
+  const channelOr: Prisma.ContactWhereInput[] = [];
+  if (a.hasLiveSignup) channelOr.push({ liveSignups: { some: {} } });
+  if (a.hasEbookStep1) channelOr.push({ ebookSubmissions: { some: { level: 1 } } });
+  if (a.hasEbookStep2) channelOr.push({ ebookSubmissions: { some: { level: 2 } } });
+  if (a.hasConsultation) channelOr.push({ consultationRequests: { some: {} } });
 
+  const tagOr: Prisma.ContactWhereInput[] = [];
   if (a.tagsAny && a.tagsAny.length > 0) {
-    // Contact.tags 또는 User.tags 둘 중 어느 쪽에라도 있으면 매칭 (OR)
-    where.OR = [
-      { tags: { hasSome: a.tagsAny } },
-      { user: { tags: { hasSome: a.tagsAny } } },
-    ];
+    tagOr.push({ tags: { hasSome: a.tagsAny } });
+    tagOr.push({ user: { tags: { hasSome: a.tagsAny } } });
+  }
+
+  // channel OR 그룹과 tag OR 그룹은 서로 AND (둘 다 존재하면 두 그룹 다 만족해야).
+  // 각 그룹 안에서는 OR.
+  if (channelOr.length > 0 && tagOr.length > 0) {
+    where.AND = [{ OR: channelOr }, { OR: tagOr }];
+  } else if (channelOr.length > 0) {
+    where.OR = channelOr;
+  } else if (tagOr.length > 0) {
+    where.OR = tagOr;
   }
 
   const contacts = await prisma.contact.findMany({

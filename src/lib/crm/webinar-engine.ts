@@ -166,8 +166,9 @@ export async function processCampaigns(maxPerCampaign = 500): Promise<{
       const fireAt = computeFireAt(step, c.webinarDate, c.endDate);
       if (!fireAt) continue;
       if (fireAt > now) continue;
-      // skipPast가 true이고 fireAt이 24시간 이상 지났으면 skip
-      if (c.skipPast && (now.getTime() - fireAt.getTime()) > 24 * 60 * 60 * 1000) continue;
+      // skipPast가 true이고 fireAt이 6시간 이상 지났으면 skip
+      // (예: 라이브 끝난 뒤에 "LIVE −1h" 같은 지난 알림이 catchup으로 잘못 발송되는 것 방지)
+      if (c.skipPast && (now.getTime() - fireAt.getTime()) > 6 * 60 * 60 * 1000) continue;
 
       const audience = parseAudience(c.audience);
       const contactIds = await resolveAudience(audience);
