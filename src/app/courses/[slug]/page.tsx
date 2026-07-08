@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getSetting, SETTING_KEYS } from "@/lib/settings";
 import { CourseDetailClient } from "./CourseDetailClient";
+import { LandingProductDetail } from "./LandingProductDetail";
 
 async function getProduct(slug: string) {
   return await prisma.product.findUnique({
@@ -49,6 +50,24 @@ export default async function CourseDetailPage({
   }
 
   const externalCheckoutUrl = (await getSetting(SETTING_KEYS.externalCheckoutUrl)) || null;
+
+  // descriptionDesign(랜딩 HTML) 이 있으면 전체폭 랜딩 모드로 표시
+  if (product.descriptionDesign) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <LandingProductDetail
+          productId={product.id}
+          title={product.title}
+          price={product.price}
+          descriptionDesign={product.descriptionDesign}
+          externalCheckoutUrl={externalCheckoutUrl}
+          hasPurchased={hasPurchased}
+        />
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

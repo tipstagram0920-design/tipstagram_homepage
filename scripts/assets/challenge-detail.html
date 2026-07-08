@@ -5,183 +5,193 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>팁스타그램 5주 멱살잡히기 챌린지</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { max-width:800px; margin:0 auto; font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif; color:#131313; background:#fff; }
-.sec { width:100%; overflow:hidden; }
-.dark { background:#131313; color:#fff; }
-.pad { padding:70px 56px; }
-@media (max-width:600px){ .pad{padding:48px 24px} .hero{padding:56px 24px 48px !important} }
+.product-landing { max-width:800px; margin:0 auto; font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif; color:#131313; background:#fff; line-height:1.6; }
+.product-landing * { margin:0; padding:0; box-sizing:border-box; }
+.product-landing .sec { width:100%; overflow:hidden; }
+.product-landing .dark { background:#131313; color:#fff; }
+.product-landing .cream { background:#FFF7DC; }
+.product-landing .soft { background:#F4F4F2; }
+.product-landing .pad { padding:70px 56px; }
+@media (max-width:640px){ .product-landing .pad{padding:48px 22px} .product-landing .hero{padding:60px 22px 48px !important} }
 
-.tape { display:inline-block; background:#FFD54A; color:#131313; font-weight:900; font-size:22px; letter-spacing:1px; padding:10px 26px; transform:rotate(-2deg); box-shadow:0 3px 0 rgba(0,0,0,0.25); }
-.tape.straight { transform:rotate(0deg); }
-.h1 { font-weight:900; font-size:64px; line-height:1.18; letter-spacing:-3px; }
-.h2 { font-weight:900; font-size:44px; line-height:1.25; letter-spacing:-2px; }
-.h3 { font-weight:900; font-size:30px; line-height:1.3; letter-spacing:-1px; }
-.body-t { font-size:24px; line-height:1.65; }
-.small { font-size:19px; line-height:1.6; }
-.gray { color:#8A8A8A; }
-.lgray { color:#B9B9B9; }
-.yellow { color:#FFD54A; }
-.igbar { height:10px; width:220px; background:linear-gradient(to right,#833AB4,#FD1D1D,#FCB045); border-radius:5px; }
-.hl { background:#FFD54A; padding:2px 8px; font-weight:900; color:#131313; }
-.hl-red { background:#FF3B30; color:#fff; padding:2px 8px; font-weight:900; }
-.stamp { display:inline-block; border:5px solid #FF3B30; color:#FF3B30; font-weight:900; font-size:26px; letter-spacing:2px; padding:8px 20px; border-radius:8px; transform:rotate(-6deg); }
-.cta { display:block; width:100%; text-align:center; background:linear-gradient(to right,#833AB4,#FD1D1D,#FCB045); color:#fff; font-weight:900; font-size:34px; letter-spacing:-1px; padding:32px 0; border-radius:18px; box-shadow:0 8px 0 rgba(0,0,0,0.35); text-decoration:none; }
-.cta .sub { display:block; font-size:19px; font-weight:700; margin-top:6px; letter-spacing:0; opacity:0.92; }
-.divider-zig { height:16px; background:linear-gradient(to right,#833AB4,#FD1D1D,#FCB045); }
+.product-landing .tape { display:inline-block; background:#FFD54A; color:#131313; font-weight:900; font-size:20px; letter-spacing:1px; padding:9px 22px; transform:rotate(-2deg); box-shadow:0 3px 0 rgba(0,0,0,0.25); }
+.product-landing .tape.straight { transform:rotate(0deg); }
+.product-landing .h1 { font-weight:900; font-size:56px; line-height:1.15; letter-spacing:-3px; }
+.product-landing .h2 { font-weight:900; font-size:40px; line-height:1.25; letter-spacing:-2px; }
+.product-landing .h3 { font-weight:900; font-size:26px; line-height:1.3; letter-spacing:-1px; }
+.product-landing .body-t { font-size:20px; line-height:1.75; }
+.product-landing .body-s { font-size:18px; line-height:1.7; }
+.product-landing .small { font-size:16px; line-height:1.6; }
+.product-landing .gray { color:#7a7a7a; }
+.product-landing .lgray { color:#B9B9B9; }
+.product-landing .yellow { color:#FFD54A; }
+.product-landing .igbar { height:8px; width:180px; background:linear-gradient(to right,#833AB4,#FD1D1D,#FCB045); border-radius:5px; }
+.product-landing .hl { background:#FFD54A; padding:2px 8px; font-weight:900; color:#131313; }
+.product-landing .hl-red { background:#FF3B30; color:#fff; padding:2px 8px; font-weight:900; }
+.product-landing .stamp { display:inline-block; border:4px solid #FF3B30; color:#FF3B30; font-weight:900; font-size:22px; letter-spacing:2px; padding:7px 18px; border-radius:8px; transform:rotate(-6deg); }
+.product-landing .divider-zig { height:12px; background:linear-gradient(to right,#833AB4,#FD1D1D,#FCB045); }
 
-.hero { padding:80px 56px 70px; }
-.hero .eyebrow { margin-bottom:44px; }
-.hero .line-sm { font-weight:900; font-size:40px; letter-spacing:-2px; color:#9a9a9a; }
-.hero .line-lg { font-weight:900; font-size:86px; letter-spacing:-5px; line-height:1.12; }
-.statbox { margin-top:52px; border:2px solid #3a3a3a; border-radius:16px; padding:8px 0; }
-.statrow { display:table; width:100%; padding:20px 32px; }
-.statrow .k { display:table-cell; width:58%; font-size:23px; color:#B9B9B9; vertical-align:middle; }
-.statrow .v { display:table-cell; text-align:right; font-weight:900; font-size:30px; letter-spacing:-1px; vertical-align:middle; }
-.statdiv { height:1px; background:#3a3a3a; margin:0 32px; }
+.product-landing .hero { padding:80px 56px 60px; }
+.product-landing .hero .line-sm { font-weight:900; font-size:32px; letter-spacing:-2px; color:#9a9a9a; margin-bottom:6px; }
+.product-landing .hero .line-lg { font-weight:900; font-size:72px; letter-spacing:-4px; line-height:1.1; }
+.product-landing .statbox { margin-top:44px; border:2px solid #3a3a3a; border-radius:16px; padding:8px 0; }
+.product-landing .statrow { display:table; width:100%; padding:18px 26px; }
+.product-landing .statrow .k { display:table-cell; width:58%; font-size:20px; color:#B9B9B9; vertical-align:middle; }
+.product-landing .statrow .v { display:table-cell; text-align:right; font-weight:900; font-size:26px; letter-spacing:-1px; vertical-align:middle; }
+.product-landing .statdiv { height:1px; background:#3a3a3a; margin:0 26px; }
 
-.chk { display:table; width:100%; margin-bottom:22px; }
-.chk .box { display:table-cell; width:52px; vertical-align:top; padding-top:4px; }
-.chk .box span { display:inline-block; width:34px; height:34px; border:4px solid #131313; border-radius:6px; background:#FFD54A; text-align:center; font-weight:900; font-size:24px; line-height:32px; }
-.chk .txt { display:table-cell; font-size:25px; font-weight:700; line-height:1.5; letter-spacing:-0.5px; }
+.product-landing .chk { display:table; width:100%; margin-bottom:18px; }
+.product-landing .chk .box { display:table-cell; width:44px; vertical-align:top; padding-top:4px; }
+.product-landing .chk .box span { display:inline-block; width:28px; height:28px; border:3px solid #131313; border-radius:6px; background:#FFD54A; text-align:center; font-weight:900; font-size:20px; line-height:26px; }
+.product-landing .chk .txt { display:table-cell; font-size:21px; font-weight:700; line-height:1.55; letter-spacing:-0.5px; }
 
-.serif { font-family:'Noto Serif KR',serif; }
-.storyquote { font-family:'Noto Serif KR',serif; font-weight:900; font-size:42px; line-height:1.45; letter-spacing:-1px; }
-.ba { border:2px solid #3a3a3a; border-radius:16px; margin-top:48px; }
-.ba .row { display:table; width:100%; }
-.ba .cell { display:table-cell; width:50%; padding:34px 30px; vertical-align:top; }
-.ba .cell.right { border-left:2px solid #3a3a3a; }
-.ba .lab { font-weight:900; font-size:20px; letter-spacing:2px; margin-bottom:14px; }
-.ba .txt { font-size:22px; line-height:1.55; color:#ddd; }
+.product-landing .serif { font-family:'Noto Serif KR',serif; }
+.product-landing .storyquote { font-family:'Noto Serif KR',serif; font-weight:900; font-size:34px; line-height:1.45; letter-spacing:-1px; }
+.product-landing .ba { border:2px solid #3a3a3a; border-radius:16px; margin-top:40px; }
+.product-landing .ba .row { display:table; width:100%; }
+.product-landing .ba .cell { display:table-cell; width:50%; padding:28px 24px; vertical-align:top; }
+.product-landing .ba .cell.right { border-left:2px solid #3a3a3a; }
+.product-landing .ba .lab { font-weight:900; font-size:16px; letter-spacing:2px; margin-bottom:12px; }
+.product-landing .ba .txt { font-size:18px; line-height:1.55; color:#ddd; }
 
-.grid { width:100%; text-align:center; }
-.card2 { display:inline-block; width:47%; min-width:280px; vertical-align:top; background:#F4F4F2; border-radius:14px; padding:26px 24px; margin:0 4px 14px; }
-.card2 .t { font-weight:900; font-size:23px; margin-bottom:8px; letter-spacing:-0.5px; }
-.card2 .n { font-size:18px; color:#8a8a8a; margin-bottom:12px; }
-.card2 .d { font-size:19px; line-height:1.5; }
+.product-landing .grid { width:100%; text-align:center; }
+.product-landing .card2 { display:inline-block; width:47%; min-width:250px; vertical-align:top; background:#F4F4F2; border-radius:14px; padding:22px 20px; margin:0 4px 12px; }
+.product-landing .card2 .t { font-weight:900; font-size:20px; margin-bottom:6px; letter-spacing:-0.5px; }
+.product-landing .card2 .n { font-size:15px; color:#8a8a8a; margin-bottom:10px; }
+.product-landing .card2 .d { font-size:17px; line-height:1.5; }
 
-.resbar { background:#131313; border-radius:16px; padding:36px 40px; margin-top:34px; color:#fff; }
-.res { display:table; width:100%; padding:14px 0; }
-.res .who { display:table-cell; font-size:22px; color:#B9B9B9; vertical-align:middle; width:44%; }
-.res .num { display:table-cell; text-align:right; font-weight:900; font-size:28px; letter-spacing:-1px; vertical-align:middle; }
-.resdiv { height:1px; background:#3a3a3a; }
+.product-landing .resbar { background:#131313; border-radius:16px; padding:30px 32px; margin-top:30px; color:#fff; }
+.product-landing .res { display:table; width:100%; padding:12px 0; }
+.product-landing .res .who { display:table-cell; font-size:19px; color:#B9B9B9; vertical-align:middle; width:52%; }
+.product-landing .res .num { display:table-cell; text-align:right; font-weight:900; font-size:24px; letter-spacing:-1px; vertical-align:middle; }
+.product-landing .resdiv { height:1px; background:#3a3a3a; }
 
-.pframe { background:#131313; border-radius:16px; padding:12px 12px 4px; }
-.pimg { width:100%; border-radius:10px; display:block; }
-.pcap { color:#c9c9c9; font-size:18px; line-height:1.45; padding:12px 6px; text-align:center; }
-.pcap b { color:#FFD54A; }
-.pcol { display:inline-block; width:47%; min-width:280px; vertical-align:top; margin:0 4px 14px; }
+.product-landing .pframe { background:#131313; border-radius:16px; padding:12px 12px 4px; }
+.product-landing .pimg { width:100%; border-radius:10px; display:block; }
+.product-landing .pcap { color:#c9c9c9; font-size:15px; line-height:1.45; padding:10px 6px; text-align:center; }
+.product-landing .pcap b { color:#FFD54A; }
+.product-landing .pcol { display:inline-block; width:47%; min-width:250px; vertical-align:top; margin:0 4px 12px; }
 
-.yt { background:#131313; border-radius:16px; margin-bottom:18px; overflow:hidden; }
-.ytwrap { position:relative; width:100%; padding-bottom:56.25%; height:0; }
-.ytwrap iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:0; }
-.ytbar { padding:20px 28px 24px; }
-.ivname { color:#fff; font-weight:900; font-size:28px; letter-spacing:-1px; margin-bottom:6px; }
-.ivdesc { color:#c9c9c9; font-size:19px; line-height:1.5; }
+.product-landing .yt { background:#131313; border-radius:16px; margin-bottom:16px; overflow:hidden; }
+.product-landing .ytwrap { position:relative; width:100%; padding-bottom:56.25%; height:0; }
+.product-landing .ytwrap iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:0; }
+.product-landing .ytbar { padding:18px 24px 22px; }
+.product-landing .ivname { color:#fff; font-weight:900; font-size:23px; letter-spacing:-1px; margin-bottom:4px; }
+.product-landing .ivdesc { color:#c9c9c9; font-size:16px; line-height:1.5; }
 
-.fun { text-align:center; }
-.fnode { background:#131313; color:#fff; border-radius:16px; padding:30px 36px; text-align:left; }
-.fnode .t { font-weight:900; font-size:30px; letter-spacing:-1px; }
-.fnode .t .no { color:#FFD54A; margin-right:10px; }
-.fnode .d { font-size:21px; color:#c9c9c9; margin-top:8px; line-height:1.5; }
-.farrow { font-weight:900; font-size:36px; color:#FD1D1D; padding:10px 0; }
+.product-landing .fun { text-align:center; }
+.product-landing .fnode { background:#fff; border:2px solid #131313; border-radius:16px; padding:24px 28px; text-align:left; margin-bottom:6px; }
+.product-landing .fnode .t { font-weight:900; font-size:24px; letter-spacing:-1px; }
+.product-landing .fnode .t .no { color:#FD1D1D; margin-right:10px; }
+.product-landing .fnode .d { font-size:17px; color:#4a4a4a; margin-top:6px; line-height:1.55; }
+.product-landing .farrow { font-weight:900; font-size:28px; color:#FD1D1D; padding:6px 0; }
 
-.wk { display:table; width:100%; margin-bottom:8px; }
-.wk .spine { display:table-cell; width:96px; vertical-align:top; text-align:center; }
-.wk .dot { display:inline-block; width:64px; height:64px; border-radius:32px; background:#FFD54A; color:#131313; font-weight:900; font-size:26px; line-height:64px; }
-.wk .dot.ig { background:linear-gradient(to bottom,#833AB4,#FD1D1D); color:#fff; }
-.wk .vline { width:4px; min-height:60px; background:#3a3a3a; margin:8px auto 0; }
-.wk .cont { display:table-cell; vertical-align:top; padding:6px 0 40px 20px; }
-.wk .wt { font-weight:900; font-size:31px; letter-spacing:-1px; margin-bottom:10px; color:#fff; }
-.wk .wd { font-size:21px; line-height:1.6; color:#c9c9c9; }
-.wk .wdate { display:inline-block; background:#2a2a2a; color:#FFD54A; font-weight:900; font-size:18px; padding:6px 14px; border-radius:8px; margin-bottom:12px; }
-.wk3box { border:3px solid #FF3B30; border-radius:14px; padding:24px 26px; }
+.product-landing .prob { border:2px solid #131313; border-radius:14px; padding:24px 26px; margin-bottom:14px; background:#fff; box-shadow:6px 6px 0 #FFD54A; }
+.product-landing .prob .num { display:inline-block; background:#131313; color:#FFD54A; width:36px; height:36px; border-radius:18px; text-align:center; line-height:36px; font-weight:900; margin-right:12px; font-size:18px; }
+.product-landing .prob .t { display:inline-block; font-weight:900; font-size:22px; letter-spacing:-0.5px; vertical-align:middle; }
+.product-landing .prob .d { font-size:17px; color:#4a4a4a; margin-top:12px; line-height:1.6; }
 
-.dcard { background:#fff; border:3px solid #131313; border-radius:16px; padding:34px; margin-bottom:20px; box-shadow:8px 8px 0 #FFD54A; }
-.dcard .t { font-weight:900; font-size:29px; letter-spacing:-1px; margin-bottom:12px; }
-.dcard .d { font-size:21px; line-height:1.6; }
+.product-landing .wk { display:table; width:100%; margin-bottom:8px; }
+.product-landing .wk .spine { display:table-cell; width:82px; vertical-align:top; text-align:center; }
+.product-landing .wk .dot { display:inline-block; width:56px; height:56px; border-radius:28px; background:#FFD54A; color:#131313; font-weight:900; font-size:22px; line-height:56px; }
+.product-landing .wk .dot.ig { background:linear-gradient(to bottom,#833AB4,#FD1D1D); color:#fff; }
+.product-landing .wk .vline { width:3px; min-height:60px; background:#3a3a3a; margin:6px auto 0; }
+.product-landing .wk .cont { display:table-cell; vertical-align:top; padding:4px 0 34px 16px; }
+.product-landing .wk .wt { font-weight:900; font-size:24px; letter-spacing:-1px; margin-bottom:8px; color:#fff; }
+.product-landing .wk .wd { font-size:17px; line-height:1.65; color:#c9c9c9; }
+.product-landing .wk .wdate { display:inline-block; background:#2a2a2a; color:#FFD54A; font-weight:900; font-size:15px; padding:5px 12px; border-radius:8px; margin-bottom:10px; }
+.product-landing .wk3box { border:3px solid #FF3B30; border-radius:14px; padding:20px 22px; }
 
-.bon { background:#FFF7DC; }
-.brow { display:table; width:100%; padding:22px 0; }
-.brow .bi { display:table-cell; font-size:23px; font-weight:700; line-height:1.45; vertical-align:middle; }
-.brow .bv { display:table-cell; width:170px; text-align:right; font-weight:900; font-size:23px; vertical-align:middle; }
-.bdiv { height:2px; background:#EBDCA8; }
+.product-landing .dcard { background:#fff; border:3px solid #131313; border-radius:16px; padding:28px; margin-bottom:16px; box-shadow:8px 8px 0 #FFD54A; }
+.product-landing .dcard .num { display:inline-block; font-size:20px; font-weight:900; color:#FD1D1D; margin-bottom:6px; letter-spacing:2px; }
+.product-landing .dcard .t { font-weight:900; font-size:24px; letter-spacing:-1px; margin-bottom:10px; }
+.product-landing .dcard .d { font-size:17px; line-height:1.65; color:#333; }
 
-.pricebox { border:3px solid #3a3a3a; border-radius:18px; padding:42px 44px; margin-top:46px; }
-.prow { display:table; width:100%; padding:12px 0; }
-.prow .pk { display:table-cell; font-size:24px; color:#B9B9B9; vertical-align:middle; }
-.prow .pv { display:table-cell; text-align:right; font-weight:900; font-size:30px; vertical-align:middle; }
-.strike { text-decoration:line-through; color:#777; font-weight:700; }
+.product-landing .brow { display:table; width:100%; padding:18px 0; }
+.product-landing .brow .bi { display:table-cell; font-size:19px; font-weight:700; line-height:1.4; vertical-align:middle; }
+.product-landing .brow .bv { display:table-cell; width:130px; text-align:right; font-weight:900; font-size:19px; vertical-align:middle; }
+.product-landing .bdiv { height:2px; background:#EBDCA8; }
 
-.faq { margin-bottom:34px; }
-.faq .q { font-weight:900; font-size:25px; letter-spacing:-0.5px; margin-bottom:10px; }
-.faq .q .qm { color:#FD1D1D; margin-right:8px; }
-.faq .a { font-size:21px; line-height:1.6; color:#4a4a4a; }
+.product-landing .pricebox { border:3px solid #3a3a3a; border-radius:18px; padding:34px 36px; margin-top:38px; background:#0a0a0a; }
+.product-landing .prow { display:table; width:100%; padding:10px 0; }
+.product-landing .prow .pk { display:table-cell; font-size:20px; color:#B9B9B9; vertical-align:middle; }
+.product-landing .prow .pv { display:table-cell; text-align:right; font-weight:900; font-size:26px; vertical-align:middle; color:#fff; }
+.product-landing .strike { text-decoration:line-through; color:#777; font-weight:700; }
 
-.slot { border:3px dashed #b9b9b9; border-radius:14px; text-align:center; padding:56px 20px; color:#9a9a9a; font-weight:700; font-size:20px; background:#FAFAF8; }
-.center { text-align:center; }
-.mt16{margin-top:16px}.mt24{margin-top:24px}.mt32{margin-top:32px}.mt40{margin-top:40px}.mt48{margin-top:48px}.mt56{margin-top:56px}
-.mb16{margin-bottom:16px}.mb24{margin-bottom:24px}.mb32{margin-bottom:32px}.mb40{margin-bottom:40px}.mb48{margin-bottom:48px}
+.product-landing .faq { margin-bottom:26px; padding-bottom:24px; border-bottom:1px solid #E5E5E5; }
+.product-landing .faq:last-child { border-bottom:none; }
+.product-landing .faq .q { font-weight:900; font-size:21px; letter-spacing:-0.5px; margin-bottom:10px; }
+.product-landing .faq .q .qm { color:#FD1D1D; margin-right:8px; }
+.product-landing .faq .a { font-size:17px; line-height:1.65; color:#4a4a4a; }
+
+.product-landing .center { text-align:center; }
+.product-landing .mt8{margin-top:8px} .product-landing .mt16{margin-top:16px} .product-landing .mt24{margin-top:24px} .product-landing .mt32{margin-top:32px} .product-landing .mt40{margin-top:40px} .product-landing .mt48{margin-top:48px} .product-landing .mt56{margin-top:56px}
+.product-landing .mb8{margin-bottom:8px} .product-landing .mb16{margin-bottom:16px} .product-landing .mb24{margin-bottom:24px} .product-landing .mb32{margin-bottom:32px} .product-landing .mb40{margin-bottom:40px} .product-landing .mb48{margin-bottom:48px}
 </style>
 </head>
 <body>
+<div class="product-landing">
 
-<!-- ===== 1. 히어로 ===== -->
+<!-- 1. HERO -->
 <div class="sec dark hero">
-  <div class="eyebrow"><span class="tape">팁스타그램 5주 챌린지 모집</span></div>
+  <div class="mb32"><span class="tape">팁스타그램 5주 챌린지 · 딱 10명</span></div>
   <div class="line-sm">혼자 하면 6개월,</div>
   <div class="line-lg">멱살 잡히면<br><span style="color:#FFD54A">5주.</span></div>
   <div class="igbar mt32"></div>
-  <div class="body-t lgray mt40">20만 팔로워 팁스타그램이 5주 동안<br>당신의 인스타그램을 <b style="color:#fff">'구경거리'</b>에서<br><b style="color:#fff">'돈 버는 시스템'</b>으로 바꿔놓습니다.</div>
+  <div class="body-t lgray mt32">20만 팔로워 팁스타그램이 5주 동안<br>당신의 인스타를 <b style="color:#fff">"구경거리"</b>에서<br><b style="color:#fff">"돈 버는 시스템"</b>으로 바꿔놓습니다.</div>
   <div class="statbox">
-    <div class="statrow"><div class="k">팔로워 · 연 수익</div><div class="v">20만 · 5억+</div></div>
+    <div class="statrow"><div class="k">팔로워 · 연 수익</div><div class="v">20만 · 6억+</div></div>
     <div class="statdiv"></div>
     <div class="statrow"><div class="k">1:1 컨설팅 · 챌린지 누적</div><div class="v">500명 · 1,000명+</div></div>
     <div class="statdiv"></div>
     <div class="statrow"><div class="k">수강생 최고 기록</div><div class="v yellow">월매출 30억</div></div>
   </div>
-  <div class="mt48"><a class="cta" href="#apply">이번 기수, 딱 10명 — 멱살 내어주기<span class="sub">3주차 1:1 오프라인 컨설팅 때문에 정말 10명만 받습니다</span></a></div>
 </div>
 
 <div class="divider-zig"></div>
 
-<!-- ===== 2. 공감 훅 ===== -->
+<!-- 2. 무료 강의 회고 -->
 <div class="sec pad">
-  <div class="h2 mb16">릴스도 올려봤고,<br>강의도 들어봤는데</div>
-  <div class="h2 mb48">왜 아직 <span class="hl">제자리</span>일까요?</div>
-  <div class="chk"><div class="box"><span>✓</span></div><div class="txt">전체 그림은 알겠는데, 오늘 뭐부터 해야 할지 모르겠다</div></div>
-  <div class="chk"><div class="box"><span>✓</span></div><div class="txt">콘텐츠를 만들어도 이게 맞는 건지 봐줄 사람이 없다</div></div>
-  <div class="chk"><div class="box"><span>✓</span></div><div class="txt">팔로워가 늘다가 멈췄고, 나도 멈췄다 (일명 '인테기')</div></div>
-  <div class="chk"><div class="box"><span>✓</span></div><div class="txt">한 달이면 될 일을 3개월째 미루고 있다</div></div>
-  <div class="chk"><div class="box"><span>✓</span></div><div class="txt">조회수는 나오는데 팔로워가 없거나, 팔로워는 있는데 매출이 없다</div></div>
-  <div class="h3 mt56" style="line-height:1.5">당신에게 부족한 건 정보가 아닙니다.<br><span class="hl">당신 콘텐츠를 봐줄 눈,</span><br><span class="hl">끝까지 가게 만드는 멱살입니다.</span></div>
+  <div class="h2 mb24">오늘 무료 강의에서<br>여러분은 <span class="hl">'전체 지도'</span>를 받았어요.</div>
+  <div class="body-t mb16" style="color:#333">누가 무엇을 파는지, 어떻게 발견되고, 어떻게 팔로워로 만들고, 어떻게 구매로 이어지는지. 길은 다 보입니다.</div>
+  <div class="body-t" style="color:#333">근데 솔직히 말할게요. <b>지도 받았다고 도착하는 거 아니잖아요.</b></div>
+  <div class="h3 mt40" style="color:#131313">여러분은 곧, 5가지의 문제와<br>맞닥뜨릴 겁니다.</div>
 </div>
 
-<!-- ===== 3. 스토리 ===== -->
+<!-- 3. 5가지 문제점 -->
+<div class="sec soft pad">
+  <div class="prob"><div><span class="num">1</span><span class="t">무엇부터 해야 할지 모른다</span></div><div class="d">전체 그림은 알겠는데, 세부 단계로 내려가면 막힙니다. 알고리즘은 만졌는데 어떻게 후킹을 만들지, 프로필 첫 줄엔 뭘 넣을지, 세일즈 페이지는 어떻게 만들지 — 모두 막막합니다.</div></div>
+  <div class="prob"><div><span class="num">2</span><span class="t">피드백해 줄 사람이 없다</span></div><div class="d">혼자 만들어냈어도 이게 맞는 건지 판단해 줄 사람이 없습니다. 잘못된 방향인데 그걸 못 고치면, 5주가 아니라 5년을 갈아 넣어도 결과가 안 나옵니다.</div></div>
+  <div class="prob"><div><span class="num">3</span><span class="t">꾸준함이 유지되지 않는다 (인테기)</span></div><div class="d">팁스타그램 팔로우하고 따라 하면 팔로워가 늡니다. 그런데 어느 순간 멈추게 되죠. 시스템이 아니라 '의지'로 하고 있었기 때문입니다. 인스타 슬럼프, 통칭 <b>'인테기'</b>가 옵니다.</div></div>
+  <div class="prob"><div><span class="num">4</span><span class="t">시간이 오래 걸린다</span></div><div class="d">한 달이면 될 일을 3개월, 6개월씩 미루는 분들이 절반이 넘습니다. 빠르게 결과를 봐야 할 것을, 혼자 헤매느라 몇 배의 시간을 쓰게 됩니다.</div></div>
+  <div class="prob"><div><span class="num">5</span><span class="t">다음 단계로 넘어가지 못한다</span></div><div class="d">이번 강의를 준비하며 가장 많이 받은 질문입니다. 조회수가 안 나오는 사람, 조회수는 나오는데 팔로워가 안 느는 사람, 팔로워는 있는데 매출이 정체된 사람. 각자 지점이 다르지만 모두 <b>'다음 단계로 못 넘어감'</b>이라는 하나의 문제입니다.</div></div>
+</div>
+
+<!-- 4. 스토리 -->
 <div class="sec dark pad">
-  <div class="mb40"><span class="tape">이 챌린지를 만든 이유</span></div>
-  <div class="storyquote mb40">3년 전, 저는<br>어머니 임플란트 비용<br><span class="yellow">300만원</span> 앞에서<br>아무 말도 못 하는<br>아들이었습니다.</div>
-  <div class="body-t lgray serif">
-    통장에 딱 300만원이 있었습니다. 그런데 "제가 낼게요"라는 말이 나오지 않았습니다. 대학원까지 다니며 쌓은 지식이 부모님의 건강 문제 앞에서 아무 쓸모가 없었습니다.<br><br>
-    그날 시작한 온라인 유통 사업. 광고비가 없어 막막하던 중, 광고 없이 올린 콘텐츠 하나가 터지면서 알게 됐습니다. <b style="color:#fff">인스타그램은 돈이 아니라, 콘텐츠로 사람을 모으는 곳</b>이라는 걸.<br><br>
-    인스타그램 CEO의 모든 게시물과 공식 문서를 파고들어 광고비 거의 없이 3개월 만에 매출 2억. 그 방법을 알려주는 '팁스타그램'은 1달 만에 2만, 지금은 20만 팔로워가 되었습니다.
+  <div class="mb32"><span class="tape">이 챌린지를 만든 이유</span></div>
+  <div class="storyquote mb32">3년 전, 저는<br>어머니 임플란트 비용<br><span class="yellow">300만원</span> 앞에서<br>아무 말도 못 하는<br>아들이었습니다.</div>
+  <div class="body-s serif lgray">
+    38살 대학원생이었습니다. NGO에서 일하며 미학을 전공하고 있었죠. 통장에 딱 300만원이 있었는데도 "제가 낼게요"라는 말이 나오지 않았습니다.<br/><br/>
+    대학원까지 쌓은 지식이 부모님 건강 문제 앞에서 아무 쓸모가 없다고 느꼈습니다. 앞으로 부모님은 계속 나이가 드실 텐데, 이 무기력함을 다시 느끼고 싶지 않았습니다.<br/><br/>
+    그날 시작한 온라인 유통. 광고비 없이는 상위 노출이 안 되던 시절, 인스타 광고를 시작하면서 우연히 광고 없이 올린 콘텐츠 하나가 폭발했습니다. <b style="color:#fff">"인스타는 돈이 아니라 콘텐츠로 사람을 모으는 곳이구나."</b> 그때 알았습니다.<br/><br/>
+    인스타 CEO 아담 모세리의 모든 게시물, 인스타 공식 문서를 파고들었습니다. 광고비 거의 없이 3개월 만에 매출 2억. 그 방법을 알려주는 '팁스타그램'은 1달 만에 2만, 1년 만에 12만, 지금은 <b style="color:#fff">20만 팔로워</b>가 되었습니다.<br/><br/>
+    1년 뒤 어머니께서 또 임플란트 수술을 하셨습니다. 이번엔 100만원이 더 비쌌습니다. <b style="color:#fff">1초도 망설이지 않고</b> 제가 내드렸습니다.
   </div>
   <div class="ba"><div class="row">
     <div class="cell"><div class="lab" style="color:#8a8a8a">BEFORE · 3년 전</div><div class="txt">300만원 앞에서<br>아무 말도<br>못 했던 아들</div></div>
     <div class="cell right"><div class="lab yellow">AFTER · 1년 뒤</div><div class="txt">더 비싸진 두 번째 수술비,<br><b style="color:#fff">1초도 망설이지 않고</b><br>내가 냈습니다</div></div>
   </div></div>
-  <div class="body-t mt48" style="color:#fff">이 챌린지는, 그때의 저처럼<br><b>새벽까지 혼자 헤매고 있는 분들</b>을 위해 만들었습니다.</div>
+  <div class="body-t mt40" style="color:#fff">이 챌린지는, 그때의 저처럼<br><b>새벽까지 혼자 헤매고 있는 분들</b>을 위해 만들었습니다.</div>
 </div>
 
-<!-- ===== 4. 증거 ===== -->
+<!-- 5. 증거 -->
 <div class="sec pad">
-  <div class="h2 mb16">"저는 예쁘지도 않고,<br>어리지도 않고,<br>팔로워도 없는데요?"</div>
-  <div class="h3 gray mb48">— 네, 이분들도 그랬습니다.</div>
-
+  <div class="h2 mb16">"저는 예쁘지도, 어리지도,<br>팔로워도 없는데요?"</div>
+  <div class="h3 gray mb40">— 네, 이분들도 그랬습니다.</div>
   <div class="grid">
     <div class="card2"><div class="t">인플루언서형</div><div class="n">켈리퀸 다이어트 · 엄미숙 교수</div><div class="d">나이는 숫자,<br>팔로워는 자산이 됩니다</div></div><div class="card2"><div class="t">강의형</div><div class="n">나혜선 · 필라테스 박영재</div><div class="d">지식이 상품이 되는<br>가장 빠른 길</div></div><div class="card2"><div class="t">상품 판매형</div><div class="n">단다로움 · 제이준 편백</div><div class="d">광고비 없이 내 스토어로<br>사람을 부릅니다</div></div><div class="card2"><div class="t">매장형</div><div class="n">부산 카페 · 아첼 피아노</div><div class="d">인스타 보고 찾아오는<br>손님이 생깁니다</div></div><div class="card2"><div class="t">미용업</div><div class="n">차오르다 · 베네뷰티</div><div class="d">예약이 DM으로<br>들어옵니다</div></div><div class="card2"><div class="t">특별함</div><div class="n">무당</div><div class="d">이런 업종도 됩니다.<br>진짜로.</div></div>
   </div>
-
   <div class="resbar">
     <div class="res"><div class="who">피부과 원장님</div><div class="num">월 400만 → <span class="yellow">1억</span></div></div>
     <div class="resdiv"></div>
@@ -203,82 +213,76 @@ body { max-width:800px; margin:0 auto; font-family:'Noto Sans KR','Apple SD Goth
     <div class="pcol"><div class="pframe"><img class="pimg" src="https://khpzthajqdmnatnecrkh.supabase.co/storage/v1/object/public/uploads/upload-1783418264471-3.jpeg"><div class="pcap">메타 마케팅 서밋 현장</div></div></div><div class="pcol"><div class="pframe"><img class="pimg" src="https://khpzthajqdmnatnecrkh.supabase.co/storage/v1/object/public/uploads/upload-1783418264471-2.jpeg"><div class="pcap">인스타그램 코리아 오피스</div></div></div>
   </div>
 
-  <div class="mt48 mb24"><span class="tape">수강생 영상 인터뷰 — 직접 들어보세요</span></div>
+  <div class="mt48 mb24"><span class="tape">수강생 영상 인터뷰</span></div>
   <div class="yt">
     <div class="ytwrap"><iframe src="https://www.youtube-nocookie.com/embed/K4XmUAOnZaE" allowfullscreen></iframe></div>
-    <div class="ytbar"><div class="ivname">나혜선 님</div><div class="ivdesc">강의형 — 지식이 상품이 되기까지의 과정을 직접 이야기합니다</div></div>
+    <div class="ytbar"><div class="ivname">나혜선 님 · 강의형</div><div class="ivdesc">지식이 상품이 되기까지</div></div>
   </div>
   <div class="yt">
     <div class="ytwrap"><iframe src="https://www.youtube-nocookie.com/embed/xoKonrtL5ZM" allowfullscreen></iframe></div>
-    <div class="ytbar"><div class="ivname">켈리퀸 님</div><div class="ivdesc">인플루언서형 — 다이어트 계정이 비즈니스가 된 이야기</div></div>
+    <div class="ytbar"><div class="ivname">켈리퀸 님 · 인플루언서형</div><div class="ivdesc">다이어트 계정이 비즈니스가 된 이야기</div></div>
   </div>
   <div class="yt">
     <div class="ytwrap"><iframe src="https://www.youtube-nocookie.com/embed/UcD2IbNvEHs" allowfullscreen></iframe></div>
-    <div class="ytbar"><div class="ivname">무당언니 님</div><div class="ivdesc">특별함 — 이런 업종도 된다는 것을 증명한 인터뷰</div></div>
+    <div class="ytbar"><div class="ivname">무당언니 님 · 특별함</div><div class="ivdesc">이런 업종도 된다는 증명</div></div>
   </div>
 </div>
 
-<!-- ===== 5. 방법론 ===== -->
-<div class="sec pad" style="background:#F4F4F2">
-  <div class="h2 mb16">인스타에서 돈이 되는 경로는</div>
-  <div class="h2 mb48"><span class="hl-red">단 하나</span>입니다.</div>
-  <div class="fun">
-    <div class="fnode"><div class="t"><span class="no">1</span>발견</div><div class="d">알고리즘이 당신 콘텐츠를 '클릭할 사람'에게 보여주게 만든다</div></div>
-    <div class="farrow">▼</div>
-    <div class="fnode"><div class="t"><span class="no">2</span>팔로워</div><div class="d">프로필과 콘텐츠 통일성으로 '계속 보고 싶은 가치'를 준다</div></div>
-    <div class="farrow">▼</div>
-    <div class="fnode"><div class="t"><span class="no">3</span>구매자</div><div class="d">결과라는 증거로 신뢰를 쌓아 지갑을 연다</div></div>
-  </div>
-  <div class="body-t mt48">팔로워 30만인데 공구 매출 200만원인 사람이 있고, 팔로워 1만인데 매달 수천만 원을 버는 사람이 있습니다.<br><br>차이는 재능이 아니라 <b>이 경로를 알고 설계했느냐</b>입니다.</div>
-  <div class="h3 mt40" style="line-height:1.55">무료 강의에서 이 '지도'는 드렸습니다.<br>챌린지에서는 이 지도를<br><span class="hl">당신 계정에 직접 이식합니다.</span></div>
+<!-- 6. 챌린지가 약속하는 5가지 -->
+<div class="sec cream pad">
+  <div class="mb32"><span class="tape straight" style="background:#131313;color:#FFD54A">챌린지가 약속하는 5가지 변화</span></div>
+  <div class="h2 mb40">지도만으로는 부족합니다.<br><span class="hl">이 챌린지가 채워드릴 것</span>은 이겁니다.</div>
+
+  <div class="dcard"><div class="num">01</div><div class="t">실행하게 만듭니다</div><div class="d">수강생들이 끝나고 가장 많이 하는 말 — <b>"코치님이 하라는 대로만 했는데… 됐어요."</b> 매주 해야 할 행동을 정확히 알려드립니다. 대단한 재능 필요 없습니다. 따라만 오세요.</div></div>
+  <div class="dcard"><div class="num">02</div><div class="t">직접 피드백해 드립니다</div><div class="d">1:1 컨설팅 500명+, 챌린지 1,000명+, 기업 마케팅 50개+. 잘되는 방법은 수십 가지라 하나로 못 짚어드리지만, <b>뭐가 잘못됐는지는 정확히 압니다.</b> 그것만 고쳐도 확실히 올라갑니다. 나이·직종 무관.</div></div>
+  <div class="dcard"><div class="num">03</div><div class="t">주 4시간 시스템을 만듭니다</div><div class="d">저는 지금 인스타 관련 일에 <b>주 1시간</b>만 씁니다. AI로 5분에 대본을 만들고 30분에 촬영, 편집자에게 넘기고, 자동화 프로그램이 사진·카드뉴스 14개를 발행합니다. 여러분에게 <b>주 4시간짜리 루프</b>를 손에 쥐어드립니다.</div></div>
+  <div class="dcard"><div class="num">04</div><div class="t">시간을 아껴드립니다</div><div class="d">저는 인스타 공식 문서, 마케팅 책 100권, 5,000만원 넘는 교육을 통해 알고리즘을 파헤쳤습니다. 그걸 통째로 가져가세요. <b>혼자였다면 6개월 걸릴 일을 5주 만에 끝냅니다.</b></div></div>
+  <div class="dcard"><div class="num">05</div><div class="t">막힌 다음 단계로 뚫어드립니다</div><div class="d">공기업·대학·아정당 같은 기업 협업까지 경험한 시스템을 나눠드립니다. 월 400만이었던 피부과 원장님 → 월 1억, 월 500만 강사님 → 억대. <b>알파남 김지수 대표는 월 30억.</b> 지금 어디가 막혔든, 그 구간을 뚫습니다.</div></div>
 </div>
 
-<!-- ===== 6. 커리큘럼 ===== -->
+<!-- 7. 5주 커리큘럼 -->
 <div class="sec dark pad">
-  <div class="mb40"><span class="tape">5주 로드맵</span></div>
-  <div class="h2 mb56" style="color:#fff">5주 뒤, 당신의 계정은<br>이렇게 달라져 있습니다.</div>
+  <div class="mb32"><span class="tape">5주 로드맵</span></div>
+  <div class="h2 mb48" style="color:#fff">5주 뒤, 여러분의 계정은<br>이렇게 달라져 있습니다.</div>
 
   <div class="wk">
     <div class="spine"><div class="dot">1주</div><div class="vline"></div></div>
-    <div class="cont"><div class="wt">방향 — "누구에게 무엇을 팔지" 확정</div><div class="wdate">7월 17일(금) 저녁 8시 · 온라인 LIVE</div><div class="wd">'실제로 살 사람'을 정의하고 프로필·콘텐츠·상품·랜딩 페이지의 뼈대를 만듭니다. 방향이 틀리면 5주가 통째로 헛수고니까, 여기에 가장 공을 들입니다.</div></div>
+    <div class="cont"><div class="wt">방향 — "누구에게, 무엇을 팔지" 확정</div><div class="wd">방향 안 잡고 릴스부터 찍는 분들, 6개월 뒤에 이런 DM 옵니다. "코치님, 팔로워 5천인데 문의가 한 건도 안 와요." 무료 정보만 받아먹는 사람들만 모은 거죠. <b style="color:#FFD54A">방향이 틀리면 5주가 통째로 헛수고</b>입니다. 여기에 가장 공을 들입니다. 실제로 살 사람이 누군지 정의하고, 프로필·콘텐츠·세일즈 페이지·상품의 뼈대를 만듭니다.</div></div>
   </div>
   <div class="wk">
     <div class="spine"><div class="dot">2주</div><div class="vline"></div></div>
-    <div class="cont"><div class="wt">릴스 — 바이럴 × 전환, 둘 다 잡기</div><div class="wd">조회수만 터지는 릴스도, 조회수 없이 팔리는 릴스도 반쪽입니다. 이날부터 챌린지 끝까지 당신의 릴스에 매주 직접 피드백을 드립니다.</div></div>
+    <div class="cont"><div class="wt">릴스 — 바이럴 × 전환, 둘 다 잡기</div><div class="wd">조회수만 터지는 릴스도, 조회수 없이 팔리는 릴스도 반쪽입니다. 바이럴이 되는 콘텐츠 공식과 전환으로 이어지는 콘텐츠 공식, 두 개를 다 배웁니다. 이날부터 챌린지 끝까지 <b style="color:#FFD54A">여러분 릴스에 매주 직접 피드백</b>을 드립니다.</div></div>
   </div>
   <div class="wk">
     <div class="spine"><div class="dot ig">3주</div><div class="vline"></div></div>
     <div class="cont"><div class="wk3box">
       <div class="mb16"><span class="stamp">진짜 멱살 잡는 날</span></div>
       <div class="wt">오프라인 1:1 — 서울에서 직접</div>
-      <div class="wdate">8월 1일(토) · 서울 컨퍼런스룸</div>
-      <div class="wd">1인당 20분, 당신 계정의 문제를 제가 직접 진단합니다. 역대 수강생 중 <b style="color:#FFD54A">가장 많이 성공한 그룹이 이 오프라인 참석자들</b>입니다.</div>
+      <div class="wdate">서울 종로 · 오프라인</div>
+      <div class="wd">1인당 20분, 여러분 계정의 문제를 제가 직접 진단합니다. 재미있게도 <b style="color:#FFD54A">역대 수강생 중 가장 많이 성공한 그룹이 이 오프라인 참석자들</b>입니다. 이날 하루가 비즈니스의 변곡점이 됩니다.</div>
     </div></div>
   </div>
   <div class="wk">
     <div class="spine"><div class="dot">4주</div><div class="vline"></div></div>
-    <div class="cont"><div class="wt">AI 자동화 — 코딩 몰라도 됩니다</div><div class="wd">신학·미학 전공자인 제가 자동화를 하는 비결 = 바이브 코딩. 주 14개 게시물이 자동으로 만들어지는 나만의 시스템을 함께 세팅합니다.</div></div>
+    <div class="cont"><div class="wt">AI 자동화 — 코딩 몰라도 됩니다</div><div class="wd">저는 신학·미학 전공자입니다. 코딩의 ㅋ자도 모르는 사람이에요. 그럼에도 자동화를 한 비결 = <b>바이브 코딩</b>. 매주 카드뉴스 14개(꿀팁 7 + 뉴스 7)가 자동으로 만들어져 5분 만에 예약 발행하는 여러분만의 시스템을 함께 세팅합니다.</div></div>
   </div>
   <div class="wk">
     <div class="spine"><div class="dot">5주</div></div>
-    <div class="cont"><div class="wt">수익화 — 첫 매출과 '혼자 굴러가는 루프'</div><div class="wd">DM 문의를 구매로 잇는 세일즈 스크립트, 주 4시간 운영 루프, 막힌 구간별 처방과 다음 단계 로드맵까지. 끝나는 날이 진짜 시작입니다.</div></div>
+    <div class="cont"><div class="wt">수익화 — 첫 매출과 '혼자 굴러가는 루프'</div><div class="wd">
+    이제 딱 하나 남았어요. 이걸 돈으로 바꾸는 것.<br/><br/>
+    <b style="color:#FFD54A">첫째,</b> DM 문의를 구매로 잇는 세일즈 스크립트, 무료 리드를 유료 고객으로 넘기는 흐름. 이번 주 안에 <b>'첫 매출' 또는 '첫 문의'</b>를 만드는 게 목표입니다.<br/><br/>
+    <b style="color:#FFD54A">둘째,</b> 여러분만의 <b>주 4시간 운영 루프</b>를 확정합니다. 무슨 요일에 뭘 하고, AI·아웃소싱에 뭘 넘길지. 챌린지 끝나는 순간 <b>진짜 시작</b>이 되도록.<br/><br/>
+    <b style="color:#FFD54A">셋째,</b> 조회수·팔로워·매출 정체 구간별 처방과 다음 단계 로드맵. 개인 계정을 넘어 시스템을 갖춘 비즈니스로 가는 길을 열어드립니다.
+    </div></div>
   </div>
 
-  <div class="mt40 center small lgray">전략(1주) + 콘텐츠(2주) + 진단(3주) + 시스템(4주) + 매출(5주)<br><b style="color:#FFD54A; font-size:24px">= 굴러가는 인스타 비즈니스</b></div>
+  <div class="mt32 center small lgray">전략 · 콘텐츠 · 진단 · 시스템 · 매출<br><b style="color:#FFD54A; font-size:20px">= 굴러가는 인스타 비즈니스</b></div>
 </div>
 
-<!-- ===== 7. 차별점 ===== -->
-<div class="sec pad">
-  <div class="h2 mb48">이건 강의가 아닙니다.<br><span class="hl">멱살입니다.</span></div>
-  <div class="dcard"><div class="t">① 실행하게 만듭니다</div><div class="d">수강생들이 가장 많이 하는 말 — <b>"코치님이 하라는 대로만 했는데… 됐어요."</b> 매주 해야 할 행동을 정해드립니다. 숙제는 페이지 채워 넣기 방식, 특별한 능력 필요 없습니다.</div></div>
-  <div class="dcard"><div class="t">② 제가 직접 피드백합니다</div><div class="d">1:1 컨설팅 500명+, 챌린지 1,000명+, 기업 마케팅 50개+. 잘되는 방법은 수십 가지라 장담 못 하지만, <b>뭐가 잘못됐는지는 정확히 압니다.</b> 그것만 고쳐도 올라갑니다. 나이·직종 무관.</div></div>
-  <div class="dcard"><div class="t">③ 시스템을 남깁니다</div><div class="d">의지로 하면 멈춥니다. 시스템으로 하면 계속됩니다. 챌린지가 끝날 때 당신 손에는 <b>'주 4시간 운영 루프'</b>가 쥐어져 있습니다. 참고로 저는 지금 주 1시간만 씁니다.</div></div>
-</div>
-
-<!-- ===== 8. 보너스 ===== -->
-<div class="sec bon pad">
-  <div class="mb40"><span class="tape straight" style="background:#131313;color:#FFD54A">BONUS</span></div>
-  <div class="h2 mb40">챌린지만 신청해도,<br>이게 다 따라옵니다.</div>
+<!-- 8. 보너스 -->
+<div class="sec cream pad">
+  <div class="mb32"><span class="tape straight" style="background:#131313;color:#FFD54A">BONUS</span></div>
+  <div class="h2 mb32">챌린지만 신청해도,<br>이게 다 따라옵니다.</div>
   <div class="brow"><div class="bi">지식사업 부스터 <b>66강 평생 이용권</b><br><span class="small gray">인스타 기초 · 캡컷 편집 · 프로필 세팅까지</span></div><div class="bv">99만원</div></div>
   <div class="bdiv"></div>
   <div class="brow"><div class="bi">릴스파이(ReelSpy) <b>프로 1개월</b><br><span class="small gray">릴스 기획 5분 컷 AI 툴</span></div><div class="bv">유료 툴</div></div>
@@ -288,40 +292,39 @@ body { max-width:800px; margin:0 auto; font-family:'Noto Sans KR','Apple SD Goth
   <div class="brow"><div class="bi">인스타 정책 변경 시 자료 <b>평생 업데이트</b></div><div class="bv">비매품</div></div>
   <div class="bdiv"></div>
   <div class="brow"><div class="bi">중도 포기 시 <b>다음 기수 재참여권</b></div><div class="bv">안전망</div></div>
-  <div class="h3 mt40" style="line-height:1.55">기초 강의만 99만원 —<br>참가비의 절반이 보너스로 돌아옵니다.<br>한 번 잡은 멱살, <span class="hl-red">수료했다고 놓지 않습니다.</span></div>
+  <div class="h3 mt32" style="line-height:1.55">기초 강의만 99만원 —<br>참가비 절반이 보너스로 돌아옵니다.<br>한 번 잡은 멱살, <span class="hl-red">수료했다고 놓지 않습니다.</span></div>
 </div>
 
-<!-- ===== 9. 희소성 + 가격 ===== -->
+<!-- 9. 희소성 + 가격 -->
 <div class="sec dark pad" id="apply">
-  <div class="center mb40"><span class="stamp" style="font-size:40px; padding:14px 34px;">딱 10명</span></div>
+  <div class="center mb32"><span class="stamp" style="font-size:32px; padding:12px 28px;">딱 10명</span></div>
   <div class="h2 center" style="color:#fff">과장이 아니라<br>물리적인 한계입니다.</div>
-  <div class="body-t lgray center mt32">3주차에 제가 한 분당 20분씩 직접 봅니다.<br>제 시간이 유한해서, 더는 못 받습니다.</div>
+  <div class="body-t lgray center mt24">3주차에 저와 <b style="color:#fff">한 분당 20분씩 오프라인 1:1</b>. 제 시간이 유한해서, 더는 못 받습니다.</div>
   <div class="pricebox">
     <div class="prow"><div class="pk">정가</div><div class="pv"><span class="strike">325만원</span></div></div>
-    <div class="prow"><div class="pk">웨비나 참석자 한정 <b style="color:#FF6B5E">40% 할인</b></div><div class="pv yellow" style="font-size:42px">195만원</div></div>
-    <div class="prow"><div class="pk">시작</div><div class="pv" style="font-size:24px">7월 17일(금) 저녁 8시</div></div>
-    <div class="prow"><div class="pk">마감</div><div class="pv" style="font-size:24px">10명 선착순 마감</div></div>
+    <div class="prow"><div class="pk">웨비나 참석자 한정 <b style="color:#FF6B5E">40% 할인</b></div><div class="pv yellow" style="font-size:34px">195만원</div></div>
+    <div class="prow"><div class="pk">마감</div><div class="pv" style="font-size:20px">10명 선착순 마감</div></div>
   </div>
-  <div class="mt40"><a class="cta" href="https://tipstagram.co.kr/shop">남은 자리 확인하고 신청하기<span class="sub">10석 중 ○석 남음</span></a></div>
 </div>
 
-<!-- ===== 10. FAQ ===== -->
+<!-- 10. FAQ -->
 <div class="sec pad">
-  <div class="h2 mb48">자주 묻는 질문</div>
+  <div class="h2 mb40">자주 묻는 질문</div>
   <div class="faq"><div class="q"><span class="qm">Q.</span>인스타 완전 초보인데 따라갈 수 있나요?</div><div class="a">그래서 99만원 상당의 기초 강의 66강 평생 이용권을 드립니다. 기초는 강의로 채우고, 챌린지에서는 실행에만 집중하세요.</div></div>
-  <div class="faq"><div class="q"><span class="qm">Q.</span>본업이 있어서 시간이 걱정됩니다.</div><div class="a">챌린지의 목표 자체가 '주 4시간 운영 시스템'입니다. 하루 종일 인스타에 매달리게 만드는 게 아니라, 그 반대를 만드는 과정입니다.</div></div>
-  <div class="faq"><div class="q"><span class="qm">Q.</span>제 업종도 되나요?</div><div class="a">피부과, 부케 말리기 강사, 피아노 학원, 심지어 무당까지 됐습니다. 업종이 문제였던 적은 없습니다. 방향이 문제였고, 그걸 1주차에 잡습니다.</div></div>
-  <div class="faq"><div class="q"><span class="qm">Q.</span>3주차 오프라인(8/1 토, 서울)에 못 가면요?</div><div class="a">오프라인 1:1이 이 챌린지의 핵심이라 참석을 강력히 권합니다. 일정이 정말 불가능하면 신청 전에 미리 문의해주세요.</div></div>
-  <div class="faq"><div class="q"><span class="qm">Q.</span>중간에 포기하면요?</div><div class="a">다음 기수 재참여 기회를 드립니다. 하지만 숙제가 '페이지 채워 넣기' 방식이라, 지금까지 못 따라온 분은 거의 없었습니다.</div></div>
+  <div class="faq"><div class="q"><span class="qm">Q.</span>본업이 있어서 시간이 걱정됩니다.</div><div class="a">챌린지 목표 자체가 '주 4시간 운영 시스템'입니다. 인스타에 하루 종일 매달리게 만드는 게 아니라, 그 반대를 만드는 과정입니다.</div></div>
+  <div class="faq"><div class="q"><span class="qm">Q.</span>제 업종도 되나요?</div><div class="a">피부과·부케 말리기·피아노 학원·심지어 무당까지 됐습니다. 업종이 문제였던 적은 없습니다. 방향이 문제였고, 그걸 1주차에 잡습니다.</div></div>
+  <div class="faq"><div class="q"><span class="qm">Q.</span>3주차 오프라인(서울)에 못 가면요?</div><div class="a">오프라인 1:1이 챌린지의 핵심이라 참석을 강력히 권합니다. 일정이 정말 불가능하면 신청 전에 미리 문의해 주세요.</div></div>
+  <div class="faq"><div class="q"><span class="qm">Q.</span>중간에 포기하면요?</div><div class="a">다음 기수 재참여 기회를 드립니다. 다만 숙제가 '페이지 채워 넣기' 방식이라, 지금까지 못 따라온 분은 거의 없었습니다.</div></div>
 </div>
 
-<!-- ===== 11. 클로징 ===== -->
+<!-- 11. 클로징 -->
 <div class="sec dark pad" style="padding-bottom:90px">
-  <div class="h1 mb40" style="color:#fff">지도는<br>이미 드렸습니다.</div>
-  <div class="body-t lgray">여러분에게 부족한 건 정보가 아닙니다.<br><br>부족한 건 —<br>여러분 콘텐츠를 봐줄 <b style="color:#fff">눈</b>,<br>끝까지 가게 만드는 <b style="color:#fff">멱살</b>,<br>혼자 1년 헤맬 걸 몇 달로 줄여줄 <b style="color:#fff">사람</b>입니다.</div>
-  <div class="storyquote mt48" style="font-size:36px">3년 전 저는 그 사람이 없어서<br>혼자 새벽까지 헤맸습니다.<br><span class="yellow">여러분은 그러지 마세요.</span></div>
-  <div class="mt56"><a class="cta" href="https://tipstagram.co.kr/shop">딱 10명 — 지금 멱살 내어주기<span class="sub">한 번 잡은 멱살, 놓지 않습니다</span></a></div>
+  <div class="h1 mb32" style="color:#fff">지도는<br>이미 드렸습니다.</div>
+  <div class="body-t lgray">여러분에게 부족한 건 정보가 아닙니다.<br/><br/>부족한 건 —<br/>여러분 콘텐츠를 봐줄 <b style="color:#fff">눈</b>,<br/>끝까지 가게 만드는 <b style="color:#fff">멱살</b>,<br/>혼자 1년 헤맬 걸 몇 달로 줄여줄 <b style="color:#fff">사람</b>입니다.</div>
+  <div class="storyquote mt40" style="font-size:28px">3년 전 저는 그 사람이 없어서<br/>혼자 새벽까지 헤맸습니다.<br/><span class="yellow">여러분은 그러지 마세요.</span></div>
+  <div class="body-t mt40 lgray">지도는 받으셨으니까, 이제 <b style="color:#fff">끌려오기만</b> 하면 됩니다.</div>
 </div>
 
+</div>
 </body>
 </html>
