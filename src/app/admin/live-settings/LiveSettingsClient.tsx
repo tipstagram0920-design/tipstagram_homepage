@@ -13,6 +13,7 @@ interface Props {
     ebook2VerifyTag: string;
     webinarSummaryUrl: string;
     webinarFaqUrl: string;
+    webinarHookUrl: string;
   };
 }
 
@@ -25,6 +26,7 @@ export function LiveSettingsClient({ initial }: Props) {
   const [verifyTag, setVerifyTag] = useState(initial.ebook2VerifyTag);
   const [summaryUrl, setSummaryUrl] = useState(initial.webinarSummaryUrl);
   const [faqUrl, setFaqUrl] = useState(initial.webinarFaqUrl);
+  const [hookUrl, setHookUrl] = useState(initial.webinarHookUrl);
   const [loading, setLoading] = useState(false);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [savedKey, setSavedKey] = useState<string | null>(null);
@@ -34,6 +36,7 @@ export function LiveSettingsClient({ initial }: Props) {
   const file2Ref = useRef<HTMLInputElement>(null);
   const fileSummaryRef = useRef<HTMLInputElement>(null);
   const fileFaqRef = useRef<HTMLInputElement>(null);
+  const fileHookRef = useRef<HTMLInputElement>(null);
 
   const validateUrl = (v: string) => !v || /^https?:\/\//.test(v);
 
@@ -256,6 +259,25 @@ export function LiveSettingsClient({ initial }: Props) {
           onSave={() => saveOne("webinar_faq_url", faqUrl)}
           loading={loading}
           saved={savedKey === "webinar_faq_url"}
+        />
+      </section>
+
+      {/* 50만+ 인스타 후킹 패턴 50선 (요약본과 함께 발송) */}
+      <section className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-4">
+        <FileUrlField
+          label="50만+ 인스타 후킹 패턴 50선 URL"
+          desc="/live/summary 스토리 인증 시 세 번째 버튼으로 첨부되는 파일 링크."
+          value={hookUrl}
+          onChange={setHookUrl}
+          onUpload={(f) => upload(f, setHookUrl, "webinar_hook_url")}
+          uploading={uploadingKey === "webinar_hook_url"}
+          inputRef={fileHookRef}
+          accept="application/pdf,application/epub+zip,application/zip"
+        />
+        <SaveRow
+          onSave={() => saveOne("webinar_hook_url", hookUrl)}
+          loading={loading}
+          saved={savedKey === "webinar_hook_url"}
         />
       </section>
 

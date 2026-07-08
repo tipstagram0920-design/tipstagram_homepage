@@ -11,6 +11,7 @@ export default async function LiveSettingsPage() {
   const ebook2VerifyTag = (await getSetting(SETTING_KEYS.ebook2VerifyTag)) || "@tipstagram2023";
   const webinarSummaryUrl = (await getSetting(SETTING_KEYS.webinarSummaryUrl)) || "";
   const webinarFaqUrl = (await getSetting(SETTING_KEYS.webinarFaqUrl)) || "";
+  const webinarHookUrl = (await getSetting(SETTING_KEYS.webinarHookUrl)) || "";
 
   return (
     <div>
@@ -19,7 +20,7 @@ export default async function LiveSettingsPage() {
         무료 라이브·전자책·강의 요약본 신청자에게 자동 발송되는 메일의 링크들을 관리합니다.
       </p>
       <LiveSettingsClient
-        initial={{ kakaoChatUrl, ebookUrl, ebook1Url, ebook2Url, ebook2VerifyTag, webinarSummaryUrl, webinarFaqUrl }}
+        initial={{ kakaoChatUrl, ebookUrl, ebook1Url, ebook2Url, ebook2VerifyTag, webinarSummaryUrl, webinarFaqUrl, webinarHookUrl }}
       />
     </div>
   );

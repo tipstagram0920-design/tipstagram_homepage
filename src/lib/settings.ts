@@ -21,6 +21,8 @@ export const SETTING_KEYS = {
   webinarSummaryUrl: "webinar_summary_url",
   /** 인스타그램 자주 묻는 질문 10 파일 URL (강의 요약본과 함께 발송) */
   webinarFaqUrl: "webinar_faq_url",
+  /** 50만+ 인스타 후킹 패턴 50선 파일 URL (강의 요약본과 함께 발송) */
+  webinarHookUrl: "webinar_hook_url",
 } as const;
 
 export async function getSetting(key: string): Promise<string | null> {
