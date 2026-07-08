@@ -138,18 +138,22 @@ model Lesson {
 }
 
 model Purchase {
-  id        String   @id @default(cuid())
-  userId    String
-  productId String
-  amount    Int
-  couponId  String?
-  orderId   String   @unique
-  createdAt DateTime @default(now())
+  id           String    @id @default(cuid())
+  userId       String
+  productId    String
+  amount       Int
+  couponId     String?
+  orderId      String    @unique
+  createdAt    DateTime  @default(now())
+  refundedAt   DateTime?
+  refundReason String?
+  refundedBy   String?
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
   coupon  Coupon? @relation(fields: [couponId], references: [id])
 
+  @@index([refundedAt])
   @@map("purchases")
 }
 

@@ -8,7 +8,7 @@ import { BookOpen, Clock } from "lucide-react";
 
 async function getUserPurchases(userId: string) {
   return await prisma.purchase.findMany({
-    where: { userId },
+    where: { userId, refundedAt: null },
     include: {
       product: {
         include: {

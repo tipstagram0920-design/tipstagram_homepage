@@ -20,6 +20,7 @@ export default async function ProfilePage() {
     where: { id: session.user.id },
     include: {
       purchases: {
+        where: { refundedAt: null },
         include: { product: { select: { id: true, slug: true, title: true, thumbnail: true } } },
         orderBy: { createdAt: "desc" },
       },

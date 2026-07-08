@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   if (!product) return NextResponse.json({ error: "상품을 찾을 수 없습니다." }, { status: 404 });
 
   if (session?.user?.id) {
-    const existing = await prisma.purchase.findFirst({ where: { userId: session.user.id, productId: product.id } });
+    const existing = await prisma.purchase.findFirst({ where: { userId: session.user.id, productId: product.id, refundedAt: null } });
     if (existing) return NextResponse.json({ error: "이미 구매한 강의입니다." }, { status: 400 });
   }
 

@@ -44,7 +44,7 @@ export default async function CourseDetailPage({
 
   if (session?.user?.id) {
     const purchase = await prisma.purchase.findFirst({
-      where: { userId: session.user.id, productId: product.id },
+      where: { userId: session.user.id, productId: product.id, refundedAt: null },
     }).catch(() => null);
     hasPurchased = !!purchase;
   }

@@ -9,7 +9,7 @@ import {
   LayoutDashboard, ShoppingBag, BookOpen, Users,
   FileText, SlidersHorizontal, Tag,
   Mail, MailOpen, MessageSquare, PanelTop, Radio, Sparkles, Workflow, Calendar, CreditCard,
-  TrendingUp, Gift, BarChart3,
+  TrendingUp, Gift, BarChart3, RotateCcw,
 } from "lucide-react";
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
@@ -61,6 +61,7 @@ const groups: NavGroup[] = [
   {
     title: "판매",
     items: [
+      { label: "구매·환불 관리", href: "/admin/purchases", icon: RotateCcw },
       { label: "쿠폰 관리", href: "/admin/coupons", icon: Tag },
       { label: "결제 설정", href: "/admin/checkout-settings", icon: CreditCard },
     ],

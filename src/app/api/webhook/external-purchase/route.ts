@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
   });
 
   // 중복 구매 방지
-  const alreadyOwn = await prisma.purchase.findFirst({ where: { userId: user.id, productId: product.id } });
+  const alreadyOwn = await prisma.purchase.findFirst({ where: { userId: user.id, productId: product.id, refundedAt: null } });
   if (alreadyOwn) {
     return NextResponse.json({ ok: true, duplicate: true, purchaseId: alreadyOwn.id }, { status: 409 });
   }
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
   for (const bonusSlug of bonusSlugs) {
     const bonus = await prisma.product.findUnique({ where: { slug: bonusSlug } });
     if (!bonus) continue;
-    const already = await prisma.purchase.findFirst({ where: { userId: user.id, productId: bonus.id } });
+    const already = await prisma.purchase.findFirst({ where: { userId: user.id, productId: bonus.id, refundedAt: null } });
     if (already) continue;
     try {
       await prisma.purchase.create({

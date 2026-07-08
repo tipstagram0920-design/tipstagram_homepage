@@ -8,6 +8,7 @@ async function getClassroomData(userId: string, slug: string) {
   const purchase = await prisma.purchase.findFirst({
     where: {
       userId,
+      refundedAt: null,
       product: { slug },
     },
     include: {
