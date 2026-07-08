@@ -95,6 +95,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e.message || "purchase 저장 실패" }, { status: 500 });
   }
 
+  // ── 번들 자동 부여 ────────────────────────────────────
+  // 5주 챌린지 계열을 구매하면 마케팅 부스터(66강)도 함께 부여.
+  // 챌린지 랜딩에서 약속한 "지식사업 부스터 66강 평생 이용권" 자동 지급.
+  const BUNDLE_MAP: Record<string, string[]> = {
+    "5-week-challenge": ["marketing-booster"],
+    "5-week-challenge-plus-consulting": ["marketing-booster"],
+  };
+  const bonusSlugs = BUNDLE_MAP[product.slug] ?? [];
+  for (const bonusSlug of bonusSlugs) {
+    const bonus = await prisma.product.findUnique({ where: { slug: bonusSlug } });
+    if (!bonus) continue;
+    const already = await prisma.purchase.findFirst({ where: { userId: user.id, productId: bonus.id } });
+    if (already) continue;
+    try {
+      await prisma.purchase.create({
+        data: {
+          userId: user.id,
+          productId: bonus.id,
+          amount: 0,
+          orderId: `${orderId}-bonus-${bonusSlug}`,
+        },
+      });
+    } catch (e) {
+      console.error("[external-webhook] 번들 부여 실패:", bonusSlug, e);
+    }
+  }
+
   // CRM contact 연결
   let contactId: string | null = null;
   try {
