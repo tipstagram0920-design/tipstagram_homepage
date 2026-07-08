@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
 
 interface Props {
@@ -29,9 +30,13 @@ export function LandingProductDetail({
   hasPurchased,
   userEmail,
 }: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [showBar, setShowBar] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const autoBuyDone = useRef(false);
 
   useEffect(() => {
     const onScroll = () => setShowBar(window.scrollY > 200);
@@ -40,57 +45,59 @@ export function LandingProductDetail({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleBuy = async () => {
+  const runCheckout = useCallback(async () => {
     setErrorMsg(null);
-
-    // 로그인 사용자면 세션 이메일, 아니면 프롬프트로 게스트 이메일 받기
-    let guestEmail: string | null = null;
-    if (!userEmail) {
-      const input = window.prompt(
-        "결제를 진행할 이메일을 입력해주세요.\n입력하신 이메일로 결제 안내와 수강 정보가 발송됩니다.",
-        ""
-      );
-      if (!input) return;
-      const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!EMAIL_RE.test(input.trim())) {
-        setErrorMsg("올바른 이메일 형식이 아닙니다.");
-        return;
-      }
-      guestEmail = input.trim();
-    }
-
     setBusy(true);
     try {
       const res = await fetch("/api/payment/prepare-external", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId,
-          productSlug,
-          guestEmail,
-        }),
+        body: JSON.stringify({ productId, productSlug }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.redirectUrl) {
-        // 실패 시 externalCheckoutUrl로 fallback
         if (externalCheckoutUrl) {
-          window.open(externalCheckoutUrl, "_blank", "noopener");
+          window.location.href = externalCheckoutUrl;
           return;
         }
         setErrorMsg(data.error || "결제 준비에 실패했어요.");
         return;
       }
-      window.open(data.redirectUrl, "_blank", "noopener");
+      // 같은 창에서 이동 (결제 완료 후 리다이렉트 복귀가 자연스러움)
+      window.location.href = data.redirectUrl;
     } catch {
       if (externalCheckoutUrl) {
-        window.open(externalCheckoutUrl, "_blank", "noopener");
+        window.location.href = externalCheckoutUrl;
       } else {
         setErrorMsg("네트워크 오류가 발생했어요.");
       }
     } finally {
       setBusy(false);
     }
+  }, [productId, productSlug, externalCheckoutUrl]);
+
+  const handleBuy = () => {
+    // 비로그인 → 회원가입 페이지로. 가입 완료 후 이 페이지의 ?autobuy=1 로 복귀
+    if (!userEmail) {
+      const returnUrl = `/courses/${productSlug}?autobuy=1`;
+      router.push(`/register?redirect=${encodeURIComponent(returnUrl)}`);
+      return;
+    }
+    void runCheckout();
   };
+
+  // 회원가입 → 리다이렉트 복귀 시 자동으로 결제 개시
+  useEffect(() => {
+    if (autoBuyDone.current) return;
+    if (searchParams.get("autobuy") !== "1") return;
+    if (!userEmail || hasPurchased) return;
+    autoBuyDone.current = true;
+    // ?autobuy 파라미터 URL 정리
+    const url = new URL(window.location.href);
+    url.searchParams.delete("autobuy");
+    window.history.replaceState({}, "", url.toString());
+    void runCheckout();
+  }, [searchParams, userEmail, hasPurchased, runCheckout]);
 
   return (
     <>
