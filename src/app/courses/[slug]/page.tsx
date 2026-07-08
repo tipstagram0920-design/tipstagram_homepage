@@ -58,11 +58,13 @@ export default async function CourseDetailPage({
         <Navbar />
         <LandingProductDetail
           productId={product.id}
+          productSlug={product.slug}
           title={product.title}
           price={product.price}
           descriptionDesign={product.descriptionDesign}
           externalCheckoutUrl={externalCheckoutUrl}
           hasPurchased={hasPurchased}
+          userEmail={session?.user?.email ?? null}
         />
         <Footer />
       </div>

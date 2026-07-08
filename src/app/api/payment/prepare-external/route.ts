@@ -8,24 +8,35 @@ import { signPurchaseToken } from "@/lib/external-purchase";
  * POST /api/payment/prepare-external
  *
  * ReelSpy 페이플 PG를 통한 결제 대행 준비.
- * 상품 조회 + 쿠폰 계산 + hasPurchased 체크 후 signed JWT 발급.
+ * 로그인 유저면 세션 email 사용, 아니면 guestEmail로 게스트 결제.
  *
- * body: { productId, couponId? }
- * resp: { redirectUrl }
+ * body: { productId?, productSlug?, couponId?, guestEmail? }
+ * resp: { redirectUrl, orderId, amount }
  */
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id || !session.user.email) {
-    return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  const { productId, productSlug, couponId, guestEmail } = await req.json();
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const email = session?.user?.email
+    || (typeof guestEmail === "string" && EMAIL_RE.test(guestEmail.trim().toLowerCase())
+        ? guestEmail.trim().toLowerCase()
+        : null);
+  if (!email) {
+    return NextResponse.json({ error: "이메일이 필요합니다." }, { status: 400 });
   }
 
-  const { productId, couponId } = await req.json();
-
-  const product = await prisma.product.findUnique({ where: { id: productId } });
+  const product = productId
+    ? await prisma.product.findUnique({ where: { id: productId } })
+    : productSlug
+    ? await prisma.product.findUnique({ where: { slug: productSlug } })
+    : null;
   if (!product) return NextResponse.json({ error: "상품을 찾을 수 없습니다." }, { status: 404 });
 
-  const existing = await prisma.purchase.findFirst({ where: { userId: session.user.id, productId } });
-  if (existing) return NextResponse.json({ error: "이미 구매한 강의입니다." }, { status: 400 });
+  if (session?.user?.id) {
+    const existing = await prisma.purchase.findFirst({ where: { userId: session.user.id, productId: product.id } });
+    if (existing) return NextResponse.json({ error: "이미 구매한 강의입니다." }, { status: 400 });
+  }
 
   let discount = 0;
   if (couponId) {
@@ -47,15 +58,16 @@ export async function POST(req: NextRequest) {
   let token: string;
   try {
     token = signPurchaseToken({
-      email: session.user.email,
-      productId,
+      email,
+      productId: product.id,
       productSlug: product.slug,
       productTitle: product.title,
       amount: finalAmount,
       orderId,
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: `토큰 서명 실패: ${e.message}` }, { status: 500 });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "unknown";
+    return NextResponse.json({ error: `토큰 서명 실패: ${msg}` }, { status: 500 });
   }
 
   const host = (process.env.EXTERNAL_CHECKOUT_HOST || "https://reelspy.vercel.app").replace(/\/$/, "");
