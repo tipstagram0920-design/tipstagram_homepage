@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { Eye, EyeOff } from "lucide-react";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/";
+
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
@@ -36,12 +40,28 @@ export default function RegisterPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "회원가입 중 오류가 발생했습니다.");
+        setLoading(false);
         return;
       }
-      router.push("/login?registered=1");
+
+      // 회원가입 성공 → 자동 로그인 후 원래 페이지로 복귀
+      const signInResult = await signIn("credentials", {
+        email: form.email,
+        password: form.password,
+        redirect: false,
+      });
+      setLoading(false);
+
+      if (signInResult?.error) {
+        // 자동 로그인 실패 → 로그인 페이지로 (redirect 유지)
+        const q = redirect !== "/" ? `?registered=1&redirect=${encodeURIComponent(redirect)}` : "?registered=1";
+        router.push(`/login${q}`);
+      } else {
+        router.push(redirect);
+        router.refresh();
+      }
     } catch {
       setError("서버 오류가 발생했습니다.");
-    } finally {
       setLoading(false);
     }
   };
@@ -55,6 +75,12 @@ export default function RegisterPage() {
 
         <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm p-8">
           <h1 className="text-2xl font-black text-neutral-900 mb-6">회원가입</h1>
+
+          {redirect !== "/" && (
+            <p className="text-xs text-pink-600 bg-pink-50 border border-pink-100 px-3 py-2 rounded-lg mb-4">
+              가입 완료 후 원래 페이지로 자동 이동합니다.
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -125,10 +151,23 @@ export default function RegisterPage() {
 
           <p className="text-center text-sm text-neutral-500 mt-6">
             이미 계정이 있으신가요?{" "}
-            <Link href="/login" className="font-semibold text-pink-600 hover:underline">로그인</Link>
+            <Link
+              href={redirect !== "/" ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login"}
+              className="font-semibold text-pink-600 hover:underline"
+            >
+              로그인
+            </Link>
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-neutral-50" />}>
+      <RegisterForm />
+    </Suspense>
   );
 }

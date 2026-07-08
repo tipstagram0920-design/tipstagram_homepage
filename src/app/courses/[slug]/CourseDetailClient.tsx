@@ -107,7 +107,12 @@ export function CourseDetailClient({
       return;
     }
     if (!isLoggedIn) {
-      router.push("/login?redirect=" + encodeURIComponent("/courses/" + product.slug));
+      const goLogin = confirm(
+        "결제하려면 로그인이 필요합니다.\n\n로그인 페이지로 이동할까요?\n(계정이 없으시면 로그인 페이지에서 회원가입도 가능하며, 완료 후 이 강의 페이지로 자동 이동합니다.)"
+      );
+      if (goLogin) {
+        router.push("/login?redirect=" + encodeURIComponent("/courses/" + product.slug));
+      }
       return;
     }
 
