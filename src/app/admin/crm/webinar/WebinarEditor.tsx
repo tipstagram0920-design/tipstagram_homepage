@@ -153,6 +153,20 @@ export function WebinarEditor({
         setError(d.error || "저장 실패");
         return;
       }
+      // 서버가 URL 변경을 감지해서 시퀀스를 자동 재시드한 경우 확인 알림.
+      const data = await res.json().catch(() => ({}));
+      if (data?.reseed) {
+        const r = data.reseed as {
+          emailSteps: number;
+          broadcasts: { created: number; deleted: number; skippedPast: number };
+        };
+        alert(
+          `URL 변경이 감지돼 시퀀스를 다시 만들었어요.\n` +
+            `- 이메일 시퀀스: ${r.emailSteps}개 재설정\n` +
+            `- 카톡 draft: 기존 미발송 ${r.broadcasts.deleted}개 삭제 후 ${r.broadcasts.created}개 새로 생성` +
+            (r.broadcasts.skippedPast ? ` (지난 시각 ${r.broadcasts.skippedPast}개는 자동 스킵)` : "")
+        );
+      }
       router.push("/admin/crm/webinar");
       router.refresh();
     } finally {
