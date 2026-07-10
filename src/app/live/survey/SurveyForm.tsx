@@ -13,21 +13,54 @@ const CHANNEL_OPTIONS = [
   "기타",
 ];
 
+const PAID_YES_OPTIONS = [
+  "강사·강의 신뢰가 확실해서",
+  "지금이 결정할 타이밍이라 느껴져서",
+  "내 상황과 딱 맞는 강의 같아서",
+  "커뮤니티·피드백이 필요해서",
+  "혼자서는 실행이 안 될 것 같아서",
+  "가격 대비 가치가 확실해 보여서",
+];
+
+const PAID_NO_OPTIONS = [
+  "가격이 부담스러워서",
+  "지금은 시기가 아니라서",
+  "더 알아보고 결정하고 싶어서",
+  "커리큘럼·후기가 부족해 보여서",
+  "혼자 해볼 수 있을 것 같아서",
+  "시간을 낼 자신이 없어서",
+  "무료 자료만으로도 충분해서",
+];
+
 type PaidSignup = "yes" | "no" | "";
 
 export function SurveyForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [channelSource, setChannelSource] = useState("");
-  const [channelDetail, setChannelDetail] = useState(""); // "기타" 선택 시 자유 입력
+  const [channelDetail, setChannelDetail] = useState("");
   const [goodPoints, setGoodPoints] = useState("");
   const [badPoints, setBadPoints] = useState("");
   const [paidSignup, setPaidSignup] = useState<PaidSignup>("");
-  const [paidReason, setPaidReason] = useState("");
+  const [paidReasonOptions, setPaidReasonOptions] = useState<string[]>([]);
+  const [paidReasonDetail, setPaidReasonDetail] = useState("");
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+
+  const toggleReasonOption = (opt: string) => {
+    setPaidReasonOptions((prev) =>
+      prev.includes(opt) ? prev.filter((x) => x !== opt) : [...prev, opt]
+    );
+  };
+
+  // 신청 여부 바꾸면 기존 옵션 초기화 (다른 카테고리라 섞이면 안 됨)
+  const setPaidSignupAndReset = (v: PaidSignup) => {
+    setPaidSignup(v);
+    setPaidReasonOptions([]);
+    setPaidReasonDetail("");
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,11 +80,11 @@ export function SurveyForm() {
       setError("유료 강의 신청 여부를 선택해주세요.");
       return;
     }
-    if (!paidReason.trim()) {
+    if (paidReasonOptions.length === 0 && !paidReasonDetail.trim()) {
       setError(
         paidSignup === "yes"
-          ? "유료 강의를 신청한 이유를 남겨주세요."
-          : "유료 강의를 신청하지 않은 이유를 남겨주세요."
+          ? "유료 강의를 신청한 이유를 한 가지 이상 선택하거나 남겨주세요."
+          : "유료 강의를 신청하지 않은 이유를 한 가지 이상 선택하거나 남겨주세요."
       );
       return;
     }
@@ -71,7 +104,8 @@ export function SurveyForm() {
           goodPoints,
           badPoints,
           hasPaidSignup: paidSignup === "yes",
-          paidReason,
+          paidReasonOptions,
+          paidReasonDetail,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -102,6 +136,8 @@ export function SurveyForm() {
       </div>
     );
   }
+
+  const reasonOptions = paidSignup === "yes" ? PAID_YES_OPTIONS : PAID_NO_OPTIONS;
 
   return (
     <form onSubmit={submit} className="space-y-6">
@@ -215,7 +251,7 @@ export function SurveyForm() {
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={() => setPaidSignup("yes")}
+            onClick={() => setPaidSignupAndReset("yes")}
             className={
               "px-3 py-3 rounded-xl text-sm font-bold border transition-colors " +
               (paidSignup === "yes"
@@ -227,7 +263,7 @@ export function SurveyForm() {
           </button>
           <button
             type="button"
-            onClick={() => setPaidSignup("no")}
+            onClick={() => setPaidSignupAndReset("no")}
             className={
               "px-3 py-3 rounded-xl text-sm font-bold border transition-colors " +
               (paidSignup === "no"
@@ -240,28 +276,50 @@ export function SurveyForm() {
         </div>
       </div>
 
-      {/* Q5. 신청/미신청 이유 */}
+      {/* Q5. 신청/미신청 이유 — 다중 선택 옵션 + 자유 서술 */}
       {paidSignup && (
         <div>
           <label className="block text-sm font-semibold text-white/85 mb-2">
             {paidSignup === "yes"
-              ? "Q5. 유료 강의를 신청한 이유는 무엇인가요?"
-              : "Q5. 아직 신청하지 않은 이유는 무엇인가요?"}
+              ? "Q5. 유료 강의를 신청한 이유는? (해당하는 항목 모두 선택)"
+              : "Q5. 아직 신청하지 않은 이유는? (해당하는 항목 모두 선택)"}
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {reasonOptions.map((opt) => {
+              const active = paidReasonOptions.includes(opt);
+              return (
+                <button
+                  type="button"
+                  key={opt}
+                  onClick={() => toggleReasonOption(opt)}
+                  className={
+                    "px-3 py-2.5 rounded-xl text-sm font-semibold border transition-colors text-left " +
+                    (active
+                      ? "border-pink-400 bg-pink-500/20 text-white"
+                      : "border-white/10 bg-white/[0.04] text-white/70 hover:border-white/30")
+                  }
+                >
+                  {active ? "✓ " : ""}{opt}
+                </button>
+              );
+            })}
+          </div>
+          <label className="mt-4 block text-xs font-semibold text-white/60">
+            더 자세한 이유 (선택)
           </label>
           <textarea
-            value={paidReason}
-            onChange={(e) => setPaidReason(e.target.value)}
-            required
-            rows={4}
+            value={paidReasonDetail}
+            onChange={(e) => setPaidReasonDetail(e.target.value)}
+            rows={3}
             maxLength={800}
             placeholder={
               paidSignup === "yes"
-                ? "어떤 점이 결정에 가장 크게 작용했는지 남겨주세요."
-                : "가격·시기·정보 부족 등 솔직한 이유를 남겨주세요. 아이디어에 반영합니다."
+                ? "결정에 가장 크게 작용한 포인트를 더 자세히 남겨주세요."
+                : "가격·시기·정보 부족 등 솔직한 이유를 더 자세히 남겨주세요. 다음 강의에 반영합니다."
             }
-            className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-white/30 text-sm focus:outline-none focus:border-pink-400 focus:bg-white/[0.08] resize-none"
+            className="mt-1.5 w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-white/30 text-sm focus:outline-none focus:border-pink-400 focus:bg-white/[0.08] resize-none"
           />
-          <p className="mt-1 text-xs text-white/40 text-right">{paidReason.length} / 800</p>
+          <p className="mt-1 text-xs text-white/40 text-right">{paidReasonDetail.length} / 800</p>
         </div>
       )}
 

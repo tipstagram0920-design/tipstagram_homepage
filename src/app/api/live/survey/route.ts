@@ -18,13 +18,25 @@ interface SurveyBody {
   goodPoints?: string;
   badPoints?: string;
   hasPaidSignup?: boolean;
-  paidReason?: string;
+  paidReasonOptions?: unknown;
+  paidReasonDetail?: string;
 }
 
 const TRIM_MAX = 2000;
+const OPTION_MAX_LEN = 120;
+const OPTION_MAX_COUNT = 20;
 
 function clean(v: string | undefined): string {
   return (v || "").trim().slice(0, TRIM_MAX);
+}
+
+function cleanOptions(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is string => typeof x === "string")
+    .map((s) => s.trim().slice(0, OPTION_MAX_LEN))
+    .filter((s) => s.length > 0)
+    .slice(0, OPTION_MAX_COUNT);
 }
 
 export async function POST(req: NextRequest) {
@@ -41,7 +53,8 @@ export async function POST(req: NextRequest) {
   const goodPoints = clean(body.goodPoints);
   const badPoints = clean(body.badPoints);
   const hasPaidSignup = body.hasPaidSignup === true;
-  const paidReason = clean(body.paidReason);
+  const paidReasonOptions = cleanOptions(body.paidReasonOptions);
+  const paidReasonDetail = clean(body.paidReasonDetail);
 
   if (!name) return NextResponse.json({ error: "이름을 입력해주세요." }, { status: 400 });
   if (!email || !EMAIL_RE.test(email)) {
@@ -56,8 +69,11 @@ export async function POST(req: NextRequest) {
   if (typeof body.hasPaidSignup !== "boolean") {
     return NextResponse.json({ error: "유료 강의 신청 여부를 선택해주세요." }, { status: 400 });
   }
-  if (!paidReason) {
-    return NextResponse.json({ error: "유료 강의 관련 이유를 남겨주세요." }, { status: 400 });
+  if (paidReasonOptions.length === 0 && !paidReasonDetail) {
+    return NextResponse.json(
+      { error: "유료 강의 관련 이유를 한 가지 이상 선택하거나 남겨주세요." },
+      { status: 400 }
+    );
   }
 
   const [summaryUrl, faqUrl, hookUrl] = await Promise.all([
@@ -80,6 +96,19 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Contact 태그에 선택된 이유 옵션도 자동 부여 (세그먼트 필터·리마케팅용)
+  //   예: 미신청_가격이 부담스러워서, 신청_강사·강의 신뢰가 확실해서
+  if (paidReasonOptions.length > 0) {
+    const prefix = hasPaidSignup ? "신청_" : "미신청_";
+    const tagged = new Set(contact.tags);
+    for (const opt of paidReasonOptions) tagged.add(`${prefix}${opt}`);
+    tagged.add(SURVEY_TAG);
+    await prisma.contact.update({
+      where: { id: contact.id },
+      data: { tags: { set: Array.from(tagged) } },
+    });
+  }
+
   // 응답 자체는 CRM Event.payload 에 저장 → 어드민 컨택트 상세 타임라인에서 조회 가능
   await logEvent(contact.id, "manual_note", {
     type: "webinar_survey",
@@ -87,7 +116,8 @@ export async function POST(req: NextRequest) {
     goodPoints,
     badPoints,
     hasPaidSignup,
-    paidReason,
+    paidReasonOptions,
+    paidReasonDetail,
   });
 
   // 3종 자료 이메일 자동 발송
