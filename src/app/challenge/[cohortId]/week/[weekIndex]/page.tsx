@@ -14,6 +14,7 @@ import {
   PenSquare,
   CheckCircle2,
   MessageSquareText,
+  Mail,
 } from "lucide-react";
 import { HomeworkForm } from "./HomeworkForm";
 
@@ -212,25 +213,30 @@ export default async function ChallengeWeekPage({
             </section>
           )}
 
-          {/* 3. 숙제 */}
+          {/* 3. 팁스타그램의 편지 + 숙제 */}
+          {week.homeworkPrompt ? (
+            <section id="letter" className="mb-8 scroll-mt-24">
+              <div className="rounded-3xl border border-pink-400/20 bg-gradient-to-br from-pink-500/10 via-purple-500/5 to-transparent p-6 sm:p-8">
+                <p className="text-xs font-bold tracking-[2px] text-pink-400 uppercase mb-3 inline-flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5" /> 팁스타그램의 편지
+                </p>
+                <div className="text-[15px] text-white/90 leading-[1.85] whitespace-pre-wrap">
+                  {week.homeworkPrompt}
+                </div>
+              </div>
+            </section>
+          ) : (
+            <section className="mb-8">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-sm text-white/50">
+                팁스타그램의 편지가 곧 도착합니다.
+              </div>
+            </section>
+          )}
+
           <section id="homework" className="mb-6 scroll-mt-24">
             <h2 className="text-lg font-bold mb-3 inline-flex items-center gap-2">
               <PenSquare className="w-5 h-5 text-pink-400" /> 이번 주 숙제
             </h2>
-            {week.homeworkPrompt ? (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 mb-6">
-                <p className="text-xs font-bold text-white/50 mb-2 uppercase tracking-wide">
-                  숙제 프롬프트
-                </p>
-                <div className="text-sm text-white/85 leading-relaxed whitespace-pre-wrap">
-                  {week.homeworkPrompt}
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-sm text-white/50 mb-6">
-                숙제 프롬프트가 곧 공개됩니다.
-              </div>
-            )}
 
             {mySubmission?.feedbackHtml && mySubmission.feedbackAt && (
               <div className="rounded-2xl border-2 border-green-400/30 bg-green-400/[0.08] p-5 sm:p-6 mb-6">

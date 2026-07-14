@@ -115,18 +115,21 @@ export function WeekEditor({
       </section>
 
       <section className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-4">
-        <h2 className="text-base font-bold text-neutral-800">숙제</h2>
+        <h2 className="text-base font-bold text-neutral-800">팁스타그램의 편지</h2>
         <div>
           <label className="block text-sm font-semibold text-neutral-800 mb-1.5">
-            숙제 프롬프트 (필수) <span className="text-neutral-400 font-normal">— 마크다운 사용 가능</span>
+            편지 본문 <span className="text-neutral-400 font-normal">— 참여자 페이지 상단 카드에 그대로 노출됩니다</span>
           </label>
           <textarea
             value={homeworkPrompt}
             onChange={(e) => setHomeworkPrompt(e.target.value)}
-            rows={8}
-            placeholder={`예:\n\n1. 프로필 3줄을 새로 써서 스크린샷 올리기\n2. 릴스 초안 1개 아이디어 정리해서 텍스트로 작성\n3. 인스타 계정 URL 공유`}
-            className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400 resize-none font-mono"
+            rows={12}
+            placeholder={`격려하면서도 단호한 톤으로 이번 주 방향을 안내하세요.\n\n예:\n안녕하세요, 팁스타그램입니다.\n이번 주는 챌린지의 뿌리를 심는 주간이에요.\n답변은 최대한 구체적으로 남겨 주세요...`}
+            className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400 resize-none"
           />
+          <p className="text-xs text-neutral-500 mt-1.5">
+            줄바꿈은 그대로 보존됩니다. 참여자가 이번 주에 무엇을 · 왜 · 어떻게 해야 하는지 한 편의 편지처럼 안내해 주세요.
+          </p>
         </div>
       </section>
 
