@@ -31,6 +31,7 @@ model User {
   progresses Progress[]
   posts      Post[]
   contact    Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  homeworkSubmissions HomeworkSubmission[]
 
   @@map("users")
 }
@@ -576,4 +577,85 @@ model TrackEvent {
   @@index([path, createdAt])
   @@index([contactId])
   @@map("track_events")
+}
+
+// ─── 5주 챌린지 (기수·주차·숙제·피드백) ────────────────────────────────────
+model ChallengeCohort {
+  id           String   @id @default(cuid())
+  productSlug  String   // "5-week-challenge" | "5-week-challenge-plus-consulting"
+  name         String   // "2026년 7월 기수"
+  week1StartAt DateTime // Week 1 오픈 시각 (UTC 저장, KST 09:00 등)
+  weeksTotal   Int      @default(5)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  weeks ChallengeWeek[]
+
+  @@index([productSlug, week1StartAt])
+  @@map("challenge_cohorts")
+}
+
+model ChallengeWeek {
+  id                   String   @id @default(cuid())
+  cohortId             String
+  weekIndex            Int // 1~5
+  title                String
+  description          String   @default("") @db.Text // 이번 주 안내 (HTML)
+  homeworkPrompt       String   @default("") @db.Text // 이번 주 숙제 프롬프트
+  openAt               DateTime
+  homeworkDueAt        DateTime
+  liveAt               DateTime?
+  zoomUrl              String?
+  recordingUrl         String?
+  recommendedLessonIds Json? // marketing-booster lesson id 배열
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  cohort      ChallengeCohort      @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  submissions HomeworkSubmission[]
+  reminderSends ChallengeReminderSend[]
+
+  @@unique([cohortId, weekIndex])
+  @@index([openAt])
+  @@map("challenge_weeks")
+}
+
+model HomeworkSubmission {
+  id           String    @id @default(cuid())
+  weekId       String
+  userId       String
+  content      String    @default("") @db.Text // Tiptap HTML
+  imageUrls    String[]  @default([])
+  instagramUrl String?
+  status       String    @default("submitted") // submitted | feedback_given
+  submittedAt  DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  feedbackHtml String?   @db.Text
+  feedbackBy   String? // admin userId
+  feedbackAt   DateTime?
+
+  week ChallengeWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([weekId, userId])
+  @@index([userId, submittedAt])
+  @@index([status, feedbackAt])
+  @@map("homework_submissions")
+}
+
+model ChallengeReminderSend {
+  id       String   @id @default(cuid())
+  weekId   String
+  stepKey  String // "open" | "live_d1" | "live_1h" | "due_d1" | "recording"
+  userId   String
+  status   String   @default("sent") // sent | failed
+  error    String?
+  sentAt   DateTime @default(now())
+
+  week ChallengeWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+
+  @@unique([weekId, stepKey, userId])
+  @@index([weekId, sentAt])
+  @@map("challenge_reminder_sends")
 }

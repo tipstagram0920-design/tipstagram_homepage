@@ -34,6 +34,7 @@ export const STATIC_PAGES: StaticPage[] = [
   { path: "/ebook/step2", title: "2차 전자책 인증", desc: "인스타 스토리 스크린샷 업로드 → 2차 전자책 메일", category: "마케팅 랜딩", source: "src/app/ebook/step2/page.tsx" },
   { path: "/live/summary", title: "강의 요약본 신청", desc: "@tipstagram2023 태그해 스토리 인증 → 요약본 메일 자동 발송", category: "마케팅 랜딩", source: "src/app/live/summary/page.tsx" },
   { path: "/live/survey", title: "라이브 설문 응답", desc: "라이브 소감 5문항 응답 → 요약본·FAQ·후킹 패턴 3종 자료 자동 발송", category: "마케팅 랜딩", source: "src/app/live/survey/page.tsx" },
+  { path: "/challenge/[cohortId]", title: "5주 챌린지 대시보드", desc: "챌린지 참여자용 · 이번 주 카드·숙제 제출·피드백 히스토리", category: "강의", examplePath: "/admin/challenge", source: "src/app/challenge/[cohortId]/page.tsx" },
   { path: "/consultation", title: "1:1 진단 세션 신청", desc: "무료 라이브 한정, 단 5분 선정 1:1 계정 진단 신청 페이지", category: "마케팅 랜딩", source: "src/app/consultation/page.tsx" },
 
   // 강의
