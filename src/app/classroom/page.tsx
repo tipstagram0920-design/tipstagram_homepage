@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import Link from "next/link";
-import { BookOpen, Clock } from "lucide-react";
+import { BookOpen, Clock, Trophy, ArrowRight } from "lucide-react";
+import { findEnrolledCohortsForUser } from "@/lib/challenge-enrollment";
+import { formatKstHuman } from "@/lib/kst";
 
 async function getUserPurchases(userId: string) {
   return await prisma.purchase.findMany({
@@ -39,6 +41,7 @@ export default async function ClassroomPage() {
   if (!session?.user?.id) redirect("/login?redirect=/classroom");
 
   const purchases = await getUserPurchases(session.user.id).catch(() => []);
+  const enrolledCohorts = await findEnrolledCohortsForUser(session.user.id).catch(() => []);
 
   const allLessonIds = purchases.flatMap(
     (p) => p.product.course?.sections.flatMap((s) => s.lessons.map((l) => l.id)) || []
@@ -54,6 +57,40 @@ export default async function ClassroomPage() {
             내 강의실
           </h1>
           <p className="text-neutral-500 mb-10">구매한 강의를 수강하세요</p>
+
+          {/* 5주 챌린지 진입 카드 */}
+          {enrolledCohorts.length > 0 && (
+            <div className="mb-10 space-y-3">
+              <p className="text-xs font-bold tracking-[2px] text-pink-600 uppercase">
+                진행 중인 챌린지
+              </p>
+              {enrolledCohorts.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/challenge/${c.id}`}
+                  className="group flex items-center gap-5 rounded-3xl bg-neutral-950 p-6 sm:p-7 hover:shadow-2xl hover:-translate-y-0.5 transition-all"
+                >
+                  <div className="shrink-0 w-14 h-14 rounded-2xl ig-gradient text-white flex items-center justify-center">
+                    <Trophy className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-white">
+                    <p className="text-[11px] font-bold tracking-wider uppercase text-white/60">
+                      5주 챌린지
+                    </p>
+                    <h2 className="text-lg sm:text-xl font-black mt-0.5 truncate">
+                      <span className="ig-gradient-text">{c.name}</span>
+                    </h2>
+                    <p className="text-xs text-white/60 mt-1">
+                      Week 1 오픈 · {formatKstHuman(c.week1StartAt)}
+                    </p>
+                  </div>
+                  <div className="shrink-0 inline-flex items-center gap-1 text-sm font-bold text-white group-hover:text-pink-400">
+                    대시보드 열기 <ArrowRight className="w-4 h-4" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
 
           {purchases.length === 0 ? (
             <div className="text-center py-24 bg-neutral-50 rounded-2xl">

@@ -625,7 +625,8 @@ model HomeworkSubmission {
   id           String    @id @default(cuid())
   weekId       String
   userId       String
-  content      String    @default("") @db.Text // Tiptap HTML
+  content      String    @default("") @db.Text // 사람이 읽는 요약 텍스트 (자동 조립)
+  formData     Json? // 주차별 구조화된 답변 (질문 답변 배열 · 조사한 사람 리스트 등)
   imageUrls    String[]  @default([])
   instagramUrl String?
   status       String    @default("submitted") // submitted | feedback_given
