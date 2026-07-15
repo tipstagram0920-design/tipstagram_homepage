@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2, Instagram, CheckCircle2, Link as LinkIcon, ImagePlus, X, Layers } from "lucide-react";
+import { Loader2, Plus, Trash2, Instagram, CheckCircle2, Link as LinkIcon, ImagePlus, X, Layers, Users } from "lucide-react";
 
 interface Initial {
   content: string;
@@ -22,43 +22,46 @@ interface Props {
 const WEEK1_QUESTIONS = [
   {
     key: "q2_expertise",
-    label: "Q2. 이 일에서 나의 전문성을 보여줄 수 있는 것들은 무엇인가요?",
+    number: "Q2",
+    label: "이 일에서 나의 전문성을 보여줄 수 있는 것들은 무엇인가요?",
     placeholder:
       "경력·자격·실적·경험·수료증·수상 이력 등 · 남들과 다른 나만의 근거를 최대한 구체적으로.\n예: 필라테스 강사 8년차 · L2 지도자 자격 · 대기업 임직원 프로그램 3년 운영 · 자세 교정 후기 300건 이상",
     rows: 5,
   },
   {
     key: "q3_customer_problem",
-    label: "Q3. 내 소비자가 지금 겪고 있는 문제·불편은 무엇인가요?",
+    number: "Q3",
+    label: "내 소비자가 지금 겪고 있는 문제·불편은 무엇인가요?",
     placeholder:
-      "'힘들다·불편하다' 같은 두루뭉술한 말고, 어떤 상황에서 무엇을 못 해서 무엇을 놓치고 있는지 구체적으로.\n예: 결혼식 준비하면서 새벽 6시 헬스장 다녀도 배가 안 빠져 웨딩드레스 사이즈 못 낮추고 있음.",
+      "'힘들다·불편하다' 같은 두루뭉술한 말고, 어떤 상황에서 무엇을 못 해서 무엇을 놓치고 있는지 구체적으로.",
     rows: 5,
   },
   {
     key: "q4_persona",
-    label: "Q4. 그 사람은 누구인가요? 그 사람의 하루는 어떤 모습인가요?",
+    number: "Q4",
+    label: "그 사람은 누구인가요? 그 사람의 하루는 어떤 모습인가요?",
     placeholder: "나이·직업·상황·주요 고민·평일 저녁의 흔한 풍경까지 한 사람을 생생하게 그려주세요.",
     rows: 5,
   },
   {
     key: "q5_solution",
-    label: "Q5. 나는 그 문제를 어떻게 해결하나요?",
-    placeholder:
-      "내 방법·접근·철학. 다른 방법과 무엇이 다른지도 함께.\n예: 하루 15분 홈트 루틴 + 식단 자동화 챗봇 + 주 1회 자세 피드백.",
+    number: "Q5",
+    label: "나는 그 문제를 어떻게 해결하나요?",
+    placeholder: "내 방법·접근·철학. 다른 방법과 무엇이 다른지도 함께.",
     rows: 5,
   },
   {
     key: "q6_transformation",
-    label: "Q6. 내 상품을 만난 뒤 소비자의 삶은 어떻게 바뀌나요?",
-    placeholder:
-      "Before → After 로 대비해서 생생하게. 3개월·6개월·1년 뒤의 그림도 함께.",
+    number: "Q6",
+    label: "내 상품을 만난 뒤 소비자의 삶은 어떻게 바뀌나요?",
+    placeholder: "Before → After 로 대비해서 생생하게. 3개월·6개월·1년 뒤의 그림도 함께.",
     rows: 5,
   },
   {
     key: "q7_search",
-    label: "Q7. 내 상품을 사기 직전에 그 사람이 검색할 단어·질문은 무엇일까요?",
-    placeholder:
-      "네이버·구글·유튜브·인스타 어디에서든 실제로 검색할 만한 실제 문장 5개 이상.",
+    number: "Q7",
+    label: "내 상품을 사기 직전에 그 사람이 검색할 단어·질문은 무엇일까요?",
+    placeholder: "네이버·구글·유튜브·인스타 어디에서든 실제로 검색할 만한 실제 문장 5개 이상.",
     rows: 4,
   },
 ] as const;
@@ -118,7 +121,7 @@ function assembleContent(
     for (const q of WEEK1_QUESTIONS) {
       const a = (answers[q.key] || "").trim();
       if (!a) continue;
-      parts.push(`# ${q.label}\n\n${a}`);
+      parts.push(`# ${q.number}. ${q.label}\n\n${a}`);
     }
     const validPeople = people.filter((p) => p.name.trim() || p.instagramUrl.trim());
     if (validPeople.length > 0) {
@@ -143,15 +146,38 @@ function assembleContent(
   return freeText;
 }
 
-// ── UI 톤 (밝은 회색·검정 위주) ────────────────────────────────────
-const CARD = "rounded-2xl border border-neutral-200 bg-white p-4 space-y-3";
+// ── Apple 시스템 설정 스타일 톤 ──────────────────────────────────
+const SECTION = "rounded-2xl border border-neutral-200/70 bg-neutral-50/50 p-5 sm:p-6";
+const NESTED_CARD = "rounded-2xl border border-neutral-200/70 bg-white p-4 space-y-3";
 const INPUT =
-  "w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-300 text-neutral-900 placeholder:text-neutral-400 text-sm focus:outline-none focus:border-neutral-900";
+  "w-full px-3.5 py-2.5 rounded-xl bg-white border border-neutral-200 text-neutral-900 placeholder:text-neutral-400 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900";
 const TEXTAREA = INPUT + " resize-none";
-const LABEL = "block text-sm font-bold text-neutral-900 mb-2";
-const HELP = "text-xs text-neutral-500";
+const LABEL_LG = "block text-[15px] font-bold text-neutral-900";
+const HELP = "text-[12px] text-neutral-500 leading-relaxed";
 const ADD_BUTTON =
-  "w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-neutral-300 text-neutral-600 text-sm hover:border-neutral-900 hover:text-neutral-900";
+  "w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-neutral-300 bg-white text-neutral-600 text-sm hover:border-neutral-900 hover:text-neutral-900";
+
+function QHeader({
+  number,
+  label,
+  help,
+}: {
+  number: string;
+  label: string;
+  help?: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 mb-4">
+      <span className="shrink-0 inline-flex items-center justify-center min-w-10 h-10 px-2 rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-700 text-white text-[13px] font-black shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_4px_10px_-4px_rgba(0,0,0,0.3)]">
+        {number}
+      </span>
+      <div className="flex-1 pt-0.5">
+        <p className={LABEL_LG}>{label}</p>
+        {help && <p className={HELP + " mt-1"}>{help}</p>}
+      </div>
+    </div>
+  );
+}
 
 export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
   const router = useRouter();
@@ -300,16 +326,19 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {isWeek1 ? (
         <>
           {/* Q1. 상품 · 다중 카드 */}
-          <div>
-            <label className={LABEL}>Q1. 팔고 싶은 것 <span className="text-neutral-500 font-normal">또는</span> 팔고 있는 것은 무엇인가요?</label>
-            <p className={HELP + " mb-3"}>여러 개라면 카드를 추가해서 각각 남겨 주세요.</p>
+          <div className={SECTION}>
+            <QHeader
+              number="Q1"
+              label="팔고 싶은 것 또는 팔고 있는 것은 무엇인가요?"
+              help="여러 개라면 카드를 추가해서 각각 남겨 주세요."
+            />
             <div className="space-y-3">
               {products.map((p, i) => (
-                <div key={i} className={CARD}>
+                <div key={i} className={NESTED_CARD}>
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-bold text-neutral-500">상품 {i + 1}</p>
                     {products.length > 1 && (
@@ -356,35 +385,42 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
             </div>
           </div>
 
-          {/* Q2~Q7 */}
-          <div className="space-y-5">
-            {WEEK1_QUESTIONS.map((q) => (
-              <div key={q.key}>
-                <label className={LABEL}>{q.label}</label>
-                <textarea
-                  value={answers[q.key] || ""}
-                  onChange={(e) => setAnswers((prev) => ({ ...prev, [q.key]: e.target.value }))}
-                  rows={q.rows}
-                  placeholder={q.placeholder}
-                  className={TEXTAREA}
-                  maxLength={2500}
-                />
-              </div>
-            ))}
-          </div>
+          {/* Q2~Q7 각각 카드 */}
+          {WEEK1_QUESTIONS.map((q) => (
+            <div key={q.key} className={SECTION}>
+              <QHeader number={q.number} label={q.label} />
+              <textarea
+                value={answers[q.key] || ""}
+                onChange={(e) => setAnswers((prev) => ({ ...prev, [q.key]: e.target.value }))}
+                rows={q.rows}
+                placeholder={q.placeholder}
+                className={TEXTAREA}
+                maxLength={2500}
+              />
+            </div>
+          ))}
 
           {/* 사람 조사 5명 이상 */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className={LABEL + " mb-0"}>나와 관련된 사람들 조사</label>
-              <span className={HELP}>최소 <strong className="text-neutral-900">5명 이상</strong></span>
+          <div className={SECTION}>
+            <div className="flex items-start gap-3 mb-4">
+              <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(37,99,235,0.4)]">
+                <Users className="w-4.5 h-4.5" strokeWidth={2.25} />
+              </span>
+              <div className="flex-1 pt-0.5 flex items-start justify-between gap-3">
+                <div>
+                  <p className={LABEL_LG}>나와 관련된 사람들 조사</p>
+                  <p className={HELP + " mt-1"}>
+                    내 잠재 고객이 이미 팔로우 중일 만한 계정 · 롤모델 · 경쟁 계정. 인스타 URL은 실제 계정 링크로 남겨 주세요.
+                  </p>
+                </div>
+                <span className="text-[11px] text-neutral-500 shrink-0 whitespace-nowrap">
+                  최소 <strong className="text-neutral-900">5명</strong>
+                </span>
+              </div>
             </div>
-            <p className={HELP + " mb-3"}>
-              내 잠재 고객이 이미 팔로우 중일 만한 계정 · 롤모델 · 경쟁 계정. 인스타 URL은 실제 계정 링크로 남겨 주세요.
-            </p>
             <div className="space-y-3">
               {people.map((p, i) => (
-                <div key={i} className={CARD}>
+                <div key={i} className={NESTED_CARD}>
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-bold text-neutral-500">사람 {i + 1}</p>
                     {people.length > MIN_PEOPLE && (
@@ -456,13 +492,18 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
           </div>
 
           {/* 랜딩 페이지 URL */}
-          <div>
-            <label className={LABEL + " inline-flex items-center gap-1.5"}>
-              <LinkIcon className="w-4 h-4 text-neutral-700" /> 랜딩 페이지 URL
-            </label>
-            <p className={HELP + " mb-2"}>
-              내 상품에 대한 소개 페이지를 만들어 URL을 남겨 주세요. 인포크 · 리틀리 등 무엇이든 좋습니다. (참고 영상은 이 페이지 상단 &quot;참고 영상&quot; 섹션에 있어요.)
-            </p>
+          <div className={SECTION}>
+            <div className="flex items-start gap-3 mb-4">
+              <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(20,184,166,0.4)]">
+                <LinkIcon className="w-4.5 h-4.5" strokeWidth={2.25} />
+              </span>
+              <div className="flex-1 pt-0.5">
+                <p className={LABEL_LG}>랜딩 페이지 URL</p>
+                <p className={HELP + " mt-1"}>
+                  내 상품에 대한 소개 페이지를 만들어 URL을 남겨 주세요. 인포크 · 리틀리 등 무엇이든 좋습니다. (참고 영상은 이 페이지 상단 &quot;참고 영상&quot; 섹션에 있어요.)
+                </p>
+              </div>
+            </div>
             <input
               type="url"
               value={landingUrl}
@@ -473,19 +514,24 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
           </div>
 
           {/* 하이라이트 4장 */}
-          <div>
-            <label className={LABEL + " inline-flex items-center gap-1.5"}>
-              <Layers className="w-4 h-4 text-neutral-700" /> 하이라이트 4장 · 스크린샷 업로드
-            </label>
-            <p className={HELP + " mb-3"}>
-              인스타 프로필에 아래 네 하이라이트를 만든 뒤, 각 하이라이트가 잘 보이도록 프로필 화면을 캡처해 올려 주세요.
-            </p>
+          <div className={SECTION}>
+            <div className="flex items-start gap-3 mb-4">
+              <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(219,39,119,0.4)]">
+                <Layers className="w-4.5 h-4.5" strokeWidth={2.25} />
+              </span>
+              <div className="flex-1 pt-0.5">
+                <p className={LABEL_LG}>하이라이트 4장 · 스크린샷 업로드</p>
+                <p className={HELP + " mt-1"}>
+                  인스타 프로필에 아래 네 하이라이트를 만든 뒤, 각 하이라이트가 잘 보이도록 프로필 화면을 캡처해 올려 주세요.
+                </p>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               {HIGHLIGHT_SLOTS.map((s) => {
                 const url = highlights[s.key];
                 const isUploading = uploadingKey === s.key;
                 return (
-                  <div key={s.key} className="rounded-2xl border border-neutral-200 bg-white p-3">
+                  <div key={s.key} className="rounded-2xl border border-neutral-200/70 bg-white p-3">
                     <p className="text-xs font-bold text-neutral-700 mb-2">{s.label}</p>
                     {url ? (
                       <div className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50 aspect-square">
@@ -511,7 +557,7 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
                         type="button"
                         onClick={() => fileRefs.current[s.key]?.click()}
                         disabled={isUploading}
-                        className="w-full aspect-square rounded-xl border-2 border-dashed border-neutral-300 text-neutral-500 hover:border-neutral-900 hover:text-neutral-900 flex flex-col items-center justify-center gap-1.5 disabled:opacity-60"
+                        className="w-full aspect-square rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 text-neutral-500 hover:border-neutral-900 hover:text-neutral-900 hover:bg-white flex flex-col items-center justify-center gap-1.5 disabled:opacity-60 transition-colors"
                       >
                         {isUploading ? (
                           <>
@@ -547,8 +593,8 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
           </div>
         </>
       ) : (
-        <div>
-          <label className={LABEL}>숙제 답변</label>
+        <div className={SECTION}>
+          <p className={LABEL_LG + " mb-3"}>숙제 답변</p>
           <textarea
             value={freeText}
             onChange={(e) => setFreeText(e.target.value)}
@@ -562,10 +608,15 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
       )}
 
       {/* 내 인스타 URL */}
-      <div>
-        <label className={LABEL + " inline-flex items-center gap-1.5"}>
-          <Instagram className="w-4 h-4 text-neutral-700" /> 내 인스타 URL (선택)
-        </label>
+      <div className={SECTION}>
+        <div className="flex items-start gap-3 mb-3">
+          <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(236,72,153,0.4)]">
+            <Instagram className="w-4.5 h-4.5" strokeWidth={2.25} />
+          </span>
+          <div className="flex-1 pt-0.5">
+            <p className={LABEL_LG}>내 인스타 URL <span className="text-neutral-500 font-normal text-[13px]">(선택)</span></p>
+          </div>
+        </div>
         <input
           type="url"
           value={instagramUrl}
@@ -576,7 +627,7 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
       </div>
 
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-3 rounded-xl">
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-3 rounded-2xl">
           {error}
         </p>
       )}
@@ -585,7 +636,7 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
         type="button"
         onClick={submit}
         disabled={saving || !canSubmit}
-        className="w-full inline-flex items-center justify-center gap-2 py-4 rounded-xl bg-neutral-900 text-white font-bold text-base hover:bg-neutral-800 disabled:opacity-50"
+        className="w-full inline-flex items-center justify-center gap-2 py-4 rounded-2xl bg-neutral-900 text-white font-bold text-base hover:bg-neutral-800 disabled:opacity-50 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]"
       >
         {saving ? (
           <>
