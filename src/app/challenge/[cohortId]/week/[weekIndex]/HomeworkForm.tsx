@@ -96,7 +96,10 @@ const HIGHLIGHT_SLOTS = [
   { key: "contact", label: "문의하기" },
 ] as const;
 type HighlightKey = (typeof HIGHLIGHT_SLOTS)[number]["key"];
-type HighlightShots = Partial<Record<HighlightKey, string>>;
+// 각 하이라이트는 여러 장의 스토리로 구성되므로 URL 배열로 저장
+type HighlightShots = Partial<Record<HighlightKey, string[]>>;
+
+const MAX_HIGHLIGHT_SHOTS_PER_SLOT = 20;
 
 function assembleContent(
   weekIndex: number,
@@ -136,10 +139,15 @@ function assembleContent(
       });
     }
     if (landingUrl.trim()) parts.push(`# 랜딩 페이지 URL\n\n${landingUrl.trim()}`);
-    const shotEntries = HIGHLIGHT_SLOTS.filter((s) => highlights[s.key]);
-    if (shotEntries.length > 0) {
-      parts.push(`# 하이라이트 스크린샷 (${shotEntries.length}장)`);
-      for (const s of shotEntries) parts.push(`- ${s.label}: ${highlights[s.key]}`);
+    const withShots = HIGHLIGHT_SLOTS.filter((s) => (highlights[s.key] ?? []).length > 0);
+    if (withShots.length > 0) {
+      const total = withShots.reduce((n, s) => n + (highlights[s.key]?.length ?? 0), 0);
+      parts.push(`# 하이라이트 스크린샷 (${withShots.length}종 · 총 ${total}장)`);
+      for (const s of withShots) {
+        const urls = highlights[s.key] ?? [];
+        parts.push(`### ${s.label} (${urls.length}장)`);
+        urls.forEach((u, i) => parts.push(`- ${i + 1}. ${u}`));
+      }
     }
     return parts.join("\n\n");
   }
@@ -203,30 +211,52 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
     contact: null,
   });
 
-  const uploadHighlight = async (key: HighlightKey, file: File) => {
+  const uploadHighlight = async (key: HighlightKey, files: FileList | File[]) => {
     setError("");
-    if (!file.type.startsWith("image/")) {
-      setError("이미지 파일만 첨부할 수 있어요.");
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    const current = highlights[key] ?? [];
+    const room = MAX_HIGHLIGHT_SHOTS_PER_SLOT - current.length;
+    if (room <= 0) {
+      setError(`이 하이라이트에는 최대 ${MAX_HIGHLIGHT_SHOTS_PER_SLOT}장까지 올릴 수 있어요.`);
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setError("10MB 이하 이미지만 첨부할 수 있어요.");
-      return;
-    }
+    const toUpload = list.slice(0, room);
     setUploadingKey(key);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/homework/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok || !data.url) {
-        setError(data.error || "업로드 실패");
-        return;
+      for (const file of toUpload) {
+        if (!file.type.startsWith("image/")) {
+          setError("이미지 파일만 첨부할 수 있어요.");
+          continue;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          setError("10MB 이하 이미지만 첨부할 수 있어요.");
+          continue;
+        }
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/homework/upload", { method: "POST", body: fd });
+        const data = await res.json();
+        if (!res.ok || !data.url) {
+          setError(data.error || "업로드 실패");
+          continue;
+        }
+        setHighlights((prev) => ({ ...prev, [key]: [...(prev[key] ?? []), data.url as string] }));
       }
-      setHighlights((prev) => ({ ...prev, [key]: data.url }));
     } finally {
       setUploadingKey(null);
     }
+  };
+
+  const removeHighlight = (key: HighlightKey, index: number) => {
+    setHighlights((prev) => {
+      const cur = prev[key] ?? [];
+      const next = cur.filter((_, i) => i !== index);
+      const copy = { ...prev };
+      if (next.length === 0) delete copy[key];
+      else copy[key] = next;
+      return copy;
+    });
   };
 
   const canSubmit = useMemo(() => {
@@ -235,13 +265,13 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
       const hasProduct = products.some((p) => p.name.trim() || p.description.trim());
       const peopleCount = people.filter((p) => p.name.trim() || p.instagramUrl.trim()).length;
       const hasLanding = landingUrl.trim().length > 0;
-      const highlightCount = HIGHLIGHT_SLOTS.filter((s) => highlights[s.key]).length;
+      const slotsWithShots = HIGHLIGHT_SLOTS.filter((s) => (highlights[s.key] ?? []).length > 0).length;
       return (
         answered >= 4 &&
         hasProduct &&
         peopleCount >= MIN_PEOPLE &&
         hasLanding &&
-        highlightCount >= HIGHLIGHT_SLOTS.length
+        slotsWithShots >= HIGHLIGHT_SLOTS.length
       );
     }
     return freeText.trim().length > 30;
@@ -269,9 +299,9 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
         setError("랜딩 페이지 URL을 남겨 주세요.");
         return;
       }
-      const missing = HIGHLIGHT_SLOTS.filter((s) => !highlights[s.key]);
+      const missing = HIGHLIGHT_SLOTS.filter((s) => (highlights[s.key] ?? []).length === 0);
       if (missing.length > 0) {
-        setError(`하이라이트 4장 모두 올려 주세요. (미제출: ${missing.map((s) => s.label).join(" · ")})`);
+        setError(`하이라이트 4종 모두 1장 이상 올려 주세요. (미제출: ${missing.map((s) => s.label).join(" · ")})`);
         return;
       }
     } else if (freeText.trim().length <= 30) {
@@ -299,9 +329,7 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
             highlights,
           }
         : { kind: "free_text", text: freeText };
-      const highlightImageUrls = HIGHLIGHT_SLOTS
-        .map((s) => highlights[s.key])
-        .filter((u): u is string => !!u);
+      const highlightImageUrls = HIGHLIGHT_SLOTS.flatMap((s) => highlights[s.key] ?? []);
       const res = await fetch("/api/homework/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -520,68 +548,78 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
                 <Layers className="w-4.5 h-4.5" strokeWidth={2.25} />
               </span>
               <div className="flex-1 pt-0.5">
-                <p className={LABEL_LG}>하이라이트 4장 · 스크린샷 업로드</p>
+                <p className={LABEL_LG}>하이라이트 스크린샷 업로드</p>
                 <p className={HELP + " mt-1"}>
-                  인스타 프로필에 아래 네 하이라이트를 만든 뒤, 각 하이라이트가 잘 보이도록 프로필 화면을 캡처해 올려 주세요.
+                  네 개의 하이라이트를 만든 뒤, 각 하이라이트를 열어서 <strong>스토리 여러 장을 한 장씩 캡처</strong>해 올려 주세요. 슬롯당 최대 {MAX_HIGHLIGHT_SHOTS_PER_SLOT}장까지 가능합니다.
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-4">
               {HIGHLIGHT_SLOTS.map((s) => {
-                const url = highlights[s.key];
+                const urls = highlights[s.key] ?? [];
                 const isUploading = uploadingKey === s.key;
+                const reachedMax = urls.length >= MAX_HIGHLIGHT_SHOTS_PER_SLOT;
                 return (
-                  <div key={s.key} className="rounded-2xl border border-neutral-200/70 bg-white p-3">
-                    <p className="text-xs font-bold text-neutral-700 mb-2">{s.label}</p>
-                    {url ? (
-                      <div className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50 aspect-square">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={url} alt={s.label} className="w-full h-full object-cover" />
+                  <div key={s.key} className="rounded-2xl border border-neutral-200/70 bg-white p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-bold text-neutral-900">{s.label}</p>
+                      <p className="text-[11px] text-neutral-500">
+                        {urls.length} / {MAX_HIGHLIGHT_SHOTS_PER_SLOT} 장
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {urls.map((url, i) => (
+                        <div
+                          key={i}
+                          className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50 aspect-square"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt={`${s.label} ${i + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeHighlight(s.key, i)}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-neutral-900/80 text-white flex items-center justify-center hover:bg-neutral-900"
+                            aria-label="삭제"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          <span className="absolute bottom-1 left-1 text-[10px] font-bold bg-black/60 text-white rounded px-1.5 py-0.5">
+                            {i + 1}
+                          </span>
+                        </div>
+                      ))}
+                      {!reachedMax && (
                         <button
                           type="button"
-                          onClick={() =>
-                            setHighlights((prev) => {
-                              const next = { ...prev };
-                              delete next[s.key];
-                              return next;
-                            })
-                          }
-                          className="absolute top-1 right-1 w-7 h-7 rounded-full bg-neutral-900/80 text-white flex items-center justify-center hover:bg-neutral-900"
-                          aria-label="다시 업로드"
+                          onClick={() => fileRefs.current[s.key]?.click()}
+                          disabled={isUploading}
+                          className="aspect-square rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 text-neutral-500 hover:border-neutral-900 hover:text-neutral-900 hover:bg-white flex flex-col items-center justify-center gap-1 disabled:opacity-60 transition-colors"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          {isUploading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span className="text-[10px]">업로드 중</span>
+                            </>
+                          ) : (
+                            <>
+                              <ImagePlus className="w-4 h-4" />
+                              <span className="text-[10px]">추가</span>
+                            </>
+                          )}
                         </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => fileRefs.current[s.key]?.click()}
-                        disabled={isUploading}
-                        className="w-full aspect-square rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 text-neutral-500 hover:border-neutral-900 hover:text-neutral-900 hover:bg-white flex flex-col items-center justify-center gap-1.5 disabled:opacity-60 transition-colors"
-                      >
-                        {isUploading ? (
-                          <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            <span className="text-[11px]">업로드 중...</span>
-                          </>
-                        ) : (
-                          <>
-                            <ImagePlus className="w-5 h-5" />
-                            <span className="text-[11px]">스크린샷 올리기</span>
-                          </>
-                        )}
-                      </button>
-                    )}
+                      )}
+                    </div>
                     <input
                       ref={(el) => {
                         fileRefs.current[s.key] = el;
                       }}
                       type="file"
                       accept="image/*"
+                      multiple
                       className="hidden"
                       onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) uploadHighlight(s.key, f);
+                        const files = e.target.files;
+                        if (files && files.length > 0) uploadHighlight(s.key, files);
                         const el = fileRefs.current[s.key];
                         if (el) el.value = "";
                       }}
