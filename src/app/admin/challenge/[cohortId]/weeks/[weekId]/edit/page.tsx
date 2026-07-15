@@ -70,6 +70,9 @@ export default async function WeekEditPage({
           recommendedLessonIds: Array.isArray(week.recommendedLessonIds)
             ? (week.recommendedLessonIds as string[])
             : [],
+          externalVideos: Array.isArray(week.externalVideos)
+            ? (week.externalVideos as Array<{ title: string; url: string; description?: string }>)
+            : [],
         }}
         lessonChoices={lessonChoices}
       />

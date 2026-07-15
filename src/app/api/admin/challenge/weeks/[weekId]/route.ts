@@ -37,6 +37,24 @@ export async function PUT(
   if (body.zoomUrl !== undefined) data.zoomUrl = extractFirstUrl(body.zoomUrl);
   if (body.recordingUrl !== undefined) data.recordingUrl = extractFirstUrl(body.recordingUrl);
   if (body.recommendedLessonIds !== undefined) data.recommendedLessonIds = body.recommendedLessonIds;
+  if (body.externalVideos !== undefined) {
+    // 배열 · [{ title, url, description? }] 만 통과
+    const arr = Array.isArray(body.externalVideos) ? body.externalVideos : [];
+    data.externalVideos = arr
+      .map((v: unknown) => {
+        if (!v || typeof v !== "object") return null;
+        const rec = v as Record<string, unknown>;
+        const url = extractFirstUrl(rec.url);
+        if (!url) return null;
+        return {
+          title: typeof rec.title === "string" ? rec.title.slice(0, 200) : "",
+          url,
+          description:
+            typeof rec.description === "string" ? rec.description.slice(0, 500) : undefined,
+        };
+      })
+      .filter(Boolean);
+  }
   const week = await prisma.challengeWeek.update({ where: { id: weekId }, data });
   return NextResponse.json({ week });
 }

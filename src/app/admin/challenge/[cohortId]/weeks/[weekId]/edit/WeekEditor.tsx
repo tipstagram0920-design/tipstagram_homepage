@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, Plus, Trash2, Video } from "lucide-react";
 import { toKstLocalDateTime, kstLocalToUtcISO } from "@/lib/kst";
 
 interface Initial {
@@ -16,7 +16,15 @@ interface Initial {
   zoomUrl: string;
   recordingUrl: string;
   recommendedLessonIds: string[];
+  externalVideos: ExternalVideoEntry[];
 }
+
+export interface ExternalVideoEntry {
+  title: string;
+  url: string;
+  description?: string;
+}
+const EMPTY_VIDEO: ExternalVideoEntry = { title: "", url: "", description: "" };
 
 interface LessonChoice {
   id: string;
@@ -43,6 +51,9 @@ export function WeekEditor({
   const [zoomUrl, setZoomUrl] = useState(initial.zoomUrl);
   const [recordingUrl, setRecordingUrl] = useState(initial.recordingUrl);
   const [selectedLessons, setSelectedLessons] = useState<string[]>(initial.recommendedLessonIds);
+  const [externalVideos, setExternalVideos] = useState<ExternalVideoEntry[]>(
+    initial.externalVideos.length > 0 ? initial.externalVideos : []
+  );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -71,6 +82,7 @@ export function WeekEditor({
           zoomUrl,
           recordingUrl,
           recommendedLessonIds: selectedLessons,
+          externalVideos: externalVideos.filter((v) => v.url.trim()),
         }),
       });
       const data = await res.json().catch(() => ({}));

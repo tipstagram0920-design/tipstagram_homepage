@@ -602,13 +602,14 @@ model ChallengeWeek {
   weekIndex            Int // 1~5
   title                String
   description          String   @default("") @db.Text // 이번 주 안내 (HTML)
-  homeworkPrompt       String   @default("") @db.Text // 이번 주 숙제 프롬프트
+  homeworkPrompt       String   @default("") @db.Text // 팁스타그램의 편지 본문
   openAt               DateTime
   homeworkDueAt        DateTime
   liveAt               DateTime?
   zoomUrl              String?
   recordingUrl         String?
   recommendedLessonIds Json? // marketing-booster lesson id 배열
+  externalVideos       Json? // 참고 영상 배열: [{ title, url, description? }]
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
@@ -632,6 +633,7 @@ model HomeworkSubmission {
   status       String    @default("submitted") // submitted | feedback_given
   submittedAt  DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  feedbackJson Json? // 5블록 원본 구조 (customerFeedback · productFeedback · profileLines · viralReels · recommendedAccounts · categoryHints)
   feedbackHtml String?   @db.Text
   feedbackBy   String? // admin userId
   feedbackAt   DateTime?
