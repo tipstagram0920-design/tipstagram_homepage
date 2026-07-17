@@ -610,6 +610,7 @@ model ChallengeWeek {
   recordingUrl         String?
   recommendedLessonIds Json? // marketing-booster lesson id 배열
   externalVideos       Json? // 참고 영상 배열: [{ title, url, description? }]
+  materials            Json? // 강의 자료 배열: [{ title, url, filename, size? }]
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

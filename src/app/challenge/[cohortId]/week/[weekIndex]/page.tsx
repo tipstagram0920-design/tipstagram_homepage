@@ -17,6 +17,9 @@ import {
   Mail,
   PlaySquare,
   Calendar,
+  FileText,
+  Download,
+  Settings2,
 } from "lucide-react";
 import { HomeworkForm } from "./HomeworkForm";
 import type { LucideIcon } from "lucide-react";
@@ -75,8 +78,9 @@ export default async function ChallengeWeekPage({
     redirect(`/login?redirect=/challenge/${cohortId}/week/${idx}`);
   }
 
+  const isAdmin = (session.user as { role?: string }).role === "ADMIN";
   const enrolled = await assertCohortEnrollment(session.user.id, cohortId);
-  if (!enrolled) notFound();
+  if (!enrolled && !isAdmin) notFound();
 
   const week = await prisma.challengeWeek.findFirst({
     where: { cohortId, weekIndex: idx },
@@ -135,6 +139,10 @@ export default async function ChallengeWeekPage({
     ? (week.externalVideos as Array<{ title: string; url: string; description?: string }>)
     : [];
 
+  const materials = Array.isArray(week.materials)
+    ? (week.materials as Array<{ title: string; url: string; filename: string; size?: number }>)
+    : [];
+
   const recordingEmbed = detectEmbed(week.recordingUrl);
 
   return (
@@ -154,12 +162,22 @@ export default async function ChallengeWeekPage({
         />
 
         <div className="relative max-w-2xl mx-auto px-4 sm:px-6 pt-20 pb-24">
-          <Link
-            href={`/challenge/${cohortId}`}
-            className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-800 mb-4"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" /> 챌린지 대시보드
-          </Link>
+          <div className="flex items-center justify-between mb-4">
+            <Link
+              href={`/challenge/${cohortId}`}
+              className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-800"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> 챌린지 대시보드
+            </Link>
+            {isAdmin && (
+              <Link
+                href={`/admin/challenge/${cohortId}/weeks/${week.id}/edit`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800"
+              >
+                <Settings2 className="w-3.5 h-3.5" /> 이 주차 편집 (관리자)
+              </Link>
+            )}
+          </div>
 
           {/* Hero 카드 */}
           <div className="rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] p-8 sm:p-10 text-center mb-8">
@@ -219,7 +237,51 @@ export default async function ChallengeWeekPage({
             )}
           </section>
 
-          {/* 2. 참고 영상 */}
+          {/* 2. 강의 자료 다운로드 */}
+          <section className="mb-10">
+            <SectionHeader icon={FileText} title="강의 자료" gradient="bg-gradient-to-br from-emerald-500 to-teal-600" />
+            {materials.length === 0 ? (
+              <div className="rounded-3xl border border-neutral-200/70 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-6 text-center text-sm text-neutral-500">
+                아직 강의 자료가 업로드되지 않았어요. 준비되는 대로 여기에서 다운로드할 수 있어요.
+              </div>
+            ) : (
+              <div className="rounded-3xl bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+                {materials.map((m, i) => {
+                  const isLast = i === materials.length - 1;
+                  const downloadUrl =
+                    m.url + (m.url.includes("?") ? "&" : "?") + "download=" + encodeURIComponent(m.filename || m.title || "자료");
+                  return (
+                    <a
+                      key={i}
+                      href={downloadUrl}
+                      className={
+                        "flex items-center gap-4 px-5 py-4 hover:bg-neutral-50/80 transition-colors " +
+                        (isLast ? "" : "border-b border-neutral-200/70")
+                      }
+                    >
+                      <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(13,148,136,0.4)]">
+                        <FileText className="w-4.5 h-4.5" strokeWidth={2.25} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-neutral-900 truncate">
+                          {m.title || m.filename}
+                        </p>
+                        <p className="text-[11.5px] text-neutral-500 mt-0.5 truncate">
+                          {m.filename}
+                          {m.size ? ` · ${m.size < 1024 * 1024 ? Math.round(m.size / 1024) + "KB" : (m.size / (1024 * 1024)).toFixed(1) + "MB"}` : ""}
+                        </p>
+                      </div>
+                      <span className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-900 text-white text-xs font-bold">
+                        <Download className="w-3.5 h-3.5" /> 다운로드
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* 3. 참고 영상 */}
           {externalVideos.length > 0 && (
             <section className="mb-10">
               <SectionHeader icon={PlaySquare} title="참고 영상" gradient="bg-gradient-to-br from-rose-500 to-red-600" />
@@ -258,7 +320,7 @@ export default async function ChallengeWeekPage({
             </section>
           )}
 
-          {/* 3. 추천 강의 */}
+          {/* 4. 추천 강의 */}
           {recommendedSorted.length > 0 && (
             <section className="mb-10">
               <SectionHeader icon={BookOpen} title="이번 주 볼 강의" gradient="bg-gradient-to-br from-amber-500 to-orange-600" />
@@ -295,7 +357,7 @@ export default async function ChallengeWeekPage({
             </section>
           )}
 
-          {/* 4. 팁스타그램의 편지 */}
+          {/* 5. 팁스타그램의 편지 */}
           {week.homeworkPrompt && (
             <section id="letter" className="mb-10 scroll-mt-24">
               <SectionHeader icon={Mail} title="팁스타그램의 편지" gradient="bg-gradient-to-br from-violet-500 to-purple-600" />
@@ -307,7 +369,7 @@ export default async function ChallengeWeekPage({
             </section>
           )}
 
-          {/* 5. 숙제 */}
+          {/* 6. 숙제 */}
           <section id="homework" className="mb-6 scroll-mt-24">
             <SectionHeader icon={PenSquare} title="이번 주 숙제" gradient="bg-gradient-to-br from-neutral-800 to-neutral-900" />
 

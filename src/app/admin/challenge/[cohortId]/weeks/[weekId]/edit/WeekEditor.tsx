@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Check, Plus, Trash2, Video } from "lucide-react";
+import { Loader2, Check, Plus, Trash2, Video, FileText, Upload } from "lucide-react";
 import { toKstLocalDateTime, kstLocalToUtcISO } from "@/lib/kst";
 
 interface Initial {
@@ -17,6 +17,7 @@ interface Initial {
   recordingUrl: string;
   recommendedLessonIds: string[];
   externalVideos: ExternalVideoEntry[];
+  materials: MaterialEntry[];
 }
 
 export interface ExternalVideoEntry {
@@ -25,6 +26,19 @@ export interface ExternalVideoEntry {
   description?: string;
 }
 const EMPTY_VIDEO: ExternalVideoEntry = { title: "", url: "", description: "" };
+
+export interface MaterialEntry {
+  title: string;
+  url: string;
+  filename: string;
+  size?: number;
+}
+
+function formatBytes(n?: number) {
+  if (!n || n <= 0) return "";
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)}KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)}MB`;
+}
 
 interface LessonChoice {
   id: string;
@@ -54,9 +68,35 @@ export function WeekEditor({
   const [externalVideos, setExternalVideos] = useState<ExternalVideoEntry[]>(
     initial.externalVideos.length > 0 ? initial.externalVideos : []
   );
+  const [materials, setMaterials] = useState<MaterialEntry[]>(initial.materials);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+
+  const uploadMaterial = async (file: File) => {
+    setError("");
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) {
+        setError(data.error || "파일 업로드에 실패했어요.");
+        return;
+      }
+      const baseName = file.name.replace(/\.[^.]+$/, "");
+      setMaterials((prev) => [
+        ...prev,
+        { title: baseName, url: data.url, filename: file.name, size: file.size },
+      ]);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const toggleLesson = (id: string) => {
     setSelectedLessons((prev) =>
@@ -83,6 +123,7 @@ export function WeekEditor({
           recordingUrl,
           recommendedLessonIds: selectedLessons,
           externalVideos: externalVideos.filter((v) => v.url.trim()),
+          materials: materials.filter((m) => m.url.trim()),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -211,6 +252,81 @@ export function WeekEditor({
             녹화본이 새로 저장되면 참여자에게 자동으로 &quot;녹화본이 올라왔어요&quot; 이메일이 발송됩니다.
           </p>
         </div>
+      </section>
+
+      <section className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-4">
+        <h2 className="text-base font-bold text-neutral-800">강의 자료 (PPT 등)</h2>
+        <p className="text-xs text-neutral-500">
+          업로드한 파일은 참여자 주차 페이지에 &quot;강의 자료&quot; 다운로드 버튼으로 노출됩니다.
+        </p>
+
+        {materials.length > 0 && (
+          <div className="space-y-2">
+            {materials.map((m, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50"
+              >
+                <FileText className="w-4 h-4 text-neutral-400 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <input
+                    type="text"
+                    value={m.title}
+                    onChange={(e) =>
+                      setMaterials((prev) =>
+                        prev.map((x, xi) => (xi === i ? { ...x, title: e.target.value } : x))
+                      )
+                    }
+                    placeholder="자료 제목 (참여자에게 보이는 이름)"
+                    className="w-full bg-transparent text-sm font-medium text-neutral-800 focus:outline-none"
+                  />
+                  <p className="text-[11px] text-neutral-400 truncate">
+                    {m.filename}
+                    {m.size ? ` · ${formatBytes(m.size)}` : ""}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMaterials((prev) => prev.filter((_, xi) => xi !== i))}
+                  className="shrink-0 p-1.5 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50"
+                  aria-label="자료 삭제"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".ppt,.pptx,.pdf,.key,.zip,.doc,.docx,.xls,.xlsx,.hwp"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) uploadMaterial(f);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-neutral-300 text-sm font-semibold text-neutral-600 hover:border-pink-400 hover:text-pink-600 disabled:opacity-50"
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" /> 업로드 중…
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4" /> 파일 업로드
+            </>
+          )}
+        </button>
+        <p className="text-xs text-neutral-400">
+          업로드 후 반드시 아래 <strong>저장</strong> 버튼을 눌러야 참여자에게 반영됩니다.
+        </p>
       </section>
 
       <section className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-4">

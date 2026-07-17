@@ -148,8 +148,8 @@ export default async function ChallengeDashboardPage({
                   </h2>
                 </div>
               </div>
-              <div className="text-[13px] text-neutral-600 mb-5 inline-flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-neutral-400" />
+              <div className="text-[13px] text-neutral-600 mb-5 flex items-center gap-1.5 flex-wrap">
+                <Calendar className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                 <span>오픈 {formatKstHuman(currentWeek.openAt)}</span>
                 <span className="mx-1 text-neutral-300">·</span>
                 <span>마감 {formatKstHuman(currentWeek.homeworkDueAt)}</span>
