@@ -69,15 +69,21 @@ export async function POST(req: NextRequest) {
   if (week.openAt.getTime() > now.getTime()) {
     return NextResponse.json({ error: "아직 이 주차가 오픈되지 않았어요." }, { status: 400 });
   }
-
-  // 한 번 제출한 숙제는 수정 불가 (읽기 전용). 재제출 시도 차단.
+  // 마감이 지나면 제출·수정 모두 잠금 (이 시점 이후 강사 피드백 대상 스냅샷 고정)
+  if (week.homeworkDueAt.getTime() <= now.getTime()) {
+    return NextResponse.json(
+      { error: "숙제 마감이 지나 더 이상 제출·수정할 수 없어요." },
+      { status: 409 }
+    );
+  }
+  // 마감 전이어도 이미 피드백을 받은 숙제는 잠금 (피드백 후 수정 방지)
   const already = await prisma.homeworkSubmission.findUnique({
     where: { weekId_userId: { weekId, userId: session.user.id } },
-    select: { id: true },
+    select: { id: true, feedbackAt: true },
   });
-  if (already) {
+  if (already?.feedbackAt) {
     return NextResponse.json(
-      { error: "이미 제출한 숙제는 수정할 수 없어요." },
+      { error: "피드백을 받은 숙제는 수정할 수 없어요." },
       { status: 409 }
     );
   }

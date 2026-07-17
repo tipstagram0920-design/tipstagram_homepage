@@ -69,6 +69,8 @@ export default async function CohortDetailPage({
 
   const now = new Date();
   const openedWeeks = cohort.weeks.filter((w) => w.openAt.getTime() <= now.getTime());
+  // 제출·피드백 리뷰 진입용: 가장 최근 오픈된 주차
+  const reviewWeek = openedWeeks[openedWeeks.length - 1] ?? null;
 
   return (
     <div>
@@ -86,12 +88,14 @@ export default async function CohortDetailPage({
             {cohort.productSlug} · Week 1 오픈 {formatKstHuman(cohort.week1StartAt)}
           </p>
         </div>
-        <Link
-          href={`/admin/challenge/${cohort.id}/submissions`}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 text-white text-sm font-bold hover:bg-neutral-800"
-        >
-          <MessageSquareText className="w-4 h-4" /> 제출 리스트
-        </Link>
+        {reviewWeek && (
+          <Link
+            href={`/admin/challenge/${cohort.id}/weeks/${reviewWeek.id}/submissions`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-900 text-white text-sm font-bold hover:bg-neutral-800"
+          >
+            <MessageSquareText className="w-4 h-4" /> 제출 · 피드백
+          </Link>
+        )}
       </div>
 
       {/* KPI */}
@@ -157,7 +161,13 @@ export default async function CohortDetailPage({
                   </th>
                   {openedWeeks.map((w) => (
                     <th key={w.id} className="font-semibold text-neutral-500 text-xs px-2 py-3 text-center whitespace-nowrap">
-                      W{w.weekIndex}
+                      <Link
+                        href={`/admin/challenge/${cohort.id}/weeks/${w.id}/submissions`}
+                        className="hover:text-pink-600 hover:underline"
+                        title={`Week ${w.weekIndex} 제출·피드백`}
+                      >
+                        W{w.weekIndex}
+                      </Link>
                     </th>
                   ))}
                   <th className="font-semibold text-neutral-500 text-xs px-3 py-3 text-center whitespace-nowrap">

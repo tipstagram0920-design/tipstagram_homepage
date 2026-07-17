@@ -119,6 +119,10 @@ export default async function ChallengeWeekPage({
     where: { weekId_userId: { weekId: week.id, userId: session.user.id } },
   });
 
+  // 마감이 지났거나 이미 피드백을 받았으면 수정 잠금 (읽기 전용)
+  const isPastDue = week.homeworkDueAt.getTime() <= now.getTime();
+  const locked = isPastDue || !!mySubmission?.feedbackAt;
+
   const recommendedLessonIds =
     Array.isArray(week.recommendedLessonIds) ? (week.recommendedLessonIds as string[]) : [];
   const recommendedLessons =
@@ -386,9 +390,15 @@ export default async function ChallengeWeekPage({
               </div>
             )}
 
+            {mySubmission && !locked && (
+              <p className="text-xs text-neutral-500 bg-neutral-50 border border-neutral-200/70 rounded-xl px-4 py-2.5 mb-4 inline-flex items-center gap-1.5">
+                <PenSquare className="w-3.5 h-3.5 text-neutral-500" />
+                마감({formatKstHuman(week.homeworkDueAt)}) 전까지 자유롭게 수정할 수 있어요.
+              </p>
+            )}
             <div className="rounded-3xl bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-6 sm:p-7">
-              {mySubmission ? (
-                // 이미 제출한 숙제는 읽기 전용으로 다시 볼 수 있음 (수정 불가)
+              {mySubmission && locked ? (
+                // 마감·피드백 이후에는 읽기 전용으로 다시 볼 수 있음 (수정 불가)
                 <SubmissionView
                   content={mySubmission.content}
                   formData={mySubmission.formData}
@@ -401,13 +411,24 @@ export default async function ChallengeWeekPage({
                   cohortId={cohortId}
                   weekId={week.id}
                   weekIndex={week.weekIndex}
-                  initial={null}
+                  initial={
+                    mySubmission
+                      ? {
+                          content: mySubmission.content,
+                          formData: mySubmission.formData,
+                          imageUrls: mySubmission.imageUrls,
+                          instagramUrl: mySubmission.instagramUrl ?? "",
+                          submittedAt: mySubmission.submittedAt.toISOString(),
+                          hasFeedback: !!mySubmission.feedbackAt,
+                        }
+                      : null
+                  }
                 />
               )}
             </div>
           </section>
 
-          {mySubmission && !mySubmission.feedbackAt && (
+          {mySubmission && locked && !mySubmission.feedbackAt && (
             <p className="text-center text-xs text-neutral-500 mt-4 inline-flex items-center gap-1.5 justify-center w-full">
               <CheckCircle2 className="w-3.5 h-3.5 text-neutral-700" />
               제출 완료 · 강사가 확인하는 즉시 이메일로 피드백을 알려 드려요

@@ -6,10 +6,27 @@ import { Loader2, Plus, Trash2, Instagram, CheckCircle2, Link as LinkIcon, Image
 
 interface Initial {
   content: string;
+  formData?: unknown;
   imageUrls: string[];
   instagramUrl: string;
   submittedAt: string;
   hasFeedback: boolean;
+}
+
+// week1 제출 formData에서 프리필용 값 안전 추출
+interface Week1FormData {
+  kind?: string;
+  products?: ProductEntry[];
+  answers?: QAnswers;
+  people?: PersonEntry[];
+  landingUrl?: string;
+  highlights?: HighlightShots;
+}
+function readWeek1FormData(formData: unknown): Week1FormData | null {
+  if (!formData || typeof formData !== "object") return null;
+  const fd = formData as Week1FormData;
+  if (fd.kind !== "week1_product_customer") return null;
+  return fd;
 }
 
 interface Props {
@@ -191,15 +208,26 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
   const router = useRouter();
   const isWeek1 = weekIndex === 1;
 
-  const [products, setProducts] = useState<ProductEntry[]>([{ ...EMPTY_PRODUCT }]);
-  const [answers, setAnswers] = useState<QAnswers>({});
+  // 마감 전 재편집을 위해 기존 제출 내용 프리필
+  const w1Initial = readWeek1FormData(initial?.formData);
+
+  const [products, setProducts] = useState<ProductEntry[]>(
+    w1Initial?.products && w1Initial.products.length > 0
+      ? w1Initial.products.map((p) => ({ ...EMPTY_PRODUCT, ...p }))
+      : [{ ...EMPTY_PRODUCT }]
+  );
+  const [answers, setAnswers] = useState<QAnswers>(w1Initial?.answers ?? {});
   const [people, setPeople] = useState<PersonEntry[]>(
-    isWeek1 ? Array.from({ length: MIN_PEOPLE }, () => ({ ...EMPTY_PERSON })) : []
+    w1Initial?.people && w1Initial.people.length > 0
+      ? w1Initial.people.map((p) => ({ ...EMPTY_PERSON, ...p }))
+      : isWeek1
+        ? Array.from({ length: MIN_PEOPLE }, () => ({ ...EMPTY_PERSON }))
+        : []
   );
   const [freeText, setFreeText] = useState<string>(!isWeek1 ? initial?.content ?? "" : "");
   const [instagramUrl, setInstagramUrl] = useState<string>(initial?.instagramUrl ?? "");
-  const [landingUrl, setLandingUrl] = useState<string>("");
-  const [highlights, setHighlights] = useState<HighlightShots>({});
+  const [landingUrl, setLandingUrl] = useState<string>(w1Initial?.landingUrl ?? "");
+  const [highlights, setHighlights] = useState<HighlightShots>(w1Initial?.highlights ?? {});
   const [uploadingKey, setUploadingKey] = useState<HighlightKey | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -678,10 +706,10 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
       >
         {saving ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" /> 제출 중...
+            <Loader2 className="w-4 h-4 animate-spin" /> 저장 중...
           </>
         ) : initial ? (
-          "다시 제출하기 (덮어쓰기)"
+          "수정 저장하기"
         ) : (
           "숙제 제출하기"
         )}
@@ -689,7 +717,10 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
 
       {savedAt && (
         <p className="text-center text-sm text-neutral-900 inline-flex items-center gap-1.5 justify-center w-full">
-          <CheckCircle2 className="w-4 h-4" /> 제출되었습니다. 강사가 확인하면 이메일로 알려드려요.
+          <CheckCircle2 className="w-4 h-4" />
+          {initial
+            ? "저장되었습니다. 마감 전까지 계속 수정할 수 있어요."
+            : "제출되었습니다. 마감 후 강사 피드백을 이메일로 알려드려요."}
         </p>
       )}
 

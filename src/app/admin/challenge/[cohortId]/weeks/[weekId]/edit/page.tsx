@@ -57,6 +57,8 @@ export default async function WeekEditPage({
         오픈 시각·라이브 URL·숙제 프롬프트를 세팅해 두면 참여자에게 자동으로 안내됩니다.
       </p>
       <WeekEditor
+        cohortName={week.cohort.name}
+        weekIndex={week.weekIndex}
         initial={{
           id: week.id,
           title: week.title,

@@ -2,8 +2,25 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Check, Plus, Trash2, Video, FileText, Upload } from "lucide-react";
+import { Loader2, Check, Plus, Trash2, Video, FileText, Upload, MessageCircle, Copy } from "lucide-react";
 import { toKstLocalDateTime, kstLocalToUtcISO } from "@/lib/kst";
+
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+// datetime-local(KST 기준 "YYYY-MM-DDTHH:mm") → "M월 D일(요일) 오전/오후 h시[ mm분]"
+function formatKstLocalHuman(local: string): string {
+  const m = local.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!m) return "";
+  const [, y, mo, d, hh, mm] = m;
+  const year = Number(y), month = Number(mo), day = Number(d);
+  const hour = Number(hh), minute = Number(mm);
+  const weekday = WEEKDAYS[new Date(year, month - 1, day).getDay()];
+  const ampm = hour < 12 ? "오전" : "오후";
+  let h12 = hour % 12;
+  if (h12 === 0) h12 = 12;
+  const timeStr = minute === 0 ? `${ampm} ${h12}시` : `${ampm} ${h12}시 ${minute}분`;
+  return `${month}월 ${day}일(${weekday}) ${timeStr}`;
+}
 
 interface Initial {
   id: string;
@@ -49,11 +66,16 @@ interface LessonChoice {
 export function WeekEditor({
   initial,
   lessonChoices,
+  cohortName,
+  weekIndex,
 }: {
   initial: Initial;
   lessonChoices: LessonChoice[];
+  cohortName: string;
+  weekIndex: number;
 }) {
   const router = useRouter();
+  const [kakaoCopied, setKakaoCopied] = useState(false);
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description);
   const [homeworkPrompt, setHomeworkPrompt] = useState(initial.homeworkPrompt);
@@ -136,6 +158,32 @@ export function WeekEditor({
       setTimeout(() => setSaved(false), 2500);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // 단톡방에 붙여넣을 라이브 참여 안내 문구 (현재 입력값 기준 실시간 생성)
+  const liveHuman = liveAt ? formatKstLocalHuman(liveAt) : "";
+  const liveKakaoMessage = liveAt
+    ? [
+        `[${cohortName}] Week ${weekIndex} 라이브 안내 🎥`,
+        ``,
+        `📅 ${liveHuman}`,
+        `🔗 접속 링크`,
+        zoomUrl.trim() || "(줌 링크를 먼저 입력해 주세요)",
+        ``,
+        `시간 맞춰 위 링크로 들어와 주세요.`,
+        `오늘 라이브에서 만나요! 💪`,
+      ].join("\n")
+    : "";
+
+  const copyLiveKakao = async () => {
+    if (!liveKakaoMessage) return;
+    try {
+      await navigator.clipboard.writeText(liveKakaoMessage);
+      setKakaoCopied(true);
+      setTimeout(() => setKakaoCopied(false), 2000);
+    } catch {
+      setError("복사에 실패했어요. 문구를 직접 선택해 복사해 주세요.");
     }
   };
 
@@ -252,6 +300,44 @@ export function WeekEditor({
             녹화본이 새로 저장되면 참여자에게 자동으로 &quot;녹화본이 올라왔어요&quot; 이메일이 발송됩니다.
           </p>
         </div>
+      </section>
+
+      {/* 단톡방 라이브 참여 안내 문구 */}
+      <section className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-4">
+        <h2 className="text-base font-bold text-neutral-800 inline-flex items-center gap-2">
+          <MessageCircle className="w-4 h-4 text-yellow-500" /> 라이브 참여 안내 (카톡 문구)
+        </h2>
+        <p className="text-xs text-neutral-500">
+          위 <strong>라이브 시각</strong>과 <strong>Zoom URL</strong>로 문구가 자동 생성됩니다. 복사해서 단톡방에 붙여넣으세요.
+          {" "}(값을 바꾸면 문구도 즉시 바뀌어요. 저장과 무관하게 복사 가능.)
+        </p>
+
+        {liveAt ? (
+          <>
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-800 whitespace-pre-wrap leading-relaxed">
+              {liveKakaoMessage}
+            </div>
+            <button
+              type="button"
+              onClick={copyLiveKakao}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-semibold text-neutral-700 hover:border-pink-400 hover:text-pink-600"
+            >
+              {kakaoCopied ? (
+                <>
+                  <Check className="w-4 h-4 text-green-600" /> 복사됨
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" /> 카톡 문구 복사
+                </>
+              )}
+            </button>
+          </>
+        ) : (
+          <p className="text-sm text-neutral-400 bg-neutral-50 rounded-xl p-4 border border-neutral-100">
+            위 &quot;라이브 (선택)&quot;에서 <strong>라이브 시각</strong>을 설정하면 여기에 카톡 안내 문구가 자동으로 만들어져요.
+          </p>
+        )}
       </section>
 
       <section className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-4">
