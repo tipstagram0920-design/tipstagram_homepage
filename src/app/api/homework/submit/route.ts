@@ -70,6 +70,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "아직 이 주차가 오픈되지 않았어요." }, { status: 400 });
   }
 
+  // 한 번 제출한 숙제는 수정 불가 (읽기 전용). 재제출 시도 차단.
+  const already = await prisma.homeworkSubmission.findUnique({
+    where: { weekId_userId: { weekId, userId: session.user.id } },
+    select: { id: true },
+  });
+  if (already) {
+    return NextResponse.json(
+      { error: "이미 제출한 숙제는 수정할 수 없어요." },
+      { status: 409 }
+    );
+  }
+
   const content = (body.content ?? "").toString().slice(0, MAX_TEXT);
   const instagramUrl =
     typeof body.instagramUrl === "string" && body.instagramUrl.trim()

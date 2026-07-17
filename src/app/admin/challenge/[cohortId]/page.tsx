@@ -22,17 +22,45 @@ export default async function CohortDetailPage({
       },
       enrollments: {
         orderBy: { createdAt: "desc" },
-        include: { user: { select: { name: true, email: true } } },
+        include: { user: { select: { id: true, name: true, email: true } } },
       },
     },
   });
   if (!cohort) notFound();
 
-  const purchasers = await prisma.purchase.count({
+  // 구매자(자동 참여) — 유저 정보까지
+  const purchaseRows = await prisma.purchase.findMany({
     where: { refundedAt: null, product: { slug: cohort.productSlug } },
+    select: { user: { select: { id: true, name: true, email: true } } },
   });
-  // 구매자 + 비밀번호로 입장한 참여자 (합산이 실제 참여 인원)
-  const enrolled = purchasers + cohort.enrollments.length;
+  const purchasers = purchaseRows.length;
+  // 구매자 + 비밀번호로 입장한 참여자 (합산이 실제 참여 인원, userId로 중복 제거)
+  const rosterMap = new Map<
+    string,
+    { id: string; name: string | null; email: string; via: "purchase" | "password" }
+  >();
+  for (const p of purchaseRows) {
+    if (p.user) rosterMap.set(p.user.id, { ...p.user, via: "purchase" });
+  }
+  for (const e of cohort.enrollments) {
+    if (!rosterMap.has(e.user.id)) {
+      rosterMap.set(e.user.id, { ...e.user, via: "password" });
+    }
+  }
+  const roster = Array.from(rosterMap.values());
+  const enrolled = roster.length;
+
+  // 참여자별 주차별 제출 현황
+  const allSubmissions = await prisma.homeworkSubmission.findMany({
+    where: { week: { cohortId } },
+    select: { userId: true, feedbackAt: true, week: { select: { weekIndex: true } } },
+  });
+  // userId -> weekIndex -> "submitted" | "feedback"
+  const statusMap = new Map<string, Map<number, "submitted" | "feedback">>();
+  for (const s of allSubmissions) {
+    if (!statusMap.has(s.userId)) statusMap.set(s.userId, new Map());
+    statusMap.get(s.userId)!.set(s.week.weekIndex, s.feedbackAt ? "feedback" : "submitted");
+  }
 
   const totalSubmissions = cohort.weeks.reduce((sum, w) => sum + w._count.submissions, 0);
   const pendingFeedback = await prisma.homeworkSubmission.count({
@@ -40,6 +68,7 @@ export default async function CohortDetailPage({
   });
 
   const now = new Date();
+  const openedWeeks = cohort.weeks.filter((w) => w.openAt.getTime() <= now.getTime());
 
   return (
     <div>
@@ -88,6 +117,114 @@ export default async function CohortDetailPage({
             {pendingFeedback}
           </p>
         </div>
+      </div>
+
+      {/* 참여자별 숙제 현황 */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+          <h2 className="text-lg font-bold text-neutral-900">참여자별 숙제 현황</h2>
+          <div className="flex items-center gap-3 text-[11px] text-neutral-500">
+            <span className="inline-flex items-center gap-1">
+              <span className="w-4 h-4 rounded-md bg-neutral-900 text-white inline-flex items-center justify-center text-[9px] font-bold">✓</span>
+              제출
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-4 h-4 rounded-md bg-emerald-500 text-white inline-flex items-center justify-center text-[9px] font-bold">★</span>
+              피드백완료
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-4 h-4 rounded-md border border-neutral-200 bg-white inline-flex items-center justify-center text-neutral-300 text-[9px]">·</span>
+              미제출
+            </span>
+          </div>
+        </div>
+
+        {roster.length === 0 ? (
+          <p className="text-sm text-neutral-400 bg-neutral-50 rounded-2xl p-5 border border-neutral-100">
+            아직 참여자가 없어요. 위에서 입장 비밀번호를 공지하거나 구매가 연결되면 여기에 표시됩니다.
+          </p>
+        ) : openedWeeks.length === 0 ? (
+          <p className="text-sm text-neutral-400 bg-neutral-50 rounded-2xl p-5 border border-neutral-100">
+            아직 오픈된 주차가 없어요.
+          </p>
+        ) : (
+          <div className="rounded-2xl border border-neutral-100 bg-white overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-neutral-100">
+                  <th className="text-left font-semibold text-neutral-500 text-xs px-4 py-3 sticky left-0 bg-white">
+                    참여자
+                  </th>
+                  {openedWeeks.map((w) => (
+                    <th key={w.id} className="font-semibold text-neutral-500 text-xs px-2 py-3 text-center whitespace-nowrap">
+                      W{w.weekIndex}
+                    </th>
+                  ))}
+                  <th className="font-semibold text-neutral-500 text-xs px-3 py-3 text-center whitespace-nowrap">
+                    완료율
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {roster.map((u) => {
+                  const userStatus = statusMap.get(u.id);
+                  const doneCount = openedWeeks.filter((w) => userStatus?.has(w.weekIndex)).length;
+                  return (
+                    <tr key={u.id} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50">
+                      <td className="px-4 py-2.5 sticky left-0 bg-white">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-neutral-900 truncate flex items-center gap-1.5">
+                            {u.name || "이름 없음"}
+                            {u.via === "password" && (
+                              <span className="text-[9px] font-bold text-pink-600 bg-pink-50 rounded px-1 py-0.5 shrink-0">
+                                비번
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-[11px] text-neutral-400 truncate">{u.email}</p>
+                        </div>
+                      </td>
+                      {openedWeeks.map((w) => {
+                        const st = userStatus?.get(w.weekIndex);
+                        return (
+                          <td key={w.id} className="px-2 py-2.5 text-center">
+                            {st === "feedback" ? (
+                              <span className="inline-flex w-6 h-6 rounded-md bg-emerald-500 text-white items-center justify-center text-xs font-bold" title="피드백 완료">
+                                ★
+                              </span>
+                            ) : st === "submitted" ? (
+                              <span className="inline-flex w-6 h-6 rounded-md bg-neutral-900 text-white items-center justify-center text-xs font-bold" title="제출됨">
+                                ✓
+                              </span>
+                            ) : (
+                              <span className="inline-flex w-6 h-6 rounded-md border border-neutral-200 bg-white text-neutral-300 items-center justify-center text-xs" title="미제출">
+                                ·
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-2.5 text-center">
+                        <span
+                          className={
+                            "text-xs font-bold " +
+                            (doneCount === openedWeeks.length
+                              ? "text-emerald-600"
+                              : doneCount === 0
+                                ? "text-neutral-300"
+                                : "text-neutral-700")
+                          }
+                        >
+                          {doneCount}/{openedWeeks.length}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* 주차 리스트 */}

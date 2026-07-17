@@ -22,6 +22,7 @@ import {
   Settings2,
 } from "lucide-react";
 import { HomeworkForm } from "./HomeworkForm";
+import { SubmissionView } from "./SubmissionView";
 import type { LucideIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -386,22 +387,23 @@ export default async function ChallengeWeekPage({
             )}
 
             <div className="rounded-3xl bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-6 sm:p-7">
-              <HomeworkForm
-                cohortId={cohortId}
-                weekId={week.id}
-                weekIndex={week.weekIndex}
-                initial={
-                  mySubmission
-                    ? {
-                        content: mySubmission.content,
-                        imageUrls: mySubmission.imageUrls,
-                        instagramUrl: mySubmission.instagramUrl ?? "",
-                        submittedAt: mySubmission.submittedAt.toISOString(),
-                        hasFeedback: !!mySubmission.feedbackAt,
-                      }
-                    : null
-                }
-              />
+              {mySubmission ? (
+                // 이미 제출한 숙제는 읽기 전용으로 다시 볼 수 있음 (수정 불가)
+                <SubmissionView
+                  content={mySubmission.content}
+                  formData={mySubmission.formData}
+                  imageUrls={mySubmission.imageUrls}
+                  instagramUrl={mySubmission.instagramUrl}
+                  submittedAt={mySubmission.submittedAt.toISOString()}
+                />
+              ) : (
+                <HomeworkForm
+                  cohortId={cohortId}
+                  weekId={week.id}
+                  weekIndex={week.weekIndex}
+                  initial={null}
+                />
+              )}
             </div>
           </section>
 
