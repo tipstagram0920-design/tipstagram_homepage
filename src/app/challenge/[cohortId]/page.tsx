@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { assertCohortEnrollment } from "@/lib/challenge-enrollment";
 import { formatKstHuman } from "@/lib/kst";
 import { CheckCircle2, Circle, Lock, Trophy, ArrowRight, MessageSquareText, Calendar } from "lucide-react";
+import { PasswordGate } from "./_components/PasswordGate";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +20,28 @@ export default async function ChallengeDashboardPage({
   const { cohortId } = await params;
   if (!session?.user?.id) redirect(`/login?redirect=/challenge/${cohortId}`);
 
+  const isAdmin = (session.user as { role?: string }).role === "ADMIN";
   const enrolled = await assertCohortEnrollment(session.user.id, cohortId);
-  if (!enrolled) notFound();
+  if (!enrolled && !isAdmin) {
+    // 아직 등록 안 됨 → 공용 비밀번호로 입장 가능한 기수면 비번 입력 화면 노출
+    const gateCohort = await prisma.challengeCohort.findUnique({
+      where: { id: cohortId },
+      select: { id: true, name: true, week1StartAt: true, accessPassword: true },
+    });
+    if (!gateCohort) notFound();
+    if (!gateCohort.accessPassword) notFound(); // 비번 미설정 = 비번 입장 불가
+    return (
+      <>
+        <Navbar />
+        <main className="relative min-h-screen bg-gradient-to-b from-neutral-100 via-neutral-50 to-white text-neutral-900">
+          <div className="max-w-md mx-auto px-4 sm:px-6 pt-32 pb-24">
+            <PasswordGate cohortId={gateCohort.id} cohortName={gateCohort.name} />
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   const cohort = await prisma.challengeCohort.findUnique({
     where: { id: cohortId },

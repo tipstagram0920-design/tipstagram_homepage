@@ -24,6 +24,10 @@ export async function PUT(
   if (typeof body.weeksTotal === "number") data.weeksTotal = Math.max(1, Math.min(12, body.weeksTotal));
   if (body.week1StartAt) data.week1StartAt = new Date(body.week1StartAt);
   if (typeof body.isActive === "boolean") data.isActive = body.isActive;
+  if (typeof body.accessPassword === "string") {
+    const pw = body.accessPassword.trim();
+    data.accessPassword = pw ? pw : null;
+  }
   const cohort = await prisma.challengeCohort.update({ where: { id: cohortId }, data });
   return NextResponse.json({ cohort });
 }

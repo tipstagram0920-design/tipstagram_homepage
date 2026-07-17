@@ -30,8 +30,14 @@ export async function assertCohortEnrollment(
     },
     select: { id: true },
   });
-  if (!purchase) return null;
-  return { cohort };
+  if (purchase) return { cohort };
+  // 구매 기록이 없어도 공용 비밀번호로 등록한 참여자면 접근 허용
+  const enrollment = await prisma.challengeEnrollment.findUnique({
+    where: { cohortId_userId: { cohortId, userId } },
+    select: { id: true },
+  });
+  if (enrollment) return { cohort };
+  return null;
 }
 
 /**
@@ -39,18 +45,32 @@ export async function assertCohortEnrollment(
  * classroom에서 "5주 챌린지 대시보드 열기" 카드 노출용.
  */
 export async function findEnrolledCohortsForUser(userId: string) {
-  const purchases = await prisma.purchase.findMany({
-    where: {
-      userId,
-      refundedAt: null,
-      product: { slug: { in: CHALLENGE_SLUGS } },
-    },
-    select: { product: { select: { slug: true } } },
-  });
+  const [purchases, enrollments] = await Promise.all([
+    prisma.purchase.findMany({
+      where: {
+        userId,
+        refundedAt: null,
+        product: { slug: { in: CHALLENGE_SLUGS } },
+      },
+      select: { product: { select: { slug: true } } },
+    }),
+    // 공용 비밀번호로 등록한 기수도 카드에 노출
+    prisma.challengeEnrollment.findMany({
+      where: { userId },
+      select: { cohortId: true },
+    }),
+  ]);
   const slugs = Array.from(new Set(purchases.map((p) => p.product.slug)));
-  if (slugs.length === 0) return [];
+  const enrolledCohortIds = enrollments.map((e) => e.cohortId);
+  if (slugs.length === 0 && enrolledCohortIds.length === 0) return [];
   return prisma.challengeCohort.findMany({
-    where: { productSlug: { in: slugs }, isActive: true },
+    where: {
+      isActive: true,
+      OR: [
+        { productSlug: { in: slugs } },
+        { id: { in: enrolledCohortIds } },
+      ],
+    },
     orderBy: { week1StartAt: "desc" },
     select: { id: true, name: true, week1StartAt: true, weeksTotal: true, productSlug: true },
   });

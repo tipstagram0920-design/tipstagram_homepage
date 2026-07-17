@@ -32,6 +32,7 @@ model User {
   posts      Post[]
   contact    Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
   homeworkSubmissions HomeworkSubmission[]
+  challengeEnrollments ChallengeEnrollment[]
 
   @@map("users")
 }
@@ -581,19 +582,36 @@ model TrackEvent {
 
 // ─── 5주 챌린지 (기수·주차·숙제·피드백) ────────────────────────────────────
 model ChallengeCohort {
-  id           String   @id @default(cuid())
-  productSlug  String   // "5-week-challenge" | "5-week-challenge-plus-consulting"
-  name         String   // "2026년 7월 기수"
-  week1StartAt DateTime // Week 1 오픈 시각 (UTC 저장, KST 09:00 등)
-  weeksTotal   Int      @default(5)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  productSlug    String   // "5-week-challenge" | "5-week-challenge-plus-consulting"
+  name           String   // "2026년 7월 기수"
+  week1StartAt   DateTime // Week 1 오픈 시각 (UTC 저장, KST 09:00 등)
+  weeksTotal     Int      @default(5)
+  isActive       Boolean  @default(true)
+  accessPassword String? // 공용 입장 비밀번호. 참여자가 최초 1회 입력 → 등록됨. 비우면 비번 입장 비활성
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  weeks ChallengeWeek[]
+  weeks       ChallengeWeek[]
+  enrollments ChallengeEnrollment[]
 
   @@index([productSlug, week1StartAt])
   @@map("challenge_cohorts")
+}
+
+// 공용 비밀번호로 입장한 참여자 명단 (구매 없이 챌린지 접근 허용)
+model ChallengeEnrollment {
+  id        String   @id @default(cuid())
+  cohortId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  cohort ChallengeCohort @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cohortId, userId])
+  @@index([userId])
+  @@map("challenge_enrollments")
 }
 
 model ChallengeWeek {

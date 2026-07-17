@@ -39,23 +39,29 @@ export async function POST(req: NextRequest) {
   // 주차 조회 + 마감 여부 확인
   const week = await prisma.challengeWeek.findUnique({
     where: { id: weekId },
-    include: { cohort: { select: { productSlug: true, isActive: true } } },
+    include: { cohort: { select: { id: true, productSlug: true, isActive: true } } },
   });
   if (!week) return NextResponse.json({ error: "주차를 찾을 수 없어요." }, { status: 404 });
   if (!week.cohort.isActive) {
     return NextResponse.json({ error: "이 기수는 비활성화되어 있어요." }, { status: 403 });
   }
 
-  // 참여자 게이트
-  const enrolled = await prisma.purchase.findFirst({
-    where: {
-      userId: session.user.id,
-      refundedAt: null,
-      product: { slug: week.cohort.productSlug },
-    },
-    select: { id: true },
-  });
-  if (!enrolled) {
+  // 참여자 게이트 — 구매 또는 공용 비밀번호 등록 중 하나라도 있으면 허용
+  const [purchase, enrollment] = await Promise.all([
+    prisma.purchase.findFirst({
+      where: {
+        userId: session.user.id,
+        refundedAt: null,
+        product: { slug: week.cohort.productSlug },
+      },
+      select: { id: true },
+    }),
+    prisma.challengeEnrollment.findUnique({
+      where: { cohortId_userId: { cohortId: week.cohort.id, userId: session.user.id } },
+      select: { id: true },
+    }),
+  ]);
+  if (!purchase && !enrollment) {
     return NextResponse.json({ error: "챌린지 참여자만 제출할 수 있어요." }, { status: 403 });
   }
 

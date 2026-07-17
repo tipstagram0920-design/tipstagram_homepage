@@ -30,6 +30,11 @@ export async function POST(req: NextRequest) {
   const week1 = new Date(week1StartIso);
   if (isNaN(week1.getTime())) return NextResponse.json({ error: "잘못된 날짜" }, { status: 400 });
 
+  const accessPassword =
+    typeof body.accessPassword === "string" && body.accessPassword.trim()
+      ? body.accessPassword.trim()
+      : null;
+
   const cohort = await prisma.challengeCohort.create({
     data: {
       name,
@@ -37,6 +42,7 @@ export async function POST(req: NextRequest) {
       weeksTotal,
       week1StartAt: week1,
       isActive: !!body.isActive,
+      accessPassword,
       weeks: {
         create: Array.from({ length: weeksTotal }, (_, i) => {
           const openAt = new Date(week1.getTime() + i * 7 * 24 * 60 * 60 * 1000);

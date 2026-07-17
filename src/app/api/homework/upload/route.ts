@@ -17,16 +17,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
   }
 
-  // 챌린지 계열 상품을 유효 구매한 사용자만 허용
-  const purchase = await prisma.purchase.findFirst({
-    where: {
-      userId: session.user.id,
-      refundedAt: null,
-      product: { slug: { in: ["5-week-challenge", "5-week-challenge-plus-consulting"] } },
-    },
-    select: { id: true },
-  });
-  if (!purchase) {
+  // 챌린지 계열 상품을 유효 구매했거나, 공용 비밀번호로 등록한 참여자만 허용
+  const [purchase, enrollment] = await Promise.all([
+    prisma.purchase.findFirst({
+      where: {
+        userId: session.user.id,
+        refundedAt: null,
+        product: { slug: { in: ["5-week-challenge", "5-week-challenge-plus-consulting"] } },
+      },
+      select: { id: true },
+    }),
+    prisma.challengeEnrollment.findFirst({
+      where: { userId: session.user.id },
+      select: { id: true },
+    }),
+  ]);
+  if (!purchase && !enrollment) {
     return NextResponse.json({ error: "챌린지 참여자만 업로드할 수 있어요." }, { status: 403 });
   }
 

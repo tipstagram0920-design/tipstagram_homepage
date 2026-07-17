@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatKstHuman } from "@/lib/kst";
-import { ChevronLeft, ChevronRight, Users, MessageSquareText, ExternalLink, Video } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, MessageSquareText, Video } from "lucide-react";
+import { AccessPasswordEditor } from "./_components/AccessPasswordEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -19,13 +20,19 @@ export default async function CohortDetailPage({
         orderBy: { weekIndex: "asc" },
         include: { _count: { select: { submissions: true } } },
       },
+      enrollments: {
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { name: true, email: true } } },
+      },
     },
   });
   if (!cohort) notFound();
 
-  const enrolled = await prisma.purchase.count({
+  const purchasers = await prisma.purchase.count({
     where: { refundedAt: null, product: { slug: cohort.productSlug } },
   });
+  // 구매자 + 비밀번호로 입장한 참여자 (합산이 실제 참여 인원)
+  const enrolled = purchasers + cohort.enrollments.length;
 
   const totalSubmissions = cohort.weeks.reduce((sum, w) => sum + w._count.submissions, 0);
   const pendingFeedback = await prisma.homeworkSubmission.count({
@@ -157,17 +164,52 @@ export default async function CohortDetailPage({
         })}
       </ul>
 
-      <div className="mt-8 rounded-2xl border border-neutral-100 bg-neutral-50 p-5">
-        <p className="text-xs text-neutral-500 leading-relaxed">
-          💡 참여자 페이지 URL:{" "}
-          <Link
-            href={`/challenge/${cohort.id}`}
-            className="inline-flex items-center gap-1 text-pink-600 hover:text-pink-700 font-semibold"
-          >
-            /challenge/{cohort.id} <ExternalLink className="w-3 h-3" />
-          </Link>
-          <br />
-          챌린지 상품 구매자만 접근할 수 있어요. 카톡·이메일 안내에 이 링크를 첨부해 주세요.
+      {/* 입장 비밀번호 + 참여자 명단 */}
+      <div className="mt-8">
+        <AccessPasswordEditor
+          cohortId={cohort.id}
+          cohortUrl={`/challenge/${cohort.id}`}
+          initialPassword={cohort.accessPassword ?? ""}
+        />
+      </div>
+
+      <div className="mt-6">
+        <h2 className="text-lg font-bold text-neutral-900 mb-3 inline-flex items-center gap-2">
+          <Users className="w-4 h-4" /> 비밀번호로 입장한 참여자
+          <span className="text-sm font-semibold text-neutral-400">
+            {cohort.enrollments.length}명
+          </span>
+        </h2>
+        {cohort.enrollments.length === 0 ? (
+          <p className="text-sm text-neutral-400 bg-neutral-50 rounded-2xl p-5 border border-neutral-100">
+            아직 비밀번호로 입장한 참여자가 없어요. 위 비밀번호를 카톡방에 공지하면, 로그인한 분들이
+            입력 후 자동으로 여기에 등록됩니다.
+          </p>
+        ) : (
+          <div className="rounded-2xl border border-neutral-100 bg-white overflow-hidden">
+            {cohort.enrollments.map((e, i) => (
+              <div
+                key={e.id}
+                className={
+                  "flex items-center gap-3 px-5 py-3 " +
+                  (i === cohort.enrollments.length - 1 ? "" : "border-b border-neutral-100")
+                }
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-neutral-900 truncate">
+                    {e.user.name || "이름 없음"}
+                  </p>
+                  <p className="text-xs text-neutral-500 truncate">{e.user.email}</p>
+                </div>
+                <p className="text-xs text-neutral-400 shrink-0">
+                  {formatKstHuman(e.createdAt)} 입장
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="text-xs text-neutral-400 mt-3">
+          ※ 챌린지 상품을 직접 구매한 분({purchasers}명)은 이 목록과 별개로 자동 참여됩니다.
         </p>
       </div>
     </div>
