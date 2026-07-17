@@ -9,11 +9,10 @@ const WEEK1_Q_LABELS: Record<string, string> = {
   q3_customer_problem: "Q3. 내 소비자가 지금 겪고 있는 문제·불편",
   q4_persona: "Q4. 그 사람은 누구인가요? 하루는 어떤 모습인가요?",
   q5_solution: "Q5. 나는 그 문제를 어떻게 해결하나요?",
-  q6_transformation: "Q6. 내 상품을 만난 뒤 소비자의 삶은 어떻게 바뀌나요?",
-  q7_search: "Q7. 사기 직전에 검색할 단어·질문",
-  q8_solved_experiences: "Q8. 소비자들의 문제를 해결했던 나의 경험들",
-  q9_customer_change: "Q9. 내 상품·서비스를 경험한 뒤 달라진 고객의 모습",
-  q10_unmet_problem: "Q10. 다른 판매자들이 채워주지 못하는 소비자의 문제",
+  q7_search: "Q6. 사기 직전에 검색할 단어·질문",
+  q8_solved_experiences: "Q7. 소비자들의 문제를 해결했던 나의 경험들",
+  q9_customer_change: "Q8. 내 상품·서비스를 경험한 뒤 달라진 고객의 모습",
+  q10_unmet_problem: "Q9. 다른 판매자들이 채워주지 못하는 소비자의 문제",
 };
 
 const HIGHLIGHT_LABELS: Record<string, string> = {
