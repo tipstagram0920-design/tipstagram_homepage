@@ -81,6 +81,30 @@ const WEEK1_QUESTIONS = [
     placeholder: "네이버·구글·유튜브·인스타 어디에서든 실제로 검색할 만한 실제 문장 5개 이상.",
     rows: 4,
   },
+  {
+    key: "q8_solved_experiences",
+    number: "Q8",
+    label: "소비자들의 문제를 해결했던 나의 경험들",
+    placeholder:
+      "실제로 고객·주변 사람의 문제를 해결해 준 사례를 구체적으로. 어떤 상황의 누구를, 어떻게 도왔고, 결과가 어땠는지.",
+    rows: 5,
+  },
+  {
+    key: "q9_customer_change",
+    number: "Q9",
+    label: "내 상품·서비스를 경험한 뒤 달라진 고객의 모습",
+    placeholder:
+      "고객이 겪은 변화를 Before → After로. 후기·수치·표정 변화 등 생생한 근거와 함께.",
+    rows: 5,
+  },
+  {
+    key: "q10_unmet_problem",
+    number: "Q10",
+    label: "다른 판매자들이 채워주지 못하는 소비자의 문제",
+    placeholder:
+      "경쟁 상품·다른 판매자가 놓치거나 해결하지 못하는 지점. 내가 그 빈틈을 어떻게 메우는지도 함께.",
+    rows: 5,
+  },
 ] as const;
 
 type QAnswers = Record<string, string>;
