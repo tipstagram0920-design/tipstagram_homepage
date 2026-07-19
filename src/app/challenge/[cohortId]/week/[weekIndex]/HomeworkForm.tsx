@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2, Instagram, CheckCircle2, Link as LinkIcon, ImagePlus, X, Layers, Users } from "lucide-react";
+import { Loader2, Plus, Trash2, Instagram, CheckCircle2, Link as LinkIcon, ImagePlus, X, Layers, Users, Save } from "lucide-react";
 
 interface Initial {
   content: string;
@@ -34,6 +34,8 @@ interface Props {
   weekId: string;
   weekIndex: number;
   initial: Initial | null;
+  /** 이미 정식 제출한 숙제인지 (임시저장 버튼 노출 여부 판단) */
+  alreadySubmitted?: boolean;
 }
 
 const WEEK1_QUESTIONS = [
@@ -221,7 +223,7 @@ function QHeader({
   );
 }
 
-export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
+export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubmitted }: Props) {
   const router = useRouter();
   const isWeek1 = weekIndex === 1;
 
@@ -247,8 +249,10 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
   const [highlights, setHighlights] = useState<HighlightShots>(w1Initial?.highlights ?? {});
   const [uploadingKey, setUploadingKey] = useState<HighlightKey | null>(null);
   const [saving, setSaving] = useState(false);
+  const [draftSaving, setDraftSaving] = useState(false);
   const [error, setError] = useState("");
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
   const fileRefs = useRef<Record<HighlightKey, HTMLInputElement | null>>({
     freebie: null,
     reviews: null,
@@ -322,6 +326,46 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
     return freeText.trim().length > 30;
   }, [isWeek1, answers, freeText, people, products, landingUrl, highlights]);
 
+  // 제출·임시저장 공통 payload 조립
+  const buildPayload = () => {
+    const content = assembleContent(weekIndex, products, answers, people, landingUrl, highlights, freeText);
+    const formData = isWeek1
+      ? {
+          kind: "week1_product_customer",
+          products: products.filter((p) => p.name.trim() || p.description.trim()),
+          answers,
+          people: people.filter((p) => p.name.trim() || p.instagramUrl.trim()),
+          landingUrl: landingUrl.trim(),
+          highlights,
+        }
+      : { kind: "free_text", text: freeText };
+    const highlightImageUrls = HIGHLIGHT_SLOTS.flatMap((s) => highlights[s.key] ?? []);
+    return { content, formData, imageUrls: highlightImageUrls, instagramUrl };
+  };
+
+  // 임시 저장 — 검증 없이 현재까지 작성한 내용을 저장 (미제출 상태 유지)
+  const saveDraft = async () => {
+    setError("");
+    setSavedAt(null);
+    setDraftSaving(true);
+    try {
+      const res = await fetch("/api/homework/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weekId, ...buildPayload(), draft: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "임시 저장 중 오류가 발생했어요.");
+        return;
+      }
+      setDraftSavedAt(new Date().toISOString());
+      router.refresh();
+    } finally {
+      setDraftSaving(false);
+    }
+  };
+
   const submit = async () => {
     setError("");
     if (isWeek1) {
@@ -354,37 +398,12 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
       return;
     }
     setSaving(true);
+    setDraftSavedAt(null);
     try {
-      const content = assembleContent(
-        weekIndex,
-        products,
-        answers,
-        people,
-        landingUrl,
-        highlights,
-        freeText
-      );
-      const formData = isWeek1
-        ? {
-            kind: "week1_product_customer",
-            products: products.filter((p) => p.name.trim() || p.description.trim()),
-            answers,
-            people: people.filter((p) => p.name.trim() || p.instagramUrl.trim()),
-            landingUrl: landingUrl.trim(),
-            highlights,
-          }
-        : { kind: "free_text", text: freeText };
-      const highlightImageUrls = HIGHLIGHT_SLOTS.flatMap((s) => highlights[s.key] ?? []);
       const res = await fetch("/api/homework/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          weekId,
-          content,
-          formData,
-          imageUrls: highlightImageUrls,
-          instagramUrl,
-        }),
+        body: JSON.stringify({ weekId, ...buildPayload() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -715,27 +734,60 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial }: Props) {
         </p>
       )}
 
+      {/* 임시 저장 — 정식 제출 전에만 노출 */}
+      {!alreadySubmitted && (
+        <button
+          type="button"
+          onClick={saveDraft}
+          disabled={draftSaving || saving}
+          className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-neutral-300 bg-white text-neutral-700 font-bold text-[15px] hover:border-neutral-900 hover:text-neutral-900 disabled:opacity-50"
+        >
+          {draftSaving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" /> 임시 저장 중...
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4" /> 임시 저장
+            </>
+          )}
+        </button>
+      )}
+
+      {!alreadySubmitted && (
+        <p className="text-center text-[11px] text-neutral-400 -mt-1">
+          아직 다 못 채웠어도 임시 저장해두고 나중에 이어서 작성할 수 있어요. (제출 아님)
+        </p>
+      )}
+
       <button
         type="button"
         onClick={submit}
-        disabled={saving || !canSubmit}
+        disabled={saving || draftSaving || !canSubmit}
         className="w-full inline-flex items-center justify-center gap-2 py-4 rounded-2xl bg-neutral-900 text-white font-bold text-base hover:bg-neutral-800 disabled:opacity-50 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]"
       >
         {saving ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" /> 저장 중...
+            <Loader2 className="w-4 h-4 animate-spin" /> 제출 중...
           </>
-        ) : initial ? (
+        ) : alreadySubmitted ? (
           "수정 저장하기"
         ) : (
           "숙제 제출하기"
         )}
       </button>
 
+      {draftSavedAt && (
+        <p className="text-center text-sm text-neutral-700 inline-flex items-center gap-1.5 justify-center w-full">
+          <CheckCircle2 className="w-4 h-4 text-neutral-500" />
+          임시 저장되었어요. 나중에 이어서 작성하고 &quot;숙제 제출하기&quot;를 눌러 완료하세요.
+        </p>
+      )}
+
       {savedAt && (
         <p className="text-center text-sm text-neutral-900 inline-flex items-center gap-1.5 justify-center w-full">
           <CheckCircle2 className="w-4 h-4" />
-          {initial
+          {alreadySubmitted
             ? "저장되었습니다. 마감 전까지 계속 수정할 수 있어요."
             : "제출되었습니다. 마감 후 강사 피드백을 이메일로 알려드려요."}
         </p>

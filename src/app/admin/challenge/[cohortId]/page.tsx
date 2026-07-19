@@ -18,7 +18,6 @@ export default async function CohortDetailPage({
     include: {
       weeks: {
         orderBy: { weekIndex: "asc" },
-        include: { _count: { select: { submissions: true } } },
       },
       enrollments: {
         orderBy: { createdAt: "desc" },
@@ -50,19 +49,22 @@ export default async function CohortDetailPage({
   const roster = Array.from(rosterMap.values());
   const enrolled = roster.length;
 
-  // 참여자별 주차별 제출 현황
+  // 참여자별 주차별 제출 현황 (임시저장 draft는 제외 = 미제출로 취급)
   const allSubmissions = await prisma.homeworkSubmission.findMany({
-    where: { week: { cohortId } },
+    where: { week: { cohortId }, status: { not: "draft" } },
     select: { userId: true, feedbackAt: true, week: { select: { weekIndex: true } } },
   });
   // userId -> weekIndex -> "submitted" | "feedback"
   const statusMap = new Map<string, Map<number, "submitted" | "feedback">>();
+  // weekIndex -> 정식 제출 수
+  const submittedByWeek = new Map<number, number>();
   for (const s of allSubmissions) {
     if (!statusMap.has(s.userId)) statusMap.set(s.userId, new Map());
     statusMap.get(s.userId)!.set(s.week.weekIndex, s.feedbackAt ? "feedback" : "submitted");
+    submittedByWeek.set(s.week.weekIndex, (submittedByWeek.get(s.week.weekIndex) ?? 0) + 1);
   }
 
-  const totalSubmissions = cohort.weeks.reduce((sum, w) => sum + w._count.submissions, 0);
+  const totalSubmissions = allSubmissions.length;
   const pendingFeedback = await prisma.homeworkSubmission.count({
     where: { week: { cohortId }, status: "submitted" },
   });
@@ -292,7 +294,7 @@ export default async function CohortDetailPage({
                     )}
                   </p>
                   <div className="text-[11px] text-neutral-400 mt-1 flex items-center gap-3">
-                    <span>제출 {w._count.submissions}건</span>
+                    <span>제출 {submittedByWeek.get(w.weekIndex) ?? 0}건</span>
                     {!w.homeworkPrompt && (
                       <span className="text-orange-500 font-semibold">숙제 프롬프트 미작성</span>
                     )}

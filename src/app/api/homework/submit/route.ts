@@ -10,6 +10,7 @@ interface Body {
   formData?: unknown; // 주차별 구조화된 JSON
   imageUrls?: unknown;
   instagramUrl?: string;
+  draft?: boolean; // true면 임시 저장(미제출) — 검증 생략, 제출로 카운트 안 함
 }
 
 const MAX_TEXT = 20000;
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
   // 마감 전이어도 이미 피드백을 받은 숙제는 잠금 (피드백 후 수정 방지)
   const already = await prisma.homeworkSubmission.findUnique({
     where: { weekId_userId: { weekId, userId: session.user.id } },
-    select: { id: true, feedbackAt: true },
+    select: { id: true, feedbackAt: true, status: true },
   });
   if (already?.feedbackAt) {
     return NextResponse.json(
@@ -87,6 +88,14 @@ export async function POST(req: NextRequest) {
       { status: 409 }
     );
   }
+
+  const isDraft = body.draft === true;
+  // 임시 저장이면 상태를 draft로. 단, 이미 정식 제출한 숙제는 draft로 되돌리지 않음.
+  const nextStatus = isDraft
+    ? already?.status === "submitted" || already?.status === "feedback_given"
+      ? already.status
+      : "draft"
+    : "submitted";
 
   const content = (body.content ?? "").toString().slice(0, MAX_TEXT);
   const instagramUrl =
@@ -116,15 +125,16 @@ export async function POST(req: NextRequest) {
       formData,
       imageUrls,
       instagramUrl,
+      status: nextStatus,
     },
     update: {
       content,
       formData,
       imageUrls,
       instagramUrl,
-      // 재제출 시 status/feedback 은 건드리지 않음 (강사가 피드백 준 뒤 학생이 수정할 수도 있음)
+      status: nextStatus,
     },
   });
 
-  return NextResponse.json({ ok: true, submissionId: submission.id });
+  return NextResponse.json({ ok: true, submissionId: submission.id, draft: isDraft });
 }

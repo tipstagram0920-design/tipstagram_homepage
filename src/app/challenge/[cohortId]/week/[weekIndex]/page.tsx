@@ -122,6 +122,9 @@ export default async function ChallengeWeekPage({
   // 마감이 지났거나 이미 피드백을 받았으면 수정 잠금 (읽기 전용)
   const isPastDue = week.homeworkDueAt.getTime() <= now.getTime();
   const locked = isPastDue || !!mySubmission?.feedbackAt;
+  // 임시 저장(draft) vs 정식 제출 구분
+  const isDraft = mySubmission?.status === "draft";
+  const alreadySubmitted = !!mySubmission && mySubmission.status !== "draft";
 
   const recommendedLessonIds =
     Array.isArray(week.recommendedLessonIds) ? (week.recommendedLessonIds as string[]) : [];
@@ -393,7 +396,9 @@ export default async function ChallengeWeekPage({
             {mySubmission && !locked && (
               <p className="text-xs text-neutral-500 bg-neutral-50 border border-neutral-200/70 rounded-xl px-4 py-2.5 mb-4 inline-flex items-center gap-1.5">
                 <PenSquare className="w-3.5 h-3.5 text-neutral-500" />
-                마감({formatKstHuman(week.homeworkDueAt)}) 전까지 자유롭게 수정할 수 있어요.
+                {isDraft
+                  ? `임시 저장된 숙제예요. 이어서 작성한 뒤 마감(${formatKstHuman(week.homeworkDueAt)}) 전까지 "숙제 제출하기"로 완료하세요.`
+                  : `마감(${formatKstHuman(week.homeworkDueAt)}) 전까지 자유롭게 수정할 수 있어요.`}
               </p>
             )}
             <div className="rounded-3xl bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-6 sm:p-7">
@@ -411,6 +416,7 @@ export default async function ChallengeWeekPage({
                   cohortId={cohortId}
                   weekId={week.id}
                   weekIndex={week.weekIndex}
+                  alreadySubmitted={alreadySubmitted}
                   initial={
                     mySubmission
                       ? {
@@ -430,8 +436,17 @@ export default async function ChallengeWeekPage({
 
           {mySubmission && locked && !mySubmission.feedbackAt && (
             <p className="text-center text-xs text-neutral-500 mt-4 inline-flex items-center gap-1.5 justify-center w-full">
-              <CheckCircle2 className="w-3.5 h-3.5 text-neutral-700" />
-              제출 완료 · 강사가 확인하는 즉시 이메일로 피드백을 알려 드려요
+              {alreadySubmitted ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-neutral-700" />
+                  제출 완료 · 강사가 확인하는 즉시 이메일로 피드백을 알려 드려요
+                </>
+              ) : (
+                <>
+                  <PenSquare className="w-3.5 h-3.5 text-neutral-400" />
+                  임시 저장만 된 상태로 마감되었어요. (정식 제출되지 않음)
+                </>
+              )}
             </p>
           )}
         </div>

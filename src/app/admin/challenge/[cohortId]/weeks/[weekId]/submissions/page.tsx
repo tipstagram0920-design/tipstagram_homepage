@@ -21,7 +21,7 @@ export default async function WeekSubmissionsPage({
   if (!week || week.cohortId !== cohortId) notFound();
 
   const submissions = await prisma.homeworkSubmission.findMany({
-    where: { weekId },
+    where: { weekId, status: { not: "draft" } },
     include: { user: { select: { name: true, email: true } } },
     orderBy: [{ feedbackAt: "asc" }, { submittedAt: "asc" }],
   });
