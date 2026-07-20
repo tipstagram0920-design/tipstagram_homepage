@@ -15,32 +15,35 @@ export interface TaskSeed {
 // 이후 고객·관리자가 자유롭게 수정/추가/삭제할 수 있다.
 // guideKey가 있는 할 일에는 입력→결과 도우미/생성기가 붙는다.
 export const DEFAULT_CONSULTING_TASKS: TaskSeed[] = [
-  // 1주차 — 세팅 + 첫 릴스 사이클
+  // 1주차 — 세팅(Day 1~3) + 릴스 1회차(Day 4~6)
   { day: 1, title: "소비자 선정 → 프로필 추천", description: "3가지 방법으로 소비자 문제 5개를 찾고, 변화·페르소나를 입력하면 프로필 추천이 나와요. 탭해서 작성하세요.", guideKey: "customer-select" },
   { day: 1, title: "인포크(링크인바이오) 링크 만들기", description: "무료·이벤트 → 후기 → 상품안내·FAQ → 상담 순서로 버튼을 배치하세요. 도우미에 영상·순서 가이드가 있어요.", guideKey: "inpock-link" },
   { day: 2, title: "하이라이트 수정", description: "무료·이벤트 → 후기 → FAQ → 상담하러가기 순으로. 커버 이모티콘 사이트와 제작 순서는 도우미 참고.", guideKey: "highlight" },
-  { day: 3, title: "랜딩페이지 만들기", description: "항목을 채우면 복붙용 랜딩페이지 글이 완성돼요. 도우미를 열어 작성하세요.", guideKey: "landing-page" },
-  { day: 4, title: "무료자료(리드마그넷) 만들기", description: "잠재 고객을 모을 무료 자료를 하나 만들어 배포 준비하세요." },
-  { day: 5, title: "이벤트 만들기", description: "참여를 유도할 이벤트(체험·챌린지·할인 등)를 기획해 공지하세요." },
-  { day: 6, title: "레퍼런스 릴스 5개 찾기 + 변형 기획", description: "레퍼런스 5개를 찾아 저장하고, 계정에 들어가 더 모으세요. 도우미로 관리하세요.", guideKey: "reels-reference" },
-  { day: 7, title: "릴스 5개 촬영 & 업로드", description: "기획한 릴스 5개를 촬영하고 순차 업로드하세요." },
+  { day: 2, title: "무료자료(리드마그넷) 만들기", description: "잠재 고객을 모을 무료 자료를 하나 만들어 배포 준비하세요." },
+  { day: 3, title: "랜딩페이지 만들기", description: "항목을 채우면 복붙용 랜딩페이지 글이 완성돼요. 탭해서 작성하세요.", guideKey: "landing-page" },
+  { day: 3, title: "이벤트 만들기", description: "참여를 유도할 이벤트(체험·챌린지·할인 등)를 기획해 공지하세요." },
 
-  // 2주차 — 콘텐츠 사이클
-  { day: 8, title: "레퍼런스 릴스 5개 찾기", description: "이번 주 콘텐츠용 레퍼런스 5개를 저장하고, 계정에 들어가 더 모으세요.", guideKey: "reels-reference" },
-  { day: 9, title: "레퍼런스 변형해서 기획", description: "찾은 레퍼런스를 내 콘텐츠로 변형해 5개 기획안을 만드세요." },
-  { day: 10, title: "릴스 5개 촬영", description: "기획한 릴스 5개를 촬영하세요." },
-  { day: 11, title: "릴스 업로드", description: "촬영한 릴스를 업로드하고 캡션·해시태그를 정리하세요." },
-  { day: 12, title: "프로필·하이라이트 점검·보완", description: "지금까지 반응을 보고 프로필/하이라이트를 다듬으세요." },
-  { day: 13, title: "랜딩페이지·무료자료 점검·보완", description: "전환이 잘 되는지 점검하고 문구·구성을 보완하세요." },
-  { day: 14, title: "이벤트 반응 점검", description: "이벤트 참여·문의 반응을 확인하고 다음 액션을 정하세요." },
+  { day: 4, title: "릴스 기획 (1회차) — 레퍼런스 5개 찾기 + 변형 기획", description: "레퍼런스 5개를 찾아 저장하고 계정에 들어가 더 모은 뒤, 내 콘텐츠로 변형해 5개를 기획하세요.", guideKey: "reels-reference" },
+  { day: 5, title: "릴스 5개 촬영 (1회차)", description: "기획한 릴스 5개를 촬영하세요." },
+  { day: 6, title: "릴스 업로드 (1회차)", description: "촬영한 릴스를 업로드하고 캡션·해시태그를 정리하세요." },
+  { day: 7, title: "1주차 점검 · 반응 확인", description: "조회수·저장·프로필 방문 등 반응을 확인하고 잘 된 포맷을 메모하세요." },
 
-  // 3주차 — 반복·최적화
-  { day: 15, title: "레퍼런스 릴스 5개 찾기", description: "마지막 주 콘텐츠용 레퍼런스 5개를 저장하고, 계정에 들어가 더 모으세요.", guideKey: "reels-reference" },
-  { day: 16, title: "레퍼런스 변형해서 기획", description: "5개 기획안을 만드세요." },
-  { day: 17, title: "릴스 5개 촬영", description: "기획한 릴스 5개를 촬영하세요." },
-  { day: 18, title: "릴스 업로드", description: "촬영한 릴스를 업로드하세요." },
-  { day: 19, title: "성과 분석", description: "조회수·저장·프로필 방문·문의 등을 분석해 잘 된 콘텐츠를 찾으세요." },
-  { day: 20, title: "잘 된 콘텐츠 리믹스", description: "반응 좋았던 콘텐츠를 변형·재활용해 추가 제작하세요." },
+  // 2주차 — 보완(Day 8~10) + 릴스 2회차(Day 11~13)
+  { day: 8, title: "프로필·하이라이트 보완", description: "반응을 보고 프로필/하이라이트를 다듬으세요." },
+  { day: 9, title: "랜딩페이지·무료자료 보완", description: "전환이 잘 되는지 점검하고 문구·구성을 보완하세요." },
+  { day: 10, title: "이벤트 반응 점검", description: "이벤트 참여·문의 반응을 확인하고 다음 액션을 정하세요." },
+  { day: 11, title: "릴스 기획 (2회차) — 레퍼런스 5개 찾기 + 변형 기획", description: "이번 주 레퍼런스 5개를 저장하고 계정에서 더 모은 뒤, 5개를 기획하세요.", guideKey: "reels-reference" },
+  { day: 12, title: "릴스 5개 촬영 (2회차)", description: "기획한 릴스 5개를 촬영하세요." },
+  { day: 13, title: "릴스 업로드 (2회차)", description: "촬영한 릴스를 업로드하세요." },
+  { day: 14, title: "2주차 점검", description: "2주차 콘텐츠 반응을 분석하고 개선점을 정리하세요." },
+
+  // 3주차 — 분석(Day 15~17) + 릴스 3회차(Day 18~20)
+  { day: 15, title: "성과 분석", description: "조회수·저장·프로필 방문·문의 등을 분석해 잘 된 콘텐츠를 찾으세요." },
+  { day: 16, title: "잘 된 콘텐츠 파악", description: "반응 좋았던 콘텐츠의 공통점(주제·포맷·후킹)을 정리하세요." },
+  { day: 17, title: "개선 아이디어 정리", description: "다음 릴스에 반영할 개선 아이디어를 정리하세요." },
+  { day: 18, title: "릴스 기획 (3회차) — 레퍼런스 5개 찾기 + 변형 기획", description: "마지막 주 레퍼런스 5개를 저장하고 계정에서 더 모은 뒤, 5개를 기획하세요.", guideKey: "reels-reference" },
+  { day: 19, title: "릴스 5개 촬영 (3회차)", description: "기획한 릴스 5개를 촬영하세요." },
+  { day: 20, title: "릴스 업로드 (3회차)", description: "촬영한 릴스를 업로드하세요." },
   { day: 21, title: "3주 회고 + 다음 액션 플랜", description: "3주 성과를 정리하고 앞으로의 콘텐츠·판매 계획을 세우세요." },
 ];
 
@@ -68,6 +71,21 @@ export async function ensureConsultingEnrollment(userId: string) {
         })),
       },
     },
+  });
+}
+
+// 이 등록의 할 일을 최신 기본 템플릿으로 초기화 (기존 할 일·입력값 삭제 후 재생성)
+export async function resetEnrollmentTasks(enrollmentId: string) {
+  await prisma.consultingTask.deleteMany({ where: { enrollmentId } });
+  await prisma.consultingTask.createMany({
+    data: DEFAULT_CONSULTING_TASKS.map((t, i) => ({
+      enrollmentId,
+      day: t.day,
+      order: i,
+      title: t.title,
+      description: t.description ?? "",
+      guideKey: t.guideKey ?? null,
+    })),
   });
 }
 

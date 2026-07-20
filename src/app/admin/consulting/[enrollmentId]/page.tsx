@@ -5,6 +5,7 @@ import { formatKstHuman } from "@/lib/kst";
 import { currentDayIndex, CONSULTING_DURATION_DAYS } from "@/lib/consulting";
 import { TaskBoard, type BoardTask } from "@/components/consulting/TaskBoard";
 import { ChevronLeft } from "lucide-react";
+import { ResetTasksButton } from "./_components/ResetTasksButton";
 
 export const dynamic = "force-dynamic";
 
@@ -43,17 +44,22 @@ export default async function AdminConsultingEnrollmentPage({
       >
         <ChevronLeft className="w-4 h-4" /> 컨설팅 목록
       </Link>
-      <h1 className="text-2xl font-black text-neutral-900">
-        {enrollment.user.name || "이름 없음"}
-      </h1>
-      <p className="text-sm text-neutral-500 mb-6">
-        {enrollment.user.email} · 시작 {formatKstHuman(enrollment.startAt)} ·{" "}
-        {dayIdx < 1
-          ? "시작 전"
-          : dayIdx > CONSULTING_DURATION_DAYS
-            ? "완료"
-            : `현재 Day ${dayIdx}`}
-      </p>
+      <div className="flex items-start justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl font-black text-neutral-900">
+            {enrollment.user.name || "이름 없음"}
+          </h1>
+          <p className="text-sm text-neutral-500">
+            {enrollment.user.email} · 시작 {formatKstHuman(enrollment.startAt)} ·{" "}
+            {dayIdx < 1
+              ? "시작 전"
+              : dayIdx > CONSULTING_DURATION_DAYS
+                ? "완료"
+                : `현재 Day ${dayIdx}`}
+          </p>
+        </div>
+        <ResetTasksButton enrollmentId={enrollment.id} />
+      </div>
 
       <TaskBoard
         startAtIso={enrollment.startAt.toISOString()}
