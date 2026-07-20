@@ -428,37 +428,36 @@ export function TaskBoard({
                     >
                       {task.doneAt && <Check className="w-3.5 h-3.5" />}
                     </button>
-                    <div className="flex-1 min-w-0">
+                    <div
+                      className={"flex-1 min-w-0 " + (task.guideKey ? "cursor-pointer" : "")}
+                      onClick={
+                        task.guideKey
+                          ? () => setOpenGuideId(openGuideId === task.id ? null : task.id)
+                          : undefined
+                      }
+                    >
                       <p
                         className={
-                          "text-sm font-medium " +
+                          "text-sm font-medium inline-flex items-center gap-1.5 " +
                           (task.doneAt ? "text-neutral-400 line-through" : "text-neutral-900")
                         }
                       >
                         {task.title}
+                        {task.guideKey && (
+                          <ChevronDown
+                            className={"w-3.5 h-3.5 text-pink-500 transition-transform " + (openGuideId === task.id ? "rotate-180" : "")}
+                          />
+                        )}
                       </p>
                       {task.description && (
                         <p className={"text-[12px] mt-0.5 whitespace-pre-wrap " + (task.doneAt ? "text-neutral-300" : "text-neutral-500")}>
                           {task.description}
                         </p>
                       )}
-                      {task.guideKey && (
-                        <button
-                          type="button"
-                          onClick={() => setOpenGuideId(openGuideId === task.id ? null : task.id)}
-                          className={
-                            "mt-2 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors " +
-                            (openGuideId === task.id
-                              ? "border-pink-300 bg-pink-50 text-pink-600"
-                              : "border-neutral-200 text-neutral-700 hover:border-pink-400 hover:text-pink-600")
-                          }
-                        >
-                          <Wand2 className="w-3.5 h-3.5" />
-                          {GUIDE_LABELS[task.guideKey] ?? "도우미"}
-                          <ChevronDown
-                            className={"w-3.5 h-3.5 transition-transform " + (openGuideId === task.id ? "rotate-180" : "")}
-                          />
-                        </button>
+                      {task.guideKey && openGuideId !== task.id && (
+                        <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-pink-600">
+                          <Wand2 className="w-3 h-3" /> 탭하면 {GUIDE_LABELS[task.guideKey] ?? "도우미"} 열려요
+                        </span>
                       )}
                     </div>
                     <div className="shrink-0 flex items-center gap-1 opacity-60 group-hover:opacity-100">

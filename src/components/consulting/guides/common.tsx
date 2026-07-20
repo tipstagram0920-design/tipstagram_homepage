@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, Loader2, Save } from "lucide-react";
+import { Copy, Check, Loader2, Save, Sparkles, MessageSquareText } from "lucide-react";
 
 export function useGuideSave(taskId: string) {
   const [saving, setSaving] = useState(false);
@@ -51,6 +51,48 @@ export function SaveButton({
           <Check className="w-3.5 h-3.5" /> 저장됨
         </span>
       )}
+    </div>
+  );
+}
+
+export function FeedbackButton({
+  onClick,
+  saving,
+  saved,
+  label = "피드백 받기",
+}: {
+  onClick: () => void;
+  saving: boolean;
+  saved: boolean;
+  label?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={saving}
+        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl ig-gradient text-white text-sm font-bold hover:opacity-90 disabled:opacity-50"
+      >
+        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+        {label}
+      </button>
+      {saved && (
+        <span className="text-xs text-green-600 inline-flex items-center gap-1">
+          <Check className="w-3.5 h-3.5" /> 저장됨
+        </span>
+      )}
+    </div>
+  );
+}
+
+export function FeedbackBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-pink-200 bg-pink-50/40 p-3.5">
+      <p className="text-xs font-bold text-pink-700 inline-flex items-center gap-1.5 mb-2">
+        <MessageSquareText className="w-4 h-4" /> 피드백
+      </p>
+      {children}
     </div>
   );
 }

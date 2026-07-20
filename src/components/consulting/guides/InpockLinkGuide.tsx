@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGuideSave, SaveButton, FIELD, FLABEL } from "./common";
+import { useGuideSave, FeedbackButton, FeedbackBox, FIELD, FLABEL } from "./common";
 import { Youtube, ExternalLink } from "lucide-react";
 
 interface Data {
@@ -27,6 +27,19 @@ export function InpockLinkGuide({ taskId, initialData }: { taskId: string; initi
 
   const setters = [setFreeUrl, setReviewUrl, setProductUrl, setConsultUrl];
   const values = [freeUrl, reviewUrl, productUrl, consultUrl];
+
+  const [show, setShow] = useState(
+    Boolean(initialData?.freeUrl || initialData?.reviewUrl || initialData?.productUrl || initialData?.consultUrl)
+  );
+  const getFeedback = () => {
+    save({ freeUrl, reviewUrl, productUrl, consultUrl });
+    setShow(true);
+  };
+  const filled = values.filter((v) => v.trim()).length;
+  const notes: string[] = [];
+  if (!freeUrl.trim()) notes.push("⚠️ 맨 위 '무료·이벤트' 링크가 비어 있어요. 첫 버튼이 가장 중요해요.");
+  if (!consultUrl.trim()) notes.push("⚠️ 마지막 '상담하기' 링크를 꼭 넣으세요. 전환이 여기서 일어나요.");
+  if (filled === 4) notes.push("👍 4개 버튼 링크를 모두 채웠어요. 순서만 위 순서대로 배치하면 완성!");
 
   return (
     <div className="space-y-4">
@@ -74,11 +87,20 @@ export function InpockLinkGuide({ taskId, initialData }: { taskId: string; initi
         </div>
       </div>
 
-      <SaveButton
-        onClick={() => save({ freeUrl, reviewUrl, productUrl, consultUrl })}
-        saving={saving}
-        saved={saved}
-      />
+      <FeedbackButton onClick={getFeedback} saving={saving} saved={saved} />
+
+      {show && (
+        <FeedbackBox>
+          <p className="text-[13px] text-neutral-800 mb-1.5">
+            버튼 링크 <strong>{filled}/4</strong> 채움. 순서는 <strong>무료·이벤트 → 후기 → 상품/FAQ → 상담</strong>이 맞아요.
+          </p>
+          <ul className="text-[12px] text-neutral-600 space-y-1 list-none">
+            {notes.map((n, i) => (
+              <li key={i}>{n}</li>
+            ))}
+          </ul>
+        </FeedbackBox>
+      )}
     </div>
   );
 }

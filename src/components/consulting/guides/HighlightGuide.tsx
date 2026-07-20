@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGuideSave, SaveButton, CopyButton, FIELD } from "./common";
+import { useGuideSave, FeedbackButton, FeedbackBox, CopyButton, FIELD } from "./common";
 import { ExternalLink, AlertCircle } from "lucide-react";
 
 interface Data {
@@ -20,6 +20,11 @@ const ORDER = ["무료 또는 이벤트", "고객후기", "자주묻는질문", 
 export function HighlightGuide({ taskId, initialData }: { taskId: string; initialData: Data | null }) {
   const [consultUrl, setConsultUrl] = useState(initialData?.consultUrl ?? "");
   const { saving, saved, save } = useGuideSave(taskId);
+  const [show, setShow] = useState(Boolean(initialData?.consultUrl));
+  const getFeedback = () => {
+    save({ consultUrl });
+    setShow(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -89,9 +94,22 @@ export function HighlightGuide({ taskId, initialData }: { taskId: string; initia
           {consultUrl.trim() && <CopyButton text={consultUrl.trim()} />}
         </div>
         <div className="mt-2">
-          <SaveButton onClick={() => save({ consultUrl })} saving={saving} saved={saved} />
+          <FeedbackButton onClick={getFeedback} saving={saving} saved={saved} />
         </div>
       </div>
+
+      {show && (
+        <FeedbackBox>
+          <p className="text-[13px] text-neutral-800 mb-1">
+            순서 확인: <strong>무료·이벤트 → 후기 → FAQ → 상담하러 가기</strong> ✅
+          </p>
+          <p className="text-[12px] text-neutral-600">
+            {consultUrl.trim()
+              ? "상담하러 가기 URL이 저장됐어요. 스토리 4개 모두에 링크 스티커로 이 URL을 꼭 넣으세요."
+              : "⚠️ 아직 상담하러 가기 URL이 없어요. 스토리에 넣을 링크를 먼저 저장하세요."}
+          </p>
+        </FeedbackBox>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGuideSave, SaveButton, CopyButton, FIELD_TA, FLABEL } from "./common";
+import { useGuideSave, FeedbackButton, FeedbackBox, CopyButton, FIELD_TA, FLABEL } from "./common";
 
 type Key =
   | "problem"
@@ -48,8 +48,15 @@ function assemble(d: Data): string {
 export function LandingPageGuide({ taskId, initialData }: { taskId: string; initialData: Data | null }) {
   const [data, setData] = useState<Data>(initialData ?? {});
   const { saving, saved, save } = useGuideSave(taskId);
+  const hasPrior = Boolean(initialData && Object.values(initialData).some((v) => (v || "").trim()));
+  const [show, setShow] = useState(hasPrior);
   const set = (k: Key, v: string) => setData((prev) => ({ ...prev, [k]: v }));
   const output = assemble(data);
+
+  const getFeedback = () => {
+    save(data);
+    setShow(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -72,19 +79,23 @@ export function LandingPageGuide({ taskId, initialData }: { taskId: string; init
         ))}
       </div>
 
-      <SaveButton onClick={() => save(data)} saving={saving} saved={saved} />
+      <FeedbackButton onClick={getFeedback} saving={saving} saved={saved} label="랜딩 글 만들기" />
 
-      <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-bold text-neutral-700">📄 완성된 랜딩페이지 글</p>
-          {output && <CopyButton text={output} label="전체 복사" />}
-        </div>
-        {output ? (
-          <div className="text-[13px] text-neutral-900 whitespace-pre-wrap leading-relaxed">{output}</div>
-        ) : (
-          <p className="text-xs text-neutral-400">위 항목을 채우면 여기에 글이 만들어져요.</p>
-        )}
-      </div>
+      {show && (
+        <FeedbackBox>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold text-neutral-700">📄 완성된 랜딩페이지 글</p>
+            {output && <CopyButton text={output} label="전체 복사" />}
+          </div>
+          {output ? (
+            <div className="rounded-lg border border-neutral-200 bg-white p-3 text-[13px] text-neutral-900 whitespace-pre-wrap leading-relaxed">
+              {output}
+            </div>
+          ) : (
+            <p className="text-xs text-neutral-400">위 항목을 채우면 여기에 글이 만들어져요.</p>
+          )}
+        </FeedbackBox>
+      )}
     </div>
   );
 }

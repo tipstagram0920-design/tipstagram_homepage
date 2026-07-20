@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGuideSave, SaveButton, FIELD, FLABEL } from "./common";
+import { useGuideSave, FeedbackButton, FeedbackBox, FIELD, FLABEL } from "./common";
 import { AlertCircle, Film } from "lucide-react";
 
 interface RefItem {
@@ -27,6 +27,12 @@ export function ReelsReferenceGuide({ taskId, initialData }: { taskId: string; i
     setRefs((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
 
   const filled = refs.filter((r) => (r.url || "").trim() || (r.account || "").trim()).length;
+  const withAccount = refs.filter((r) => (r.account || "").trim()).length;
+  const [show, setShow] = useState(Boolean(initialData?.refs && initialData.refs.length > 0));
+  const getFeedback = () => {
+    save({ refs });
+    setShow(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -81,7 +87,21 @@ export function ReelsReferenceGuide({ taskId, initialData }: { taskId: string; i
         </div>
       </div>
 
-      <SaveButton onClick={() => save({ refs })} saving={saving} saved={saved} />
+      <FeedbackButton onClick={getFeedback} saving={saving} saved={saved} />
+
+      {show && (
+        <FeedbackBox>
+          <p className="text-[13px] text-neutral-800 mb-1">
+            레퍼런스 <strong>{filled}/5</strong> 저장 · 계정 <strong>{withAccount}</strong>개 기재
+          </p>
+          <ul className="text-[12px] text-neutral-600 space-y-1 list-none">
+            {filled < 5 && <li>⚠️ 5개를 다 채우면 이번 주 릴스 기획이 훨씬 쉬워져요.</li>}
+            {withAccount < filled && <li>⚠️ 계정을 안 적은 레퍼런스가 있어요. 계정을 적고 꼭 방문하세요.</li>}
+            <li>👉 저장한 계정들에 <strong>직접 들어가 다른 잘 된 릴스도 더 모으세요.</strong> 그게 진짜 레퍼런스 창고가 돼요.</li>
+            {filled === 5 && withAccount === 5 && <li>👍 완벽해요! 이제 Reelspy에서 이 레퍼런스로 기획을 시작하세요.</li>}
+          </ul>
+        </FeedbackBox>
+      )}
     </div>
   );
 }

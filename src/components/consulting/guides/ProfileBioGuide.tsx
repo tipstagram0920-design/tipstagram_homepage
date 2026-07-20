@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGuideSave, SaveButton, CopyButton, FIELD, FLABEL } from "./common";
+import { useGuideSave, FeedbackButton, FeedbackBox, CopyButton, FIELD, FLABEL } from "./common";
 
 interface Data {
   who?: string;
@@ -35,7 +35,14 @@ export function ProfileBioGuide({ taskId, initialData }: { taskId: string; initi
   const [problem, setProblem] = useState(initialData?.problem ?? "");
   const [change, setChange] = useState(initialData?.change ?? "");
   const { saving, saved, save } = useGuideSave(taskId);
+  const hasPrior = Boolean(initialData?.who || initialData?.problem || initialData?.change);
+  const [show, setShow] = useState(hasPrior);
   const versions = buildVersions(who, problem, change);
+
+  const getFeedback = () => {
+    save({ who, problem, change });
+    setShow(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -56,22 +63,29 @@ export function ProfileBioGuide({ taskId, initialData }: { taskId: string; initi
         <input value={change} onChange={(e) => setChange(e.target.value)} className={FIELD} placeholder="예: 통증 없는 바른 자세" />
       </div>
 
-      <SaveButton onClick={() => save({ who, problem, change })} saving={saving} saved={saved} />
+      <FeedbackButton onClick={getFeedback} saving={saving} saved={saved} />
 
-      <div className="space-y-3 pt-1">
-        {versions.map((v) => {
-          const text = v.lines.join("\n");
-          return (
-            <div key={v.name} className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-bold text-neutral-700">{v.name}</p>
-                <CopyButton text={text} />
-              </div>
-              <div className="text-sm text-neutral-900 whitespace-pre-wrap leading-relaxed">{text}</div>
-            </div>
-          );
-        })}
-      </div>
+      {show && (
+        <FeedbackBox>
+          <p className="text-[12px] text-neutral-600 mb-3">
+            입력을 바탕으로 만든 <strong>3줄 바이오 3버전</strong>이에요. 마음에 드는 걸 복사해 프로필에 붙여넣으세요.
+          </p>
+          <div className="space-y-3">
+            {versions.map((v) => {
+              const text = v.lines.join("\n");
+              return (
+                <div key={v.name} className="rounded-xl border border-neutral-200 bg-white p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-bold text-neutral-700">{v.name}</p>
+                    <CopyButton text={text} />
+                  </div>
+                  <div className="text-sm text-neutral-900 whitespace-pre-wrap leading-relaxed">{text}</div>
+                </div>
+              );
+            })}
+          </div>
+        </FeedbackBox>
+      )}
     </div>
   );
 }
