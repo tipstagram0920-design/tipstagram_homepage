@@ -123,3 +123,27 @@ export const FIELD =
   "w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:border-pink-400";
 export const FIELD_TA = FIELD + " resize-none";
 export const FLABEL = "block text-[13px] font-semibold text-neutral-800 mb-1";
+
+// 이모지 포함 글자 수 (인스타 바이오 카운트 근사)
+export const charLen = (s: string) => Array.from(s).length;
+
+// 긴 입력을 핵심만 남겨 짧게 압축 (구분자 우선 → 단어 경계 클립)
+export function compress(input: string, maxLen: number): string {
+  const t = (input || "").trim().replace(/\s+/g, " ");
+  if (!t) return "";
+  if (charLen(t) <= maxLen) return t;
+  const segs = t.split(/[·/|,\n]/).map((x) => x.trim()).filter(Boolean);
+  if (segs.length > 1) {
+    let out = "";
+    for (const seg of segs) {
+      const cand = out ? `${out} · ${seg}` : seg;
+      if (charLen(cand) > maxLen) break;
+      out = cand;
+    }
+    if (out) return out;
+  }
+  const arr = Array.from(t);
+  const clipped = arr.slice(0, maxLen).join("");
+  const lastSpace = clipped.lastIndexOf(" ");
+  return lastSpace > maxLen * 0.6 ? clipped.slice(0, lastSpace) : clipped;
+}

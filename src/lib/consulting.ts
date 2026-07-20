@@ -16,7 +16,7 @@ export interface TaskSeed {
 // guideKey가 있는 할 일에는 입력→결과 도우미/생성기가 붙는다.
 export const DEFAULT_CONSULTING_TASKS: TaskSeed[] = [
   // 1주차 — 세팅 + 첫 릴스 사이클
-  { day: 1, title: "프로필 수정 (3줄 바이오)", description: "전문성·소비자 문제·변화를 입력하면 3줄 바이오 3버전이 나와요. 도우미를 열어 작성하세요.", guideKey: "profile-bio" },
+  { day: 1, title: "소비자 선정 → 프로필 추천", description: "3가지 방법으로 소비자 문제 5개를 찾고, 변화·페르소나를 입력하면 프로필 추천이 나와요. 탭해서 작성하세요.", guideKey: "customer-select" },
   { day: 1, title: "인포크(링크인바이오) 링크 만들기", description: "무료·이벤트 → 후기 → 상품안내·FAQ → 상담 순서로 버튼을 배치하세요. 도우미에 영상·순서 가이드가 있어요.", guideKey: "inpock-link" },
   { day: 2, title: "하이라이트 수정", description: "무료·이벤트 → 후기 → FAQ → 상담하러가기 순으로. 커버 이모티콘 사이트와 제작 순서는 도우미 참고.", guideKey: "highlight" },
   { day: 3, title: "랜딩페이지 만들기", description: "항목을 채우면 복붙용 랜딩페이지 글이 완성돼요. 도우미를 열어 작성하세요.", guideKey: "landing-page" },

@@ -1,13 +1,13 @@
 "use client";
 
-import { ProfileBioGuide } from "./ProfileBioGuide";
+import { CustomerSelectGuide } from "./CustomerSelectGuide";
 import { InpockLinkGuide } from "./InpockLinkGuide";
 import { HighlightGuide } from "./HighlightGuide";
 import { LandingPageGuide } from "./LandingPageGuide";
 import { ReelsReferenceGuide } from "./ReelsReferenceGuide";
 
 export const GUIDE_LABELS: Record<string, string> = {
-  "profile-bio": "3줄 바이오 만들기 도우미",
+  "customer-select": "소비자 선정 → 프로필 추천",
   "inpock-link": "인포크 링크 순서 가이드",
   highlight: "하이라이트 제작 가이드",
   "landing-page": "랜딩페이지 글 생성기",
@@ -25,8 +25,8 @@ export function TaskGuide({
 }) {
   const d = (data ?? null) as never;
   switch (guideKey) {
-    case "profile-bio":
-      return <ProfileBioGuide taskId={taskId} initialData={d} />;
+    case "customer-select":
+      return <CustomerSelectGuide taskId={taskId} initialData={d} />;
     case "inpock-link":
       return <InpockLinkGuide taskId={taskId} initialData={d} />;
     case "highlight":
