@@ -10,6 +10,7 @@ import {
   X,
   Loader2,
   CalendarDays,
+  GripVertical,
 } from "lucide-react";
 
 export interface BoardTask {
@@ -22,10 +23,20 @@ export interface BoardTask {
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+const DAY_MS = 24 * 60 * 60 * 1000;
 
+function midnight(d: Date): Date {
+  const c = new Date(d);
+  c.setHours(0, 0, 0, 0);
+  return c;
+}
+function addDays(d: Date, n: number): Date {
+  const c = new Date(d);
+  c.setDate(c.getDate() + n);
+  return c;
+}
 function dateForDay(startAtIso: string, day: number): string {
-  const start = new Date(startAtIso);
-  const d = new Date(start.getTime() + (day - 1) * 24 * 60 * 60 * 1000);
+  const d = addDays(new Date(startAtIso), day - 1);
   return `${d.getMonth() + 1}/${d.getDate()} (${WEEKDAYS[d.getDay()]})`;
 }
 
@@ -46,27 +57,42 @@ export function TaskBoard({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addDay, setAddDay] = useState<number | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverDay, setDragOverDay] = useState<number | null>(null);
 
+  const startDate = useMemo(() => midnight(new Date(startAtIso)), [startAtIso]);
   const todayIndex = useMemo(() => {
-    const start = new Date(startAtIso);
-    start.setHours(0, 0, 0, 0);
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    return Math.floor((now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
-  }, [startAtIso]);
+    return Math.round((midnight(new Date()).getTime() - startDate.getTime()) / DAY_MS) + 1;
+  }, [startDate]);
 
   const maxDay = Math.max(durationDays, ...tasks.map((t) => t.day));
   const days = Array.from({ length: maxDay }, (_, i) => i + 1);
-
   const byDay = (day: number) =>
     tasks.filter((t) => t.day === day).sort((a, b) => a.order - b.order);
-
   const doneCount = tasks.filter((t) => t.doneAt).length;
 
+  // ── 달력 그리드 계산 ──────────────────────────────
+  const calendar = useMemo(() => {
+    const lastDate = addDays(startDate, maxDay - 1);
+    const gridStart = addDays(startDate, -startDate.getDay());
+    const gridEnd = addDays(lastDate, 6 - lastDate.getDay());
+    const cellCount = Math.round((gridEnd.getTime() - gridStart.getTime()) / DAY_MS) + 1;
+    const cells = Array.from({ length: cellCount }, (_, i) => {
+      const date = addDays(gridStart, i);
+      const dayIndex = Math.round((midnight(date).getTime() - startDate.getTime()) / DAY_MS) + 1;
+      return { date, dayIndex };
+    });
+    const weeks: (typeof cells)[] = [];
+    for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+    return weeks;
+  }, [startDate, maxDay]);
+
+  const todayMs = midnight(new Date()).getTime();
+
+  // ── API ──────────────────────────────
   const toggleDone = async (task: BoardTask) => {
     setBusyId(task.id);
     const next = !task.doneAt;
-    // 낙관적 업데이트
     setTasks((prev) =>
       prev.map((t) => (t.id === task.id ? { ...t, doneAt: next ? new Date().toISOString() : null } : t))
     );
@@ -76,30 +102,25 @@ export function TaskBoard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ done: next }),
       });
-      if (!res.ok) {
-        // 롤백
-        setTasks((prev) =>
-          prev.map((t) => (t.id === task.id ? { ...t, doneAt: task.doneAt } : t))
-        );
-      }
+      if (!res.ok)
+        setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, doneAt: task.doneAt } : t)));
     } finally {
       setBusyId(null);
     }
   };
 
-  const saveEdit = async (taskId: string, title: string, description: string) => {
+  const saveEdit = async (taskId: string, title: string, description: string, day: number) => {
     if (!title.trim()) return;
     setBusyId(taskId);
     try {
       const res = await fetch(`/api/consulting/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description }),
+        body: JSON.stringify({ title, description, day }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.task) {
+      if (res.ok) {
         setTasks((prev) =>
-          prev.map((t) => (t.id === taskId ? { ...t, title, description } : t))
+          prev.map((t) => (t.id === taskId ? { ...t, title, description, day } : t))
         );
         setEditingId(null);
       }
@@ -148,8 +169,122 @@ export function TaskBoard({
     }
   };
 
+  const persistReorder = (moves: { id: string; day: number; order: number }[]) => {
+    if (moves.length === 0) return;
+    fetch(`/api/consulting/tasks/reorder`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moves }),
+    }).catch(() => {});
+  };
+
+  // 드래그한 task를 targetDay의 beforeId 앞(또는 맨 끝)으로 이동
+  const reorder = (draggedId: string, targetDay: number, beforeId: string | null) => {
+    setTasks((prev) => {
+      const dragged = prev.find((t) => t.id === draggedId);
+      if (!dragged) return prev;
+      const srcDay = dragged.day;
+      const without = prev.filter((t) => t.id !== draggedId);
+      const targetList = without.filter((t) => t.day === targetDay).sort((a, b) => a.order - b.order);
+      let idx = beforeId ? targetList.findIndex((t) => t.id === beforeId) : targetList.length;
+      if (idx < 0) idx = targetList.length;
+      targetList.splice(idx, 0, { ...dragged, day: targetDay });
+      const targetReindexed = targetList.map((t, i) => ({ ...t, order: i }));
+      const srcReindexed =
+        srcDay === targetDay
+          ? []
+          : without
+              .filter((t) => t.day === srcDay)
+              .sort((a, b) => a.order - b.order)
+              .map((t, i) => ({ ...t, order: i }));
+      const others = without.filter((t) => t.day !== targetDay && t.day !== srcDay);
+      const merged = [...others, ...targetReindexed, ...srcReindexed];
+      persistReorder(
+        [...targetReindexed, ...srcReindexed].map((t) => ({ id: t.id, day: t.day, order: t.order }))
+      );
+      return merged;
+    });
+    setDragId(null);
+    setDragOverDay(null);
+  };
+
+  const pct = tasks.length > 0 ? Math.round((doneCount / tasks.length) * 100) : 0;
+
   return (
     <div className="space-y-4">
+      {/* 달력 */}
+      <div className="rounded-2xl border border-neutral-200/70 bg-white p-4 sm:p-5">
+        <p className="text-sm font-bold text-neutral-900 mb-3 inline-flex items-center gap-1.5">
+          <CalendarDays className="w-4 h-4 text-neutral-500" /> 일정 달력
+        </p>
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {WEEKDAYS.map((w, i) => (
+            <div
+              key={w}
+              className={
+                "text-center text-[11px] font-bold py-1 " +
+                (i === 0 ? "text-red-400" : i === 6 ? "text-blue-400" : "text-neutral-400")
+              }
+            >
+              {w}
+            </div>
+          ))}
+        </div>
+        <div className="space-y-1">
+          {calendar.map((week, wi) => (
+            <div key={wi} className="grid grid-cols-7 gap-1">
+              {week.map(({ date, dayIndex }) => {
+                const inProgram = dayIndex >= 1 && dayIndex <= maxDay;
+                const dayTasks = inProgram ? byDay(dayIndex) : [];
+                const isToday = midnight(date).getTime() === todayMs;
+                const doneN = dayTasks.filter((t) => t.doneAt).length;
+                const allDone = dayTasks.length > 0 && doneN === dayTasks.length;
+                return (
+                  <button
+                    key={date.toISOString()}
+                    type="button"
+                    disabled={!inProgram}
+                    onClick={() =>
+                      document
+                        .getElementById(`cday-${dayIndex}`)
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                    }
+                    className={
+                      "aspect-square rounded-lg border flex flex-col items-center justify-center gap-0.5 p-0.5 transition-colors " +
+                      (!inProgram
+                        ? "border-transparent text-neutral-300"
+                        : isToday
+                          ? "border-pink-300 bg-pink-50 text-neutral-900"
+                          : "border-neutral-200/70 bg-white hover:border-neutral-400 text-neutral-700")
+                    }
+                  >
+                    <span className="text-[11px] font-semibold leading-none">{date.getDate()}</span>
+                    {inProgram && (
+                      <span className="text-[8px] font-bold leading-none text-neutral-400">
+                        D{dayIndex}
+                      </span>
+                    )}
+                    {inProgram && dayTasks.length > 0 && (
+                      <span
+                        className={
+                          "mt-0.5 w-1.5 h-1.5 rounded-full " +
+                          (allDone ? "bg-emerald-500" : doneN > 0 ? "bg-amber-400" : "bg-neutral-300")
+                        }
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-3 mt-3 text-[10px] text-neutral-400">
+          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-neutral-300" /> 예정</span>
+          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> 진행 중</span>
+          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> 완료</span>
+        </div>
+      </div>
+
       {/* 진행률 */}
       <div className="rounded-2xl border border-neutral-200/70 bg-white px-5 py-4 flex items-center justify-between gap-3">
         <div>
@@ -158,12 +293,12 @@ export function TaskBoard({
             {durationDays}일 프로그램 · {tasks.length}개 할 일 중 {doneCount}개 완료
           </p>
         </div>
-        <div className="text-right">
-          <p className="text-2xl font-black ig-gradient-text">
-            {tasks.length > 0 ? Math.round((doneCount / tasks.length) * 100) : 0}%
-          </p>
-        </div>
+        <p className="text-2xl font-black ig-gradient-text">{pct}%</p>
       </div>
+
+      <p className="text-[11px] text-neutral-400 px-1">
+        <GripVertical className="w-3 h-3 inline -mt-0.5" /> 손잡이를 잡고 끌어서 다른 날로 옮기거나 순서를 바꿀 수 있어요.
+      </p>
 
       {days.map((day) => {
         const dayTasks = byDay(day);
@@ -172,11 +307,25 @@ export function TaskBoard({
         return (
           <section
             key={day}
+            id={`cday-${day}`}
+            onDragOver={(e) => {
+              if (dragId) {
+                e.preventDefault();
+                setDragOverDay(day);
+              }
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragId) reorder(dragId, day, null);
+            }}
+            style={{ scrollMarginTop: "16px" }}
             className={
-              "rounded-2xl border p-4 sm:p-5 " +
-              (isToday
-                ? "border-pink-300 bg-pink-50/40 shadow-[0_4px_16px_-8px_rgba(219,39,119,0.4)]"
-                : "border-neutral-200/70 bg-white")
+              "rounded-2xl border p-4 sm:p-5 transition-colors " +
+              (dragOverDay === day
+                ? "border-pink-400 bg-pink-50/60"
+                : isToday
+                  ? "border-pink-300 bg-pink-50/40 shadow-[0_4px_16px_-8px_rgba(219,39,119,0.4)]"
+                  : "border-neutral-200/70 bg-white")
             }
           >
             <div className="flex items-center gap-2 mb-3">
@@ -209,7 +358,7 @@ export function TaskBoard({
 
             <div className="space-y-2">
               {dayTasks.length === 0 && addDay !== day && (
-                <p className="text-xs text-neutral-400 px-1">할 일이 없어요.</p>
+                <p className="text-xs text-neutral-400 px-1">할 일이 없어요. 여기로 끌어다 놓거나 추가하세요.</p>
               )}
               {dayTasks.map((task) =>
                 editingId === task.id ? (
@@ -217,16 +366,43 @@ export function TaskBoard({
                     key={task.id}
                     initialTitle={task.title}
                     initialDescription={task.description}
+                    initialDay={task.day}
+                    maxDay={maxDay}
                     busy={busyId === task.id}
                     onCancel={() => setEditingId(null)}
-                    onSave={(title, desc) => saveEdit(task.id, title, desc)}
+                    onSave={(title, desc, d) => saveEdit(task.id, title, desc, d)}
                     onDelete={() => removeTask(task.id)}
                   />
                 ) : (
                   <div
                     key={task.id}
-                    className="group flex items-start gap-3 rounded-xl border border-neutral-200/70 bg-white px-3 py-2.5"
+                    onDragOver={(e) => {
+                      if (dragId && dragId !== task.id) e.preventDefault();
+                    }}
+                    onDrop={(e) => {
+                      if (dragId && dragId !== task.id) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        reorder(dragId, task.day, task.id);
+                      }
+                    }}
+                    className={
+                      "group flex items-start gap-2 rounded-xl border border-neutral-200/70 bg-white px-2.5 py-2.5 " +
+                      (dragId === task.id ? "opacity-40" : "")
+                    }
                   >
+                    <span
+                      draggable
+                      onDragStart={() => setDragId(task.id)}
+                      onDragEnd={() => {
+                        setDragId(null);
+                        setDragOverDay(null);
+                      }}
+                      className="shrink-0 mt-0.5 cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500"
+                      aria-label="드래그해서 이동"
+                    >
+                      <GripVertical className="w-4 h-4" />
+                    </span>
                     <button
                       type="button"
                       onClick={() => toggleDone(task)}
@@ -283,6 +459,8 @@ export function TaskBoard({
                 <TaskEditRow
                   initialTitle=""
                   initialDescription=""
+                  initialDay={day}
+                  maxDay={maxDay}
                   busy={busyId === "add"}
                   addMode
                   onCancel={() => setAddDay(null)}
@@ -311,6 +489,8 @@ export function TaskBoard({
 function TaskEditRow({
   initialTitle,
   initialDescription,
+  initialDay,
+  maxDay,
   busy,
   addMode,
   onSave,
@@ -319,14 +499,17 @@ function TaskEditRow({
 }: {
   initialTitle: string;
   initialDescription: string;
+  initialDay: number;
+  maxDay: number;
   busy: boolean;
   addMode?: boolean;
-  onSave: (title: string, description: string) => void;
+  onSave: (title: string, description: string, day: number) => void;
   onCancel: () => void;
   onDelete?: () => void;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
+  const [day, setDay] = useState(initialDay);
 
   return (
     <div className="rounded-xl border border-neutral-300 bg-white p-3 space-y-2">
@@ -345,10 +528,23 @@ function TaskEditRow({
         placeholder="설명 (선택)"
         className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-[13px] focus:outline-none focus:border-pink-400 resize-none"
       />
+      {!addMode && (
+        <label className="flex items-center gap-2 text-xs text-neutral-500">
+          Day 이동
+          <input
+            type="number"
+            min={1}
+            max={maxDay}
+            value={day}
+            onChange={(e) => setDay(Math.max(1, Number(e.target.value) || 1))}
+            className="w-20 px-2 py-1.5 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
+          />
+        </label>
+      )}
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => onSave(title, description)}
+          onClick={() => onSave(title, description, day)}
           disabled={busy || !title.trim()}
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 disabled:opacity-50"
         >
