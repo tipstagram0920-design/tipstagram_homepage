@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import Link from "next/link";
-import { BookOpen, Clock, Trophy, ArrowRight } from "lucide-react";
+import { BookOpen, Clock, Trophy, ArrowRight, Sparkles } from "lucide-react";
 import { findEnrolledCohortsForUser } from "@/lib/challenge-enrollment";
 import { formatKstHuman } from "@/lib/kst";
 
@@ -42,6 +42,9 @@ export default async function ClassroomPage() {
 
   const purchases = await getUserPurchases(session.user.id).catch(() => []);
   const enrolledCohorts = await findEnrolledCohortsForUser(session.user.id).catch(() => []);
+  const consultingEnrollment = await prisma.consultingEnrollment
+    .findUnique({ where: { userId: session.user.id }, select: { id: true } })
+    .catch(() => null);
 
   const allLessonIds = purchases.flatMap(
     (p) => p.product.course?.sections.flatMap((s) => s.lessons.map((l) => l.id)) || []
@@ -89,6 +92,35 @@ export default async function ClassroomPage() {
                   </div>
                 </Link>
               ))}
+            </div>
+          )}
+
+          {/* 1:1 컨설팅 진입 카드 */}
+          {consultingEnrollment && (
+            <div className="mb-10">
+              <p className="text-xs font-bold tracking-[2px] text-pink-600 uppercase mb-3">
+                진행 중인 컨설팅
+              </p>
+              <Link
+                href="/consulting"
+                className="group flex items-center gap-5 rounded-3xl bg-neutral-950 p-6 sm:p-7 hover:shadow-2xl hover:-translate-y-0.5 transition-all"
+              >
+                <div className="shrink-0 w-14 h-14 rounded-2xl ig-gradient text-white flex items-center justify-center">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0 text-white">
+                  <p className="text-[11px] font-bold tracking-wider uppercase text-white/60">
+                    1:1 컨설팅
+                  </p>
+                  <h2 className="text-lg sm:text-xl font-black mt-0.5">
+                    <span className="ig-gradient-text">3주 실행 프로그램</span>
+                  </h2>
+                  <p className="text-xs text-white/60 mt-1">오늘의 할 일을 확인하세요</p>
+                </div>
+                <div className="shrink-0 inline-flex items-center gap-1 text-sm font-bold text-white group-hover:text-pink-400">
+                  열기 <ArrowRight className="w-4 h-4" />
+                </div>
+              </Link>
             </div>
           )}
 

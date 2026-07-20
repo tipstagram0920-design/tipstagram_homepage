@@ -33,6 +33,7 @@ model User {
   contact    Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
   homeworkSubmissions HomeworkSubmission[]
   challengeEnrollments ChallengeEnrollment[]
+  consultingEnrollment ConsultingEnrollment?
 
   @@map("users")
 }
@@ -283,6 +284,40 @@ model Setting {
   updatedAt DateTime @updatedAt
 
   @@map("settings")
+}
+
+// ============================================================================
+// 1:1 컨설팅 — 등록일 기준 21일(3주) 개인별 데일리 할 일 프로그램
+// ============================================================================
+
+model ConsultingEnrollment {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  startAt   DateTime @default(now()) // 등록 시점 = Day 1 기준 (개인별 상대 일정)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks ConsultingTask[]
+
+  @@map("consulting_enrollments")
+}
+
+model ConsultingTask {
+  id           String    @id @default(cuid())
+  enrollmentId String
+  day          Int // 1~21 (등록일 기준 상대 일수)
+  order        Int       @default(0)
+  title        String
+  description  String    @default("") @db.Text
+  doneAt       DateTime? // 완료 체크 시각
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  enrollment ConsultingEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([enrollmentId, day, order])
+  @@map("consulting_tasks")
 }
 
 // ============================================================================

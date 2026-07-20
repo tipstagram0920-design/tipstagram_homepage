@@ -9,7 +9,7 @@ import {
   LayoutDashboard, ShoppingBag, BookOpen, Users,
   FileText, SlidersHorizontal, Tag,
   Mail, MailOpen, MessageSquare, PanelTop, Radio, Sparkles, Workflow, Calendar, CreditCard,
-  TrendingUp, Gift, BarChart3, RotateCcw, Trophy,
+  TrendingUp, Gift, BarChart3, RotateCcw, Trophy, Sparkles as SparklesIcon,
 } from "lucide-react";
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
@@ -38,6 +38,7 @@ const groups: NavGroup[] = [
       { label: "워크플로우", href: "/admin/crm/workflows", icon: Workflow },
       { label: "웨비나 캠페인", href: "/admin/crm/webinar", icon: Calendar },
       { label: "5주 챌린지", href: "/admin/challenge", icon: Trophy },
+      { label: "1:1 컨설팅", href: "/admin/consulting", icon: SparklesIcon },
       { label: "운영 to-do", href: "/admin/crm/tasks", icon: Calendar },
       { label: "예약 메시지", href: "/admin/crm/broadcast", icon: Calendar },
       { label: "메일 발송", href: "/admin/mail", icon: Mail },
