@@ -6,6 +6,7 @@ import { currentDayIndex, CONSULTING_DURATION_DAYS } from "@/lib/consulting";
 import { TaskBoard, type BoardTask } from "@/components/consulting/TaskBoard";
 import { ChevronLeft } from "lucide-react";
 import { ResetTasksButton } from "./_components/ResetTasksButton";
+import { AdminResults } from "./_components/AdminResults";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default async function AdminConsultingEnrollmentPage({
   const tasks: BoardTask[] = enrollment.tasks.map((t) => ({
     id: t.id,
     day: t.day,
+    endDay: t.endDay,
     order: t.order,
     title: t.title,
     description: t.description,
@@ -61,6 +63,21 @@ export default async function AdminConsultingEnrollmentPage({
         <ResetTasksButton enrollmentId={enrollment.id} />
       </div>
 
+      {/* 고객 제출 결과 — 클릭하면 결과가 펼쳐집니다 */}
+      <h2 className="text-lg font-bold text-neutral-900 mb-2">숙제 제출 결과</h2>
+      <p className="text-xs text-neutral-500 mb-3">각 숙제를 클릭하면 고객이 작성한 내용·결과를 볼 수 있어요.</p>
+      <AdminResults
+        tasks={tasks.map((t) => ({
+          id: t.id,
+          day: t.day,
+          title: t.title,
+          guideKey: t.guideKey ?? null,
+          data: t.data,
+          doneAt: t.doneAt,
+        }))}
+      />
+
+      <h2 className="text-lg font-bold text-neutral-900 mb-2">일정 편집</h2>
       <TaskBoard
         startAtIso={enrollment.startAt.toISOString()}
         durationDays={CONSULTING_DURATION_DAYS}

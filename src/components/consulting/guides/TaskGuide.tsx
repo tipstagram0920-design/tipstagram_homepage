@@ -5,6 +5,7 @@ import { InpockLinkGuide } from "./InpockLinkGuide";
 import { HighlightGuide } from "./HighlightGuide";
 import { LandingPageGuide } from "./LandingPageGuide";
 import { ReelsReferenceGuide } from "./ReelsReferenceGuide";
+import { ReelsUploadGuide } from "./ReelsUploadGuide";
 
 export const GUIDE_LABELS: Record<string, string> = {
   "customer-select": "소비자 선정 → 프로필 추천",
@@ -12,6 +13,7 @@ export const GUIDE_LABELS: Record<string, string> = {
   highlight: "하이라이트 제작 가이드",
   "landing-page": "랜딩페이지 글 생성기",
   "reels-reference": "레퍼런스 릴스 5개 수집",
+  "reels-upload": "업로드 릴스 URL 제출",
 };
 
 export function TaskGuide({
@@ -35,6 +37,8 @@ export function TaskGuide({
       return <LandingPageGuide taskId={taskId} initialData={d} />;
     case "reels-reference":
       return <ReelsReferenceGuide taskId={taskId} initialData={d} />;
+    case "reels-upload":
+      return <ReelsUploadGuide taskId={taskId} initialData={d} />;
     default:
       return null;
   }

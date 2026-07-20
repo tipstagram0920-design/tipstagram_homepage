@@ -31,6 +31,10 @@ const FIELDS: { key: Key; label: string; placeholder: string; heading: string }[
   { key: "cta", label: "11) 구매 CTA", placeholder: "행동을 유도하는 마지막 문장", heading: "" },
 ];
 
+export function assembleLanding(d: Record<string, string>): string {
+  return assemble(d as Data);
+}
+
 function assemble(d: Data): string {
   const parts: string[] = [];
   for (const f of FIELDS) {

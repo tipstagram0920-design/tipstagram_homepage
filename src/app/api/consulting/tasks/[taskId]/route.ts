@@ -32,6 +32,14 @@ export async function PATCH(
     const day = Number(body.day);
     if (Number.isInteger(day) && day >= 1) data.day = day;
   }
+  if (body.endDay !== undefined) {
+    if (body.endDay === null) {
+      data.endDay = null;
+    } else {
+      const endDay = Number(body.endDay);
+      if (Number.isInteger(endDay) && endDay >= 1) data.endDay = endDay;
+    }
+  }
   if (body.done !== undefined) {
     data.doneAt = body.done ? new Date() : null;
   }

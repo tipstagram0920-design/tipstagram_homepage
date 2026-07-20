@@ -49,6 +49,7 @@ export default async function ConsultingPage() {
   const tasks: BoardTask[] = enrollment.tasks.map((t) => ({
     id: t.id,
     day: t.day,
+    endDay: t.endDay,
     order: t.order,
     title: t.title,
     description: t.description,

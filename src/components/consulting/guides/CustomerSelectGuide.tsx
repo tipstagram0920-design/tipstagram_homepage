@@ -42,7 +42,7 @@ const METHODS = [
   },
 ];
 
-function buildProfiles(topProblem: string, change: string, persona: string, expertise: string) {
+export function buildProfiles(topProblem: string, change: string, persona: string, expertise: string) {
   const p = compress(topProblem, 14) || "○○ 고민";
   const c = compress(change, 16) || "○○한 변화";
   const who = compress(persona, 16) || "○○";

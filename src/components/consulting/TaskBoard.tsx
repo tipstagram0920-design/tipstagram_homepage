@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
@@ -19,6 +19,7 @@ import { TaskGuide, GUIDE_LABELS } from "./guides/TaskGuide";
 export interface BoardTask {
   id: string;
   day: number;
+  endDay?: number | null;
   order: number;
   title: string;
   description: string;
@@ -65,8 +66,53 @@ export function TaskBoard({
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverDay, setDragOverDay] = useState<number | null>(null);
   const [openGuideId, setOpenGuideId] = useState<string | null>(null);
+  const [resizingId, setResizingId] = useState<string | null>(null);
+  const weekRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  const effEnd = (t: BoardTask) => Math.max(t.day, t.endDay ?? t.day);
+
+  const persistEndDay = (taskId: string, endDay: number | null) => {
+    fetch(`/api/consulting/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endDay }),
+    }).catch(() => {});
+  };
+
+  // 달력 막대 우측 핸들 드래그로 마감일(endDay) 늘리기/줄이기
+  const startResize = (e: React.PointerEvent, task: BoardTask, weekIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setResizingId(task.id);
+    const gridStartDayIndex = 1 - startDateDow + weekIndex * 7; // 해당 주 첫 칸의 dayIndex
+    const move = (ev: PointerEvent) => {
+      const el = weekRefs.current[weekIndex];
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const col = Math.floor(((ev.clientX - rect.left) / rect.width) * 7);
+      const clamped = Math.max(0, Math.min(6, col));
+      const targetDay = gridStartDayIndex + clamped;
+      const newEnd = Math.max(task.day, targetDay);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === task.id ? { ...t, endDay: newEnd === t.day ? null : newEnd } : t))
+      );
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      setResizingId(null);
+      setTasks((prev) => {
+        const t = prev.find((x) => x.id === task.id);
+        if (t) persistEndDay(task.id, t.endDay ?? null);
+        return prev;
+      });
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
 
   const startDate = useMemo(() => midnight(new Date(startAtIso)), [startAtIso]);
+  const startDateDow = useMemo(() => midnight(new Date(startAtIso)).getDay(), [startAtIso]);
   const todayIndex = useMemo(() => {
     return Math.round((midnight(new Date()).getTime() - startDate.getTime()) / DAY_MS) + 1;
   }, [startDate]);
@@ -115,18 +161,25 @@ export function TaskBoard({
     }
   };
 
-  const saveEdit = async (taskId: string, title: string, description: string, day: number) => {
+  const saveEdit = async (
+    taskId: string,
+    title: string,
+    description: string,
+    day: number,
+    endDay: number | null
+  ) => {
     if (!title.trim()) return;
+    const normEnd = endDay && endDay > day ? endDay : null;
     setBusyId(taskId);
     try {
       const res = await fetch(`/api/consulting/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, day }),
+        body: JSON.stringify({ title, description, day, endDay: normEnd }),
       });
       if (res.ok) {
         setTasks((prev) =>
-          prev.map((t) => (t.id === taskId ? { ...t, title, description, day } : t))
+          prev.map((t) => (t.id === taskId ? { ...t, title, description, day, endDay: normEnd } : t))
         );
         setEditingId(null);
       }
@@ -236,59 +289,115 @@ export function TaskBoard({
             </div>
           ))}
         </div>
-        <div className="space-y-1">
-          {calendar.map((week, wi) => (
-            <div key={wi} className="grid grid-cols-7 gap-1">
-              {week.map(({ date, dayIndex }) => {
-                const inProgram = dayIndex >= 1 && dayIndex <= maxDay;
-                const dayTasks = inProgram ? byDay(dayIndex) : [];
-                const isToday = midnight(date).getTime() === todayMs;
-                const doneN = dayTasks.filter((t) => t.doneAt).length;
-                const allDone = dayTasks.length > 0 && doneN === dayTasks.length;
-                return (
-                  <button
-                    key={date.toISOString()}
-                    type="button"
-                    disabled={!inProgram}
-                    onClick={() =>
-                      document
-                        .getElementById(`cday-${dayIndex}`)
-                        ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                    }
-                    className={
-                      "aspect-square rounded-lg border flex flex-col items-center justify-center gap-0.5 p-0.5 transition-colors " +
-                      (!inProgram
-                        ? "border-transparent text-neutral-300"
-                        : isToday
-                          ? "border-pink-300 bg-pink-50 text-neutral-900"
-                          : "border-neutral-200/70 bg-white hover:border-neutral-400 text-neutral-700")
-                    }
-                  >
-                    <span className="text-[11px] font-semibold leading-none">{date.getDate()}</span>
-                    {inProgram && (
-                      <span className="text-[8px] font-bold leading-none text-neutral-400">
-                        D{dayIndex}
-                      </span>
-                    )}
-                    {inProgram && dayTasks.length > 0 && (
-                      <span
-                        className={
-                          "mt-0.5 w-1.5 h-1.5 rounded-full " +
-                          (allDone ? "bg-emerald-500" : doneN > 0 ? "bg-amber-400" : "bg-neutral-300")
+        <div className="space-y-2">
+          {calendar.map((week, wi) => {
+            const weekStart = week[0].dayIndex;
+            const weekEnd = week[6].dayIndex;
+            const inWeek = tasks
+              .filter((t) => t.day <= weekEnd && effEnd(t) >= weekStart)
+              .sort((a, b) => a.day - b.day || a.order - b.order);
+            // 레인(줄) 배치 — 겹치지 않게 쌓기
+            const laneEnd: number[] = [];
+            const placed = inWeek.map((t) => {
+              const s = Math.max(0, t.day - weekStart);
+              const e = Math.min(6, effEnd(t) - weekStart);
+              let lane = 0;
+              while (lane < laneEnd.length && laneEnd[lane] >= s) lane++;
+              laneEnd[lane] = e;
+              return { t, s, e, lane };
+            });
+            const laneCount = laneEnd.length;
+            return (
+              <div key={wi} className="space-y-1">
+                {/* 날짜 행 */}
+                <div
+                  ref={(el) => {
+                    weekRefs.current[wi] = el;
+                  }}
+                  className="grid grid-cols-7 gap-1"
+                >
+                  {week.map(({ date, dayIndex }) => {
+                    const inProgram = dayIndex >= 1 && dayIndex <= maxDay;
+                    const isToday = midnight(date).getTime() === todayMs;
+                    return (
+                      <button
+                        key={date.toISOString()}
+                        type="button"
+                        disabled={!inProgram}
+                        onClick={() =>
+                          document.getElementById(`cday-${dayIndex}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
                         }
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+                        className={
+                          "rounded-lg border py-1.5 flex flex-col items-center justify-center leading-none transition-colors " +
+                          (!inProgram
+                            ? "border-transparent text-neutral-300"
+                            : isToday
+                              ? "border-pink-300 bg-pink-50 text-neutral-900"
+                              : "border-neutral-200/70 bg-white hover:border-neutral-400 text-neutral-700")
+                        }
+                      >
+                        <span className="text-[11px] font-semibold">{date.getDate()}</span>
+                        {inProgram && <span className="text-[8px] font-bold text-neutral-400 mt-0.5">D{dayIndex}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* 일정 막대 */}
+                {laneCount > 0 && (
+                  <div
+                    className="grid grid-cols-7 gap-1"
+                    style={{ gridTemplateRows: `repeat(${laneCount}, 18px)` }}
+                  >
+                    {placed.map(({ t, s, e, lane }) => {
+                      const startsHere = t.day >= weekStart;
+                      const endsHere = effEnd(t) <= weekEnd;
+                      const done = !!t.doneAt;
+                      const inRangeToday = t.day <= todayIndex && effEnd(t) >= todayIndex;
+                      return (
+                        <div
+                          key={t.id}
+                          style={{ gridColumn: `${s + 1} / ${e + 2}`, gridRow: lane + 1 }}
+                          className="relative min-w-0"
+                        >
+                          <div
+                            onClick={() =>
+                              document.getElementById(`cday-${t.day}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
+                            }
+                            className={
+                              "h-[18px] px-1.5 flex items-center text-[10px] font-semibold truncate cursor-pointer " +
+                              (startsHere ? "rounded-l-md " : "") +
+                              (endsHere ? "rounded-r-md " : "") +
+                              (done
+                                ? "bg-emerald-500 text-white"
+                                : inRangeToday
+                                  ? "ig-gradient text-white"
+                                  : "bg-neutral-700 text-white") +
+                              (resizingId === t.id ? " ring-2 ring-pink-400" : "")
+                            }
+                          >
+                            {startsHere ? t.title : "…"}
+                          </div>
+                          {endsHere && (
+                            <span
+                              onPointerDown={(ev) => startResize(ev, t, wi)}
+                              className="absolute right-0 top-0 bottom-0 w-2.5 cursor-ew-resize touch-none flex items-center justify-center"
+                              title="드래그해서 마감일 늘리기"
+                            >
+                              <span className="w-0.5 h-2.5 rounded bg-white/70" />
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-        <div className="flex items-center gap-3 mt-3 text-[10px] text-neutral-400">
-          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-neutral-300" /> 예정</span>
-          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> 진행 중</span>
-          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> 완료</span>
-        </div>
+        <p className="text-[10px] text-neutral-400 mt-3">
+          막대 오른쪽 끝을 잡고 드래그하면 여러 날에 걸치도록 마감일을 늘릴 수 있어요. · 초록=완료
+        </p>
       </div>
 
       {/* 진행률 */}
@@ -373,10 +482,11 @@ export function TaskBoard({
                     initialTitle={task.title}
                     initialDescription={task.description}
                     initialDay={task.day}
+                    initialEndDay={task.endDay ?? null}
                     maxDay={maxDay}
                     busy={busyId === task.id}
                     onCancel={() => setEditingId(null)}
-                    onSave={(title, desc, d) => saveEdit(task.id, title, desc, d)}
+                    onSave={(title, desc, d, ed) => saveEdit(task.id, title, desc, d, ed)}
                     onDelete={() => removeTask(task.id)}
                   />
                 ) : (
@@ -443,6 +553,11 @@ export function TaskBoard({
                         }
                       >
                         {task.title}
+                        {task.endDay && task.endDay > task.day && (
+                          <span className="text-[10px] font-bold text-neutral-500 bg-neutral-100 rounded px-1.5 py-0.5">
+                            D{task.day}~D{task.endDay}
+                          </span>
+                        )}
                         {task.guideKey && (
                           <ChevronDown
                             className={"w-3.5 h-3.5 text-pink-500 transition-transform " + (openGuideId === task.id ? "rotate-180" : "")}
@@ -494,6 +609,7 @@ export function TaskBoard({
                   initialTitle=""
                   initialDescription=""
                   initialDay={day}
+                  initialEndDay={null}
                   maxDay={maxDay}
                   busy={busyId === "add"}
                   addMode
@@ -524,6 +640,7 @@ function TaskEditRow({
   initialTitle,
   initialDescription,
   initialDay,
+  initialEndDay,
   maxDay,
   busy,
   addMode,
@@ -534,16 +651,18 @@ function TaskEditRow({
   initialTitle: string;
   initialDescription: string;
   initialDay: number;
+  initialEndDay: number | null;
   maxDay: number;
   busy: boolean;
   addMode?: boolean;
-  onSave: (title: string, description: string, day: number) => void;
+  onSave: (title: string, description: string, day: number, endDay: number | null) => void;
   onCancel: () => void;
   onDelete?: () => void;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
   const [day, setDay] = useState(initialDay);
+  const [endDay, setEndDay] = useState<number | "">(initialEndDay ?? "");
 
   return (
     <div className="rounded-xl border border-neutral-300 bg-white p-3 space-y-2">
@@ -563,22 +682,36 @@ function TaskEditRow({
         className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-[13px] focus:outline-none focus:border-pink-400 resize-none"
       />
       {!addMode && (
-        <label className="flex items-center gap-2 text-xs text-neutral-500">
-          Day 이동
-          <input
-            type="number"
-            min={1}
-            max={maxDay}
-            value={day}
-            onChange={(e) => setDay(Math.max(1, Number(e.target.value) || 1))}
-            className="w-20 px-2 py-1.5 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
-          />
-        </label>
+        <div className="flex items-center gap-4 flex-wrap">
+          <label className="flex items-center gap-2 text-xs text-neutral-500">
+            시작 Day
+            <input
+              type="number"
+              min={1}
+              max={maxDay}
+              value={day}
+              onChange={(e) => setDay(Math.max(1, Number(e.target.value) || 1))}
+              className="w-20 px-2 py-1.5 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
+            />
+          </label>
+          <label className="flex items-center gap-2 text-xs text-neutral-500">
+            마감 Day <span className="text-neutral-400">(여러 날, 비우면 하루)</span>
+            <input
+              type="number"
+              min={day}
+              max={maxDay}
+              value={endDay}
+              onChange={(e) => setEndDay(e.target.value === "" ? "" : Math.max(1, Number(e.target.value) || 1))}
+              placeholder="—"
+              className="w-20 px-2 py-1.5 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
+            />
+          </label>
+        </div>
       )}
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => onSave(title, description, day)}
+          onClick={() => onSave(title, description, day, endDay === "" ? null : Number(endDay))}
           disabled={busy || !title.trim()}
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 disabled:opacity-50"
         >

@@ -306,7 +306,8 @@ model ConsultingEnrollment {
 model ConsultingTask {
   id           String    @id @default(cuid())
   enrollmentId String
-  day          Int // 1~21 (등록일 기준 상대 일수)
+  day          Int // 시작 Day (등록일 기준 상대 일수)
+  endDay       Int? // 마감 Day (여러 날에 걸치는 숙제. null이면 하루짜리 = day)
   order        Int       @default(0)
   title        String
   description  String    @default("") @db.Text
