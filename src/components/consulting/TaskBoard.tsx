@@ -11,7 +11,10 @@ import {
   Loader2,
   CalendarDays,
   GripVertical,
+  Wand2,
+  ChevronDown,
 } from "lucide-react";
+import { TaskGuide, GUIDE_LABELS } from "./guides/TaskGuide";
 
 export interface BoardTask {
   id: string;
@@ -20,6 +23,8 @@ export interface BoardTask {
   title: string;
   description: string;
   doneAt: string | null;
+  guideKey?: string | null;
+  data?: unknown;
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -59,6 +64,7 @@ export function TaskBoard({
   const [addDay, setAddDay] = useState<number | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverDay, setDragOverDay] = useState<number | null>(null);
+  const [openGuideId, setOpenGuideId] = useState<string | null>(null);
 
   const startDate = useMemo(() => midnight(new Date(startAtIso)), [startAtIso]);
   const todayIndex = useMemo(() => {
@@ -374,8 +380,8 @@ export function TaskBoard({
                     onDelete={() => removeTask(task.id)}
                   />
                 ) : (
+                  <div key={task.id}>
                   <div
-                    key={task.id}
                     onDragOver={(e) => {
                       if (dragId && dragId !== task.id) e.preventDefault();
                     }}
@@ -393,7 +399,12 @@ export function TaskBoard({
                   >
                     <span
                       draggable
-                      onDragStart={() => setDragId(task.id)}
+                      onDragStart={(e) => {
+                        setDragId(task.id);
+                        // Firefox/Safari 등은 setData 없으면 드래그가 시작되지 않음
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", task.id);
+                      }}
                       onDragEnd={() => {
                         setDragId(null);
                         setDragOverDay(null);
@@ -431,6 +442,24 @@ export function TaskBoard({
                           {task.description}
                         </p>
                       )}
+                      {task.guideKey && (
+                        <button
+                          type="button"
+                          onClick={() => setOpenGuideId(openGuideId === task.id ? null : task.id)}
+                          className={
+                            "mt-2 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors " +
+                            (openGuideId === task.id
+                              ? "border-pink-300 bg-pink-50 text-pink-600"
+                              : "border-neutral-200 text-neutral-700 hover:border-pink-400 hover:text-pink-600")
+                          }
+                        >
+                          <Wand2 className="w-3.5 h-3.5" />
+                          {GUIDE_LABELS[task.guideKey] ?? "도우미"}
+                          <ChevronDown
+                            className={"w-3.5 h-3.5 transition-transform " + (openGuideId === task.id ? "rotate-180" : "")}
+                          />
+                        </button>
+                      )}
                     </div>
                     <div className="shrink-0 flex items-center gap-1 opacity-60 group-hover:opacity-100">
                       <button
@@ -451,6 +480,12 @@ export function TaskBoard({
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
+                  </div>
+                  {task.guideKey && openGuideId === task.id && (
+                    <div className="mt-2 rounded-xl border border-pink-200 bg-white p-4">
+                      <TaskGuide guideKey={task.guideKey} taskId={task.id} data={task.data} />
+                    </div>
+                  )}
                   </div>
                 )
               )}

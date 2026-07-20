@@ -30,6 +30,8 @@ export default async function AdminConsultingEnrollmentPage({
     title: t.title,
     description: t.description,
     doneAt: t.doneAt ? t.doneAt.toISOString() : null,
+    guideKey: t.guideKey,
+    data: t.data,
   }));
   const dayIdx = currentDayIndex(enrollment.startAt);
 

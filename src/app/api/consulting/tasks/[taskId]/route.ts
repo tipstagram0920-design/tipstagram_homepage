@@ -35,6 +35,14 @@ export async function PATCH(
   if (body.done !== undefined) {
     data.doneAt = body.done ? new Date() : null;
   }
+  if (body.data !== undefined) {
+    // 도우미 입력값(JSON) 저장. 크기 제한.
+    const json = JSON.parse(JSON.stringify(body.data ?? null));
+    if (json && JSON.stringify(json).length > 40000) {
+      return NextResponse.json({ error: "저장 데이터가 너무 커요." }, { status: 400 });
+    }
+    data.data = json;
+  }
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "변경할 내용이 없어요." }, { status: 400 });
   }

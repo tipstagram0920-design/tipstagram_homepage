@@ -310,6 +310,8 @@ model ConsultingTask {
   order        Int       @default(0)
   title        String
   description  String    @default("") @db.Text
+  guideKey     String? // 이 할 일에 붙는 도우미/생성기 종류 (profile-bio, inpock-link, highlight, landing-page, reels-reference)
+  data         Json? // 도우미 입력값 저장 (고객이 채운 필드 등)
   doneAt       DateTime? // 완료 체크 시각
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

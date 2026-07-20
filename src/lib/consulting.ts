@@ -8,22 +8,25 @@ export interface TaskSeed {
   day: number;
   title: string;
   description?: string;
+  guideKey?: string;
 }
 
 // 등록일(Day 1) 기준 기본 21일 일정. 등록 시 이 템플릿이 고객별로 복제되고,
 // 이후 고객·관리자가 자유롭게 수정/추가/삭제할 수 있다.
+// guideKey가 있는 할 일에는 입력→결과 도우미/생성기가 붙는다.
 export const DEFAULT_CONSULTING_TASKS: TaskSeed[] = [
   // 1주차 — 세팅 + 첫 릴스 사이클
-  { day: 1, title: "프로필 수정", description: "한 줄 소개·프로필 사진·대표 링크를 콘셉트에 맞게 정비하세요." },
-  { day: 2, title: "하이라이트 수정", description: "커버·순서·이름을 정리하고 필수 하이라이트(무료자료·후기·FAQ·문의)를 세팅하세요." },
-  { day: 3, title: "랜딩페이지 만들기", description: "내 상품 소개 랜딩페이지를 만들고 링크를 프로필에 연결하세요." },
+  { day: 1, title: "프로필 수정 (3줄 바이오)", description: "전문성·소비자 문제·변화를 입력하면 3줄 바이오 3버전이 나와요. 도우미를 열어 작성하세요.", guideKey: "profile-bio" },
+  { day: 1, title: "인포크(링크인바이오) 링크 만들기", description: "무료·이벤트 → 후기 → 상품안내·FAQ → 상담 순서로 버튼을 배치하세요. 도우미에 영상·순서 가이드가 있어요.", guideKey: "inpock-link" },
+  { day: 2, title: "하이라이트 수정", description: "무료·이벤트 → 후기 → FAQ → 상담하러가기 순으로. 커버 이모티콘 사이트와 제작 순서는 도우미 참고.", guideKey: "highlight" },
+  { day: 3, title: "랜딩페이지 만들기", description: "항목을 채우면 복붙용 랜딩페이지 글이 완성돼요. 도우미를 열어 작성하세요.", guideKey: "landing-page" },
   { day: 4, title: "무료자료(리드마그넷) 만들기", description: "잠재 고객을 모을 무료 자료를 하나 만들어 배포 준비하세요." },
   { day: 5, title: "이벤트 만들기", description: "참여를 유도할 이벤트(체험·챌린지·할인 등)를 기획해 공지하세요." },
-  { day: 6, title: "레퍼런스 릴스 5개 찾기 + 변형 기획", description: "내 주제에 맞는 레퍼런스 릴스 5개를 찾고, 내 것으로 변형할 기획안을 잡으세요." },
+  { day: 6, title: "레퍼런스 릴스 5개 찾기 + 변형 기획", description: "레퍼런스 5개를 찾아 저장하고, 계정에 들어가 더 모으세요. 도우미로 관리하세요.", guideKey: "reels-reference" },
   { day: 7, title: "릴스 5개 촬영 & 업로드", description: "기획한 릴스 5개를 촬영하고 순차 업로드하세요." },
 
   // 2주차 — 콘텐츠 사이클
-  { day: 8, title: "레퍼런스 릴스 5개 찾기", description: "이번 주 콘텐츠용 레퍼런스 릴스 5개를 새로 찾으세요." },
+  { day: 8, title: "레퍼런스 릴스 5개 찾기", description: "이번 주 콘텐츠용 레퍼런스 5개를 저장하고, 계정에 들어가 더 모으세요.", guideKey: "reels-reference" },
   { day: 9, title: "레퍼런스 변형해서 기획", description: "찾은 레퍼런스를 내 콘텐츠로 변형해 5개 기획안을 만드세요." },
   { day: 10, title: "릴스 5개 촬영", description: "기획한 릴스 5개를 촬영하세요." },
   { day: 11, title: "릴스 업로드", description: "촬영한 릴스를 업로드하고 캡션·해시태그를 정리하세요." },
@@ -32,7 +35,7 @@ export const DEFAULT_CONSULTING_TASKS: TaskSeed[] = [
   { day: 14, title: "이벤트 반응 점검", description: "이벤트 참여·문의 반응을 확인하고 다음 액션을 정하세요." },
 
   // 3주차 — 반복·최적화
-  { day: 15, title: "레퍼런스 릴스 5개 찾기", description: "마지막 주 콘텐츠용 레퍼런스 릴스 5개를 찾으세요." },
+  { day: 15, title: "레퍼런스 릴스 5개 찾기", description: "마지막 주 콘텐츠용 레퍼런스 5개를 저장하고, 계정에 들어가 더 모으세요.", guideKey: "reels-reference" },
   { day: 16, title: "레퍼런스 변형해서 기획", description: "5개 기획안을 만드세요." },
   { day: 17, title: "릴스 5개 촬영", description: "기획한 릴스 5개를 촬영하세요." },
   { day: 18, title: "릴스 업로드", description: "촬영한 릴스를 업로드하세요." },
@@ -61,6 +64,7 @@ export async function ensureConsultingEnrollment(userId: string) {
           order: i,
           title: t.title,
           description: t.description ?? "",
+          guideKey: t.guideKey ?? null,
         })),
       },
     },
