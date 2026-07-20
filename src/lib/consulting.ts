@@ -6,6 +6,7 @@ export const CONSULTING_PASSWORD_KEY = "consulting_access_password";
 
 export interface TaskSeed {
   day: number;
+  endDay?: number; // 여러 날에 걸치는 숙제의 마감 Day
   title: string;
   description?: string;
   guideKey?: string;
@@ -25,7 +26,7 @@ export const DEFAULT_CONSULTING_TASKS: TaskSeed[] = [
 
   { day: 4, title: "릴스 기획 (1회차) — 레퍼런스 5개 찾기 + 변형 기획", description: "레퍼런스 5개를 찾아 저장하고 계정에 들어가 더 모은 뒤, 내 콘텐츠로 변형해 5개를 기획하세요.", guideKey: "reels-reference" },
   { day: 5, title: "릴스 5개 촬영 (1회차)", description: "기획한 릴스 5개를 촬영하세요." },
-  { day: 6, title: "릴스 업로드 (1회차)", description: "매일 하나씩 업로드하고, 업로드한 릴스 URL을 도우미에 붙여넣으세요. (관리자 확인)", guideKey: "reels-upload" },
+  { day: 6, endDay: 10, title: "릴스 업로드 (1회차) — 5일간 매일 1개", description: "촬영 다음날부터 하루에 하나씩 5일간 업로드하세요. 그날 올린 릴스 URL을 도우미에 붙여넣으면 관리자가 확인해요.", guideKey: "reels-upload" },
   { day: 7, title: "1주차 점검 · 반응 확인", description: "조회수·저장·프로필 방문 등 반응을 확인하고 잘 된 포맷을 메모하세요." },
 
   // 2주차 — 보완(Day 8~10) + 릴스 2회차(Day 11~13)
@@ -34,7 +35,7 @@ export const DEFAULT_CONSULTING_TASKS: TaskSeed[] = [
   { day: 10, title: "이벤트 반응 점검", description: "이벤트 참여·문의 반응을 확인하고 다음 액션을 정하세요." },
   { day: 11, title: "릴스 기획 (2회차) — 레퍼런스 5개 찾기 + 변형 기획", description: "이번 주 레퍼런스 5개를 저장하고 계정에서 더 모은 뒤, 5개를 기획하세요.", guideKey: "reels-reference" },
   { day: 12, title: "릴스 5개 촬영 (2회차)", description: "기획한 릴스 5개를 촬영하세요." },
-  { day: 13, title: "릴스 업로드 (2회차)", description: "매일 하나씩 업로드하고, 업로드한 릴스 URL을 도우미에 붙여넣으세요. (관리자 확인)", guideKey: "reels-upload" },
+  { day: 13, endDay: 17, title: "릴스 업로드 (2회차) — 5일간 매일 1개", description: "촬영 다음날부터 하루에 하나씩 5일간 업로드하세요. 그날 올린 릴스 URL을 도우미에 붙여넣으세요.", guideKey: "reels-upload" },
   { day: 14, title: "2주차 점검", description: "2주차 콘텐츠 반응을 분석하고 개선점을 정리하세요." },
 
   // 3주차 — 분석(Day 15~17) + 릴스 3회차(Day 18~20)
@@ -43,7 +44,7 @@ export const DEFAULT_CONSULTING_TASKS: TaskSeed[] = [
   { day: 17, title: "개선 아이디어 정리", description: "다음 릴스에 반영할 개선 아이디어를 정리하세요." },
   { day: 18, title: "릴스 기획 (3회차) — 레퍼런스 5개 찾기 + 변형 기획", description: "마지막 주 레퍼런스 5개를 저장하고 계정에서 더 모은 뒤, 5개를 기획하세요.", guideKey: "reels-reference" },
   { day: 19, title: "릴스 5개 촬영 (3회차)", description: "기획한 릴스 5개를 촬영하세요." },
-  { day: 20, title: "릴스 업로드 (3회차)", description: "매일 하나씩 업로드하고, 업로드한 릴스 URL을 도우미에 붙여넣으세요. (관리자 확인)", guideKey: "reels-upload" },
+  { day: 20, endDay: 24, title: "릴스 업로드 (3회차) — 5일간 매일 1개", description: "촬영 다음날부터 하루에 하나씩 5일간 업로드하세요. 그날 올린 릴스 URL을 도우미에 붙여넣으세요.", guideKey: "reels-upload" },
   { day: 21, title: "3주 회고 + 다음 액션 플랜", description: "3주 성과를 정리하고 앞으로의 콘텐츠·판매 계획을 세우세요." },
 ];
 
@@ -64,6 +65,7 @@ export async function ensureConsultingEnrollment(userId: string) {
       tasks: {
         create: DEFAULT_CONSULTING_TASKS.map((t, i) => ({
           day: t.day,
+          endDay: t.endDay ?? null,
           order: i,
           title: t.title,
           description: t.description ?? "",
@@ -81,6 +83,7 @@ export async function resetEnrollmentTasks(enrollmentId: string) {
     data: DEFAULT_CONSULTING_TASKS.map((t, i) => ({
       enrollmentId,
       day: t.day,
+      endDay: t.endDay ?? null,
       order: i,
       title: t.title,
       description: t.description ?? "",

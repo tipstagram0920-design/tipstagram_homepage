@@ -117,7 +117,7 @@ export function TaskBoard({
     return Math.round((midnight(new Date()).getTime() - startDate.getTime()) / DAY_MS) + 1;
   }, [startDate]);
 
-  const maxDay = Math.max(durationDays, ...tasks.map((t) => t.day));
+  const maxDay = Math.max(durationDays, ...tasks.map((t) => Math.max(t.day, t.endDay ?? t.day)));
   const days = Array.from({ length: maxDay }, (_, i) => i + 1);
   const byDay = (day: number) =>
     tasks.filter((t) => t.day === day).sort((a, b) => a.order - b.order);

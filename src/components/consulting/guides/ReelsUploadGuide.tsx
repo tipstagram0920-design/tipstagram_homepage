@@ -35,18 +35,18 @@ export function ReelsUploadGuide({ taskId, initialData }: { taskId: string; init
   return (
     <div className="space-y-4">
       <p className="text-xs text-neutral-500 leading-relaxed">
-        릴스를 <strong>매일 하나씩 업로드</strong>할 때마다, 그 릴스 URL을 여기에 붙여넣고 저장하세요. 5개를 다 채우면 이번 회차 업로드 완료예요. (관리자가 확인합니다)
+        촬영한 5개를 <strong>하루에 하나씩</strong> 올리세요. 그날 업로드한 릴스 URL을 <strong>그 날짜 칸</strong>에 붙여넣고 저장하면 돼요. (관리자가 확인합니다)
       </p>
 
       <div className="space-y-2">
         {uploads.map((u, i) => (
           <div key={i} className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="shrink-0 w-6 h-6 rounded-lg ig-gradient text-white text-[11px] font-black flex items-center justify-center">
-                {i + 1}
+              <span className="shrink-0 px-2 h-6 rounded-lg ig-gradient text-white text-[11px] font-black flex items-center justify-center">
+                {i + 1}일차
               </span>
               <div className="flex-1">
-                <label className={FLABEL}>업로드한 릴스 URL</label>
+                <label className={FLABEL}>{i + 1}일차 업로드 릴스 URL</label>
                 <input
                   value={u.url ?? ""}
                   onChange={(e) => update(i, { url: e.target.value })}
