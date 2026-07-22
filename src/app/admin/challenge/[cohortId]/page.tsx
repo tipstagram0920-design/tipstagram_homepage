@@ -51,20 +51,23 @@ export default async function CohortDetailPage({
 
   // 참여자별 주차별 제출 현황 (임시저장 draft는 제외 = 미제출로 취급)
   const allSubmissions = await prisma.homeworkSubmission.findMany({
-    where: { week: { cohortId }, status: { not: "draft" } },
-    select: { userId: true, feedbackAt: true, week: { select: { weekIndex: true } } },
+    where: { week: { cohortId } },
+    select: { userId: true, status: true, feedbackAt: true, week: { select: { weekIndex: true } } },
   });
-  // userId -> weekIndex -> "submitted" | "feedback"
-  const statusMap = new Map<string, Map<number, "submitted" | "feedback">>();
-  // weekIndex -> 정식 제출 수
+  // userId -> weekIndex -> "submitted" | "feedback" | "draft"
+  const statusMap = new Map<string, Map<number, "submitted" | "feedback" | "draft">>();
+  // weekIndex -> 정식 제출 수(draft 제외)
   const submittedByWeek = new Map<number, number>();
+  let totalSubmissions = 0;
   for (const s of allSubmissions) {
     if (!statusMap.has(s.userId)) statusMap.set(s.userId, new Map());
-    statusMap.get(s.userId)!.set(s.week.weekIndex, s.feedbackAt ? "feedback" : "submitted");
-    submittedByWeek.set(s.week.weekIndex, (submittedByWeek.get(s.week.weekIndex) ?? 0) + 1);
+    const state = s.feedbackAt ? "feedback" : s.status === "draft" ? "draft" : "submitted";
+    statusMap.get(s.userId)!.set(s.week.weekIndex, state);
+    if (state !== "draft") {
+      submittedByWeek.set(s.week.weekIndex, (submittedByWeek.get(s.week.weekIndex) ?? 0) + 1);
+      totalSubmissions++;
+    }
   }
-
-  const totalSubmissions = allSubmissions.length;
   const pendingFeedback = await prisma.homeworkSubmission.count({
     where: { week: { cohortId }, status: "submitted" },
   });
@@ -139,6 +142,10 @@ export default async function CohortDetailPage({
               피드백완료
             </span>
             <span className="inline-flex items-center gap-1">
+              <span className="w-4 h-4 rounded-md bg-amber-400 text-white inline-flex items-center justify-center text-[9px] font-bold">…</span>
+              작성 중
+            </span>
+            <span className="inline-flex items-center gap-1">
               <span className="w-4 h-4 rounded-md border border-neutral-200 bg-white inline-flex items-center justify-center text-neutral-300 text-[9px]">·</span>
               미제출
             </span>
@@ -180,7 +187,10 @@ export default async function CohortDetailPage({
               <tbody>
                 {roster.map((u) => {
                   const userStatus = statusMap.get(u.id);
-                  const doneCount = openedWeeks.filter((w) => userStatus?.has(w.weekIndex)).length;
+                  const doneCount = openedWeeks.filter((w) => {
+                    const st = userStatus?.get(w.weekIndex);
+                    return st === "submitted" || st === "feedback";
+                  }).length;
                   return (
                     <tr key={u.id} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50">
                       <td className="px-4 py-2.5 sticky left-0 bg-white">
@@ -207,6 +217,10 @@ export default async function CohortDetailPage({
                             ) : st === "submitted" ? (
                               <span className="inline-flex w-6 h-6 rounded-md bg-neutral-900 text-white items-center justify-center text-xs font-bold" title="제출됨">
                                 ✓
+                              </span>
+                            ) : st === "draft" ? (
+                              <span className="inline-flex w-6 h-6 rounded-md bg-amber-400 text-white items-center justify-center text-xs font-bold" title="작성 중(임시저장)">
+                                …
                               </span>
                             ) : (
                               <span className="inline-flex w-6 h-6 rounded-md border border-neutral-200 bg-white text-neutral-300 items-center justify-center text-xs" title="미제출">

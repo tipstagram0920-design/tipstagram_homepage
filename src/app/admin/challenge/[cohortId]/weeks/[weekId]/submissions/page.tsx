@@ -21,12 +21,14 @@ export default async function WeekSubmissionsPage({
   if (!week || week.cohortId !== cohortId) notFound();
 
   const submissions = await prisma.homeworkSubmission.findMany({
-    where: { weekId, status: { not: "draft" } },
+    where: { weekId },
     include: { user: { select: { name: true, email: true } } },
-    orderBy: [{ feedbackAt: "asc" }, { submittedAt: "asc" }],
+    orderBy: [{ status: "asc" }, { feedbackAt: "asc" }, { submittedAt: "asc" }],
   });
 
-  const pending = submissions.filter((s) => !s.feedbackAt).length;
+  const submittedList = submissions.filter((s) => s.status !== "draft");
+  const draftCount = submissions.length - submittedList.length;
+  const pending = submittedList.filter((s) => !s.feedbackAt).length;
 
   return (
     <div className="max-w-3xl">
@@ -40,7 +42,7 @@ export default async function WeekSubmissionsPage({
         Week {week.weekIndex} · 제출 &amp; 피드백
       </h1>
       <p className="text-sm text-neutral-500 mb-8">
-        총 {submissions.length}건 · 피드백 대기 {pending}건
+        제출 {submittedList.length}건 · 작성 중 {draftCount}건 · 피드백 대기 {pending}건
         {" · "}마감 {formatKstHuman(week.homeworkDueAt)}
       </p>
 
@@ -71,16 +73,18 @@ export default async function WeekSubmissionsPage({
                   <span
                     className={
                       "text-[11px] font-bold rounded-full px-2.5 py-1 shrink-0 " +
-                      (s.feedbackAt
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-pink-100 text-pink-700")
+                      (s.status === "draft"
+                        ? "bg-amber-50 text-amber-700"
+                        : s.feedbackAt
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-pink-100 text-pink-700")
                     }
                   >
-                    {s.feedbackAt ? "피드백 완료" : "피드백 대기"}
+                    {s.status === "draft" ? "작성 중(임시저장)" : s.feedbackAt ? "피드백 완료" : "피드백 대기"}
                   </span>
                 </div>
 
-                {/* 학생 제출 내용 (읽기 전용) */}
+                {/* 학생 제출 내용 (읽기 전용) — 작성 중이면 현재까지 작성분 */}
                 <SubmissionView
                   content={s.content}
                   formData={s.formData}
@@ -89,13 +93,19 @@ export default async function WeekSubmissionsPage({
                   submittedAt={s.submittedAt.toISOString()}
                 />
 
-                {/* 피드백 작성·발송 */}
-                <FeedbackEditor
-                  submissionId={s.id}
-                  initialText={feedbackText}
-                  hasFeedback={!!s.feedbackAt}
-                  feedbackAtHuman={s.feedbackAt ? formatKstHuman(s.feedbackAt) : null}
-                />
+                {/* 피드백: 정식 제출한 건만. 작성 중이면 안내 */}
+                {s.status === "draft" ? (
+                  <p className="text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                    아직 정식 제출 전이에요 (임시저장). 학생이 제출을 완료하면 피드백을 보낼 수 있어요.
+                  </p>
+                ) : (
+                  <FeedbackEditor
+                    submissionId={s.id}
+                    initialText={feedbackText}
+                    hasFeedback={!!s.feedbackAt}
+                    feedbackAtHuman={s.feedbackAt ? formatKstHuman(s.feedbackAt) : null}
+                  />
+                )}
               </div>
             );
           })}
