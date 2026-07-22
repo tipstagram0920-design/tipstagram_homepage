@@ -418,7 +418,7 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-28">
       {isWeek1 ? (
         <>
           {/* Q1. 상품 · 다중 카드 */}
@@ -728,75 +728,60 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
         />
       </div>
 
-      {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-3 rounded-2xl">
-          {error}
-        </p>
-      )}
-
-      {/* 임시 저장 — 정식 제출 전에만 노출 */}
-      {!alreadySubmitted && (
-        <button
-          type="button"
-          onClick={saveDraft}
-          disabled={draftSaving || saving}
-          className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-neutral-300 bg-white text-neutral-700 font-bold text-[15px] hover:border-neutral-900 hover:text-neutral-900 disabled:opacity-50"
-        >
-          {draftSaving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" /> 임시 저장 중...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" /> 임시 저장
-            </>
-          )}
-        </button>
-      )}
-
-      {!alreadySubmitted && (
-        <p className="text-center text-[11px] text-neutral-400 -mt-1">
-          아직 다 못 채웠어도 임시 저장해두고 나중에 이어서 작성할 수 있어요. (제출 아님)
-        </p>
-      )}
-
-      <button
-        type="button"
-        onClick={submit}
-        disabled={saving || draftSaving || !canSubmit}
-        className="w-full inline-flex items-center justify-center gap-2 py-4 rounded-2xl bg-neutral-900 text-white font-bold text-base hover:bg-neutral-800 disabled:opacity-50 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]"
-      >
-        {saving ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" /> 제출 중...
-          </>
-        ) : alreadySubmitted ? (
-          "수정 저장하기"
-        ) : (
-          "숙제 제출하기"
-        )}
-      </button>
-
-      {draftSavedAt && (
-        <p className="text-center text-sm text-neutral-700 inline-flex items-center gap-1.5 justify-center w-full">
-          <CheckCircle2 className="w-4 h-4 text-neutral-500" />
-          임시 저장되었어요. 나중에 이어서 작성하고 &quot;숙제 제출하기&quot;를 눌러 완료하세요.
-        </p>
-      )}
-
-      {savedAt && (
-        <p className="text-center text-sm text-neutral-900 inline-flex items-center gap-1.5 justify-center w-full">
-          <CheckCircle2 className="w-4 h-4" />
-          {alreadySubmitted
-            ? "저장되었습니다. 마감 전까지 계속 수정할 수 있어요."
-            : "제출되었습니다. 마감 후 강사 피드백을 이메일로 알려드려요."}
-        </p>
-      )}
-
       <div className="pt-2 text-center">
         <a href={`/challenge/${cohortId}`} className="text-xs text-neutral-500 hover:text-neutral-800">
           챌린지 대시보드로 돌아가기 →
         </a>
+      </div>
+
+      {/* 하단 고정 액션 바 — 작성 중 항상 저장/제출 버튼 노출 */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-neutral-200 bg-white/95 backdrop-blur-md shadow-[0_-6px_20px_-8px_rgba(0,0,0,0.15)]">
+        <div className="max-w-2xl mx-auto px-4 py-3 space-y-2">
+          {error && (
+            <p className="text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
+              {error}
+            </p>
+          )}
+          {savedAt && (
+            <p className="text-xs text-center text-emerald-700 inline-flex items-center gap-1.5 justify-center w-full">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {alreadySubmitted
+                ? "저장되었습니다. 마감 전까지 계속 수정할 수 있어요."
+                : "제출되었습니다. 마감 후 강사 피드백을 이메일로 알려드려요."}
+            </p>
+          )}
+          {!savedAt && draftSavedAt && (
+            <p className="text-xs text-center text-neutral-600 inline-flex items-center gap-1.5 justify-center w-full">
+              <CheckCircle2 className="w-3.5 h-3.5 text-neutral-500" />
+              임시 저장됨 · 이어서 작성하고 제출하세요.
+            </p>
+          )}
+          <div className="flex items-center gap-2">
+            {!alreadySubmitted && (
+              <button
+                type="button"
+                onClick={saveDraft}
+                disabled={draftSaving || saving}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 py-3 rounded-xl border border-neutral-300 bg-white text-neutral-700 font-bold text-sm hover:border-neutral-900 hover:text-neutral-900 disabled:opacity-50"
+              >
+                {draftSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                임시 저장
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={submit}
+              disabled={saving || draftSaving || !canSubmit}
+              className={
+                "inline-flex items-center justify-center gap-1.5 py-3.5 rounded-xl bg-neutral-900 text-white font-bold text-sm hover:bg-neutral-800 disabled:opacity-50 " +
+                (alreadySubmitted ? "flex-1" : "flex-[2]")
+              }
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {saving ? "제출 중..." : alreadySubmitted ? "수정 저장하기" : "숙제 제출하기"}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
