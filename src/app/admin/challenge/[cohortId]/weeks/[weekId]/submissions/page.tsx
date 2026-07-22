@@ -5,6 +5,7 @@ import { formatKstHuman } from "@/lib/kst";
 import { ChevronLeft, Inbox } from "lucide-react";
 import { SubmissionView } from "@/app/challenge/[cohortId]/week/[weekIndex]/SubmissionView";
 import { FeedbackEditor } from "./_components/FeedbackEditor";
+import { SendAllFeedbackButton } from "./_components/SendAllFeedbackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,8 @@ export default async function WeekSubmissionsPage({
   const submittedList = submissions.filter((s) => s.status !== "draft");
   const draftCount = submissions.length - submittedList.length;
   const pending = submittedList.filter((s) => !s.feedbackAt).length;
+  // 저장만 되고 미발송인 피드백 (일괄 전송 대상)
+  const readyToSend = submissions.filter((s) => !s.feedbackAt && !!s.feedbackHtml).length;
 
   return (
     <div className="max-w-3xl">
@@ -41,10 +44,19 @@ export default async function WeekSubmissionsPage({
       <h1 className="text-2xl font-black text-neutral-900 mb-1">
         Week {week.weekIndex} · 제출 &amp; 피드백
       </h1>
-      <p className="text-sm text-neutral-500 mb-8">
+      <p className="text-sm text-neutral-500 mb-4">
         제출 {submittedList.length}건 · 작성 중 {draftCount}건 · 피드백 대기 {pending}건
         {" · "}마감 {formatKstHuman(week.homeworkDueAt)}
       </p>
+
+      {readyToSend > 0 && (
+        <div className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border border-pink-200 bg-pink-50/50 px-4 py-3 mb-8">
+          <p className="text-sm text-neutral-700">
+            저장해둔 피드백 <strong className="text-pink-600">{readyToSend}건</strong>이 아직 미발송이에요. 검토 후 한 번에 보내세요.
+          </p>
+          <SendAllFeedbackButton weekId={week.id} count={readyToSend} />
+        </div>
+      )}
 
       {submissions.length === 0 ? (
         <div className="text-center py-20 bg-neutral-50 rounded-2xl border border-neutral-100">
@@ -103,6 +115,7 @@ export default async function WeekSubmissionsPage({
                     submissionId={s.id}
                     initialText={feedbackText}
                     hasFeedback={!!s.feedbackAt}
+                    hasDraft={!s.feedbackAt && !!s.feedbackHtml}
                     feedbackAtHuman={s.feedbackAt ? formatKstHuman(s.feedbackAt) : null}
                   />
                 )}
