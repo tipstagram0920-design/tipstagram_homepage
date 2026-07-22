@@ -308,22 +308,22 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
     });
   };
 
-  const canSubmit = useMemo(() => {
+  // 제출까지 남은 항목 (버튼 옆 안내용)
+  const missing = useMemo(() => {
+    const m: string[] = [];
     if (isWeek1) {
-      const answered = WEEK1_QUESTIONS.filter((q) => (answers[q.key] || "").trim().length > 0).length;
-      const hasProduct = products.some((p) => p.name.trim() || p.description.trim());
-      const peopleCount = people.filter((p) => p.name.trim() || p.instagramUrl.trim()).length;
-      const hasLanding = landingUrl.trim().length > 0;
-      const slotsWithShots = HIGHLIGHT_SLOTS.filter((s) => (highlights[s.key] ?? []).length > 0).length;
-      return (
-        answered >= 4 &&
-        hasProduct &&
-        peopleCount >= MIN_PEOPLE &&
-        hasLanding &&
-        slotsWithShots >= HIGHLIGHT_SLOTS.length
-      );
+      if (!products.some((p) => p.name.trim() || p.description.trim())) m.push("상품 1개");
+      const answered = WEEK1_QUESTIONS.filter((q) => (answers[q.key] || "").trim()).length;
+      if (answered < 4) m.push(`질문 ${4 - answered}개 더`);
+      const ppl = people.filter((p) => p.name.trim() || p.instagramUrl.trim()).length;
+      if (ppl < MIN_PEOPLE) m.push(`사람 ${MIN_PEOPLE - ppl}명 더`);
+      if (!landingUrl.trim()) m.push("랜딩 URL");
+      const missSlots = HIGHLIGHT_SLOTS.filter((s) => (highlights[s.key] ?? []).length === 0);
+      if (missSlots.length) m.push(`하이라이트 ${missSlots.map((s) => s.label).join("·")}`);
+    } else if (freeText.trim().length <= 30) {
+      m.push("30자 이상 작성");
     }
-    return freeText.trim().length > 30;
+    return m;
   }, [isWeek1, answers, freeText, people, products, landingUrl, highlights]);
 
   // 제출·임시저장 공통 payload 조립
@@ -756,6 +756,11 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
               임시 저장됨 · 이어서 작성하고 제출하세요.
             </p>
           )}
+          {!alreadySubmitted && !savedAt && missing.length > 0 && (
+            <p className="text-[11px] text-center text-amber-600">
+              제출까지 필요: {missing.join(" · ")}
+            </p>
+          )}
           <div className="flex items-center gap-2">
             {!alreadySubmitted && (
               <button
@@ -771,7 +776,7 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
             <button
               type="button"
               onClick={submit}
-              disabled={saving || draftSaving || !canSubmit}
+              disabled={saving || draftSaving}
               className={
                 "inline-flex items-center justify-center gap-1.5 py-3.5 rounded-xl bg-neutral-900 text-white font-bold text-sm hover:bg-neutral-800 disabled:opacity-50 " +
                 (alreadySubmitted ? "flex-1" : "flex-[2]")

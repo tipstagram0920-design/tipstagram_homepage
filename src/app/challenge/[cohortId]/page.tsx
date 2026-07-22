@@ -129,7 +129,7 @@ export default async function ChallengeDashboardPage({
             <ol className="flex items-center gap-2">
               {cohort.weeks.map((w) => {
                 const opened = w.openAt.getTime() <= now.getTime();
-                const submitted = w.submissions.length > 0;
+                const submitted = !!w.submissions[0] && w.submissions[0].status !== "draft";
                 const feedback = w.submissions[0]?.feedbackAt;
                 const isCurrent = w.id === currentWeek?.id;
                 return (
@@ -220,7 +220,9 @@ export default async function ChallengeDashboardPage({
           <div className="rounded-3xl bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
             {cohort.weeks.map((w, i) => {
               const opened = w.openAt.getTime() <= now.getTime();
-              const submitted = w.submissions[0];
+              const sub = w.submissions[0];
+              const submitted = sub && sub.status !== "draft";
+              const isDraft = sub && sub.status === "draft";
               const isCurrent = w.id === currentWeek?.id;
               const isLast = i === cohort.weeks.length - 1;
               const inner = (
@@ -244,13 +246,17 @@ export default async function ChallengeDashboardPage({
                     </p>
                   </div>
                   {opened ? (
-                    submitted?.feedbackAt ? (
+                    sub?.feedbackAt ? (
                       <span className="text-[10px] font-bold text-neutral-900 border border-neutral-900 rounded-full px-2 py-0.5 inline-flex items-center gap-1">
                         <MessageSquareText className="w-3 h-3" /> 피드백
                       </span>
                     ) : submitted ? (
-                      <span className="text-[10px] font-bold text-neutral-700 bg-neutral-100 rounded-full px-2 py-0.5">
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5">
                         제출 완료
+                      </span>
+                    ) : isDraft ? (
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 rounded-full px-2 py-0.5">
+                        작성 중(임시저장)
                       </span>
                     ) : isCurrent ? (
                       <span className="text-[10px] font-bold text-white bg-neutral-900 rounded-full px-2 py-0.5">
