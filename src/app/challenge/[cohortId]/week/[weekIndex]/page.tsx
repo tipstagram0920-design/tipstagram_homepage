@@ -393,12 +393,28 @@ export default async function ChallengeWeekPage({
               </div>
             )}
 
-            {mySubmission && !locked && (
+            {/* 제출 완료 확인 배너 — 정식 제출했으면 항상 표시 */}
+            {alreadySubmitted && (
+              <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3.5 mb-4 flex items-center gap-2.5">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-emerald-800">숙제 제출 완료</p>
+                  <p className="text-[12px] text-emerald-700/80">
+                    {formatKstHuman(mySubmission!.submittedAt)} 제출됨
+                    {mySubmission!.feedbackAt
+                      ? " · 강사 피드백 도착"
+                      : locked
+                        ? " · 강사 피드백을 기다리고 있어요"
+                        : ` · 마감(${formatKstHuman(week.homeworkDueAt)}) 전까지 수정 가능`}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {mySubmission && !locked && isDraft && (
               <p className="text-xs text-neutral-500 bg-neutral-50 border border-neutral-200/70 rounded-xl px-4 py-2.5 mb-4 inline-flex items-center gap-1.5">
                 <PenSquare className="w-3.5 h-3.5 text-neutral-500" />
-                {isDraft
-                  ? `임시 저장된 숙제예요. 이어서 작성한 뒤 마감(${formatKstHuman(week.homeworkDueAt)}) 전까지 "숙제 제출하기"로 완료하세요.`
-                  : `마감(${formatKstHuman(week.homeworkDueAt)}) 전까지 자유롭게 수정할 수 있어요.`}
+                {`임시 저장된 숙제예요. 이어서 작성한 뒤 마감(${formatKstHuman(week.homeworkDueAt)}) 전까지 "숙제 제출하기"로 완료하세요.`}
               </p>
             )}
             <div className="rounded-3xl bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-6 sm:p-7">
@@ -434,21 +450,21 @@ export default async function ChallengeWeekPage({
             </div>
           </section>
 
-          {mySubmission && locked && !mySubmission.feedbackAt && (
+          {mySubmission && locked && !alreadySubmitted && (
             <p className="text-center text-xs text-neutral-500 mt-4 inline-flex items-center gap-1.5 justify-center w-full">
-              {alreadySubmitted ? (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-neutral-700" />
-                  제출 완료 · 강사가 확인하는 즉시 이메일로 피드백을 알려 드려요
-                </>
-              ) : (
-                <>
-                  <PenSquare className="w-3.5 h-3.5 text-neutral-400" />
-                  임시 저장만 된 상태로 마감되었어요. (정식 제출되지 않음)
-                </>
-              )}
+              <PenSquare className="w-3.5 h-3.5 text-neutral-400" />
+              임시 저장만 된 상태로 마감되었어요. (정식 제출되지 않음)
             </p>
           )}
+
+          <div className="mt-6 text-center">
+            <Link
+              href={`/challenge/${cohortId}`}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-600 hover:text-neutral-900"
+            >
+              <ChevronLeft className="w-4 h-4" /> 내 대시보드로 돌아가기
+            </Link>
+          </div>
         </div>
       </main>
       <Footer />

@@ -68,6 +68,13 @@ export default async function ChallengeDashboardPage({
         (i === cohort.weeks.length - 1 || cohort.weeks[i + 1].openAt.getTime() > now.getTime())
     ) ?? cohort.weeks[0];
 
+  // 내 숙제 현황 요약 (draft는 미제출로 취급)
+  const openedCount = cohort.weeks.filter((w) => w.openAt.getTime() <= now.getTime()).length;
+  const submittedCount = cohort.weeks.filter(
+    (w) => w.submissions[0] && w.submissions[0].status !== "draft"
+  ).length;
+  const feedbackCount = cohort.weeks.filter((w) => w.submissions[0]?.feedbackAt).length;
+
   return (
     <>
       <Navbar />
@@ -99,6 +106,22 @@ export default async function ChallengeDashboardPage({
             <p className="text-[13px] text-neutral-500 leading-relaxed">
               Week 1 오픈 · {formatKstHuman(cohort.week1StartAt)}
             </p>
+          </div>
+
+          {/* 내 숙제 현황 요약 */}
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            <div className="rounded-2xl bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.03)] px-4 py-4 text-center">
+              <p className="text-[11px] font-bold text-neutral-500">열린 주차</p>
+              <p className="mt-1 text-2xl font-black text-neutral-900">{openedCount}</p>
+            </div>
+            <div className="rounded-2xl bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.03)] px-4 py-4 text-center">
+              <p className="text-[11px] font-bold text-neutral-500">제출 완료</p>
+              <p className="mt-1 text-2xl font-black text-emerald-600">{submittedCount}</p>
+            </div>
+            <div className="rounded-2xl bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.03)] px-4 py-4 text-center">
+              <p className="text-[11px] font-bold text-neutral-500">피드백 받음</p>
+              <p className="mt-1 text-2xl font-black text-neutral-900">{feedbackCount}</p>
+            </div>
           </div>
 
           {/* 5주 진행바 카드 */}
