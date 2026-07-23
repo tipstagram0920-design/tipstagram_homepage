@@ -21,6 +21,40 @@ export function KakaoSendClient({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ sent: number; failed: number; total: number; capped: boolean; errors: string[] } | null>(null);
+  const [testPhone, setTestPhone] = useState("");
+  const [testBusy, setTestBusy] = useState(false);
+  const [testMsg, setTestMsg] = useState("");
+
+  const sendTest = async () => {
+    setTestMsg("");
+    setError("");
+    if (!testPhone.trim()) {
+      setTestMsg("테스트 받을 전화번호를 입력하세요.");
+      return;
+    }
+    if (!body.trim()) {
+      setTestMsg("아래 메시지 내용을 먼저 입력하세요.");
+      return;
+    }
+    if (isAlimtalk && !templateKey.trim()) {
+      setTestMsg("알림톡은 템플릿 코드가 필요해요.");
+      return;
+    }
+    setTestBusy(true);
+    try {
+      const res = await fetch("/api/admin/kakao-send/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel, phone: testPhone.trim(), body: body.trim(), templateKey: templateKey.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setTestMsg(data.ok ? "✅ 발송 요청 성공! 카카오톡을 확인하세요." : `❌ 실패: ${data.error || "알 수 없는 오류"}`);
+    } catch {
+      setTestMsg("❌ 네트워크 오류");
+    } finally {
+      setTestBusy(false);
+    }
+  };
 
   const isAlimtalk = channel === "kakao_alimtalk";
   const audienceHint = isAlimtalk
@@ -178,6 +212,31 @@ export function KakaoSendClient({
             )}
           </div>
         )}
+
+        {/* 테스트 발송 */}
+        <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50/60 p-3 space-y-2">
+          <p className="text-xs font-bold text-neutral-600">🧪 내 번호로 테스트 발송</p>
+          <p className="text-[11px] text-neutral-500">
+            위 채널·내용 그대로 이 번호로만 1건 보냅니다. {isAlimtalk ? "" : "친구톡은 이 번호가 @팁스타그램 채널을 친구추가한 상태여야 도착해요."}
+          </p>
+          <div className="flex gap-2">
+            <input
+              value={testPhone}
+              onChange={(e) => setTestPhone(e.target.value)}
+              placeholder="01012345678"
+              inputMode="numeric"
+              className="flex-1 px-3 py-2 rounded-lg border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
+            />
+            <button
+              onClick={sendTest}
+              disabled={testBusy}
+              className="px-3 py-2 rounded-lg border border-neutral-300 bg-white text-sm font-bold text-neutral-700 hover:border-neutral-900 disabled:opacity-50 inline-flex items-center gap-1.5"
+            >
+              {testBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "테스트"}
+            </button>
+          </div>
+          {testMsg && <p className="text-[12px] text-neutral-700">{testMsg}</p>}
+        </div>
 
         <button
           onClick={send}
