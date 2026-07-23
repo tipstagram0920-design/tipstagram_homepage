@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     take: MAX_PER_RUN,
     include: {
       user: { select: { name: true } },
-      week: { select: { weekIndex: true, title: true } },
+      week: { select: { weekIndex: true, title: true, homeworkPrompt: true, description: true } },
     },
   });
 
@@ -48,8 +48,10 @@ export async function GET(req: NextRequest) {
     const text = await generateFeedbackText({
       weekIndex: s.week.weekIndex,
       weekTitle: s.week.title,
+      weekContext: s.week.homeworkPrompt || s.week.description || null,
       studentName: s.user.name,
       content: s.content,
+      formData: s.formData,
     });
     if (!text) continue;
     await prisma.homeworkSubmission.update({

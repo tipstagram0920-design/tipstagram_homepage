@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Check, Send, Save, MessageSquareText } from "lucide-react";
+import { Loader2, Check, Send, Save, MessageSquareText, Sparkles } from "lucide-react";
 
 export function FeedbackEditor({
   submissionId,
@@ -22,8 +22,31 @@ export function FeedbackEditor({
   const router = useRouter();
   const [text, setText] = useState(initialText);
   const [busy, setBusy] = useState<"save" | "send" | null>(null);
+  const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState("");
   const [error, setError] = useState("");
+
+  const generateAi = async () => {
+    setError("");
+    setDone("");
+    if (text.trim() && !confirm("AI가 새 초안을 만들어 현재 내용을 덮어씁니다. 계속할까요?")) return;
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/admin/challenge/submissions/${submissionId}/ai-draft`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "AI 생성 실패");
+        return;
+      }
+      setText(data.text || "");
+      setDone("AI 초안을 새로 만들었어요. 검토·수정 후 전송하세요.");
+      router.refresh();
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const submit = async (send: boolean) => {
     setError("");
@@ -89,8 +112,20 @@ export function FeedbackEditor({
         {!hasFeedback && (
           <button
             type="button"
+            onClick={generateAi}
+            disabled={busy !== null || generating}
+            title="질문 의도와 답변을 비교해 항목별 피드백 초안을 AI가 작성합니다"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-violet-200 bg-violet-50 text-violet-700 text-sm font-bold hover:border-violet-400 disabled:opacity-50"
+          >
+            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {generating ? "생성 중…" : text.trim() ? "AI 다시 생성" : "AI 초안 생성"}
+          </button>
+        )}
+        {!hasFeedback && (
+          <button
+            type="button"
             onClick={() => submit(false)}
-            disabled={busy !== null}
+            disabled={busy !== null || generating}
             className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-neutral-300 bg-white text-neutral-700 text-sm font-bold hover:border-neutral-900 hover:text-neutral-900 disabled:opacity-50"
           >
             {busy === "save" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -100,7 +135,7 @@ export function FeedbackEditor({
         <button
           type="button"
           onClick={() => submit(true)}
-          disabled={busy !== null}
+          disabled={busy !== null || generating}
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-neutral-900 text-white text-sm font-bold hover:bg-neutral-800 disabled:opacity-50"
         >
           {busy === "send" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
