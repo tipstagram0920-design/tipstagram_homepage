@@ -9,12 +9,14 @@ export function FeedbackEditor({
   initialText,
   hasFeedback,
   hasDraft,
+  isAuto,
   feedbackAtHuman,
 }: {
   submissionId: string;
   initialText: string;
   hasFeedback: boolean; // 이미 학생에게 발송됨(feedbackAt 있음)
   hasDraft: boolean; // 저장은 됐지만 미발송
+  isAuto?: boolean; // AI가 자동 생성한 초안
   feedbackAtHuman: string | null;
 }) {
   const router = useRouter();
@@ -64,6 +66,8 @@ export function FeedbackEditor({
         <MessageSquareText className="w-4 h-4 text-pink-500" /> 강사 피드백
         {hasFeedback && feedbackAtHuman ? (
           <span className="text-[11px] font-bold text-emerald-600">· 발송됨 {feedbackAtHuman}</span>
+        ) : hasDraft && isAuto ? (
+          <span className="text-[11px] font-bold text-violet-600">· 🤖 AI 초안 (검토 후 전송)</span>
         ) : hasDraft ? (
           <span className="text-[11px] font-bold text-amber-600">· 저장됨 (미발송)</span>
         ) : null}

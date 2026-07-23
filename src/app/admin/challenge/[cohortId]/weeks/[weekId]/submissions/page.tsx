@@ -116,6 +116,13 @@ export default async function WeekSubmissionsPage({
                     initialText={feedbackText}
                     hasFeedback={!!s.feedbackAt}
                     hasDraft={!s.feedbackAt && !!s.feedbackHtml}
+                    isAuto={
+                      !s.feedbackAt &&
+                      !!s.feedbackJson &&
+                      typeof s.feedbackJson === "object" &&
+                      "auto" in s.feedbackJson &&
+                      !!(s.feedbackJson as { auto?: unknown }).auto
+                    }
                     feedbackAtHuman={s.feedbackAt ? formatKstHuman(s.feedbackAt) : null}
                   />
                 )}

@@ -64,6 +64,13 @@
 - Prisma 마이그레이션: `npx prisma migrate dev --name <name>`
 - Prisma Studio: `npx prisma studio`
 
+## 11. 5주 챌린지 자동 피드백 (규칙)
+- 학생이 숙제를 **정식 제출**하면, **제출 시각 30분 후** AI(Claude, `claude-opus-4-8`)가 강사 피드백 **초안을 자동 생성**한다.
+- 자동 생성된 피드백은 **초안(미발송) 상태**로 저장된다 → `feedbackHtml`만 채우고 `feedbackAt`은 비움. **학생에게는 보이지 않음.**
+- 어드민(`/admin/challenge/[기수]/weeks/[주차]/submissions`)에서 **"🤖 AI 초안"** 으로 표시되고, 관리자가 **검토·수정 후 "확인 후 전송"(또는 일괄 전송)** 을 눌러야만 학생에게 공개·이메일 발송된다. **자동 발송 금지.**
+- 구현: 크론 `/api/cron/challenge-auto-feedback` (10분마다) + `src/lib/challenge-ai-feedback.ts`. 발송 로직은 `src/lib/challenge-feedback.ts` 재사용.
+- 환경변수 `ANTHROPIC_API_KEY` 필요(미설정 시 크론은 no-op). draft/임시저장(status=draft)·이미 피드백 있는 제출은 대상 제외.
+
 ## 10. 금지 사항
 - `tailwind.config.js` 생성 (v4는 CSS @theme 사용)
 - `getServerSession` 사용 (v5는 `auth()`)
