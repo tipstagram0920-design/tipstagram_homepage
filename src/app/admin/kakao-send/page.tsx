@@ -7,12 +7,13 @@ import { KakaoSendClient } from "./KakaoSendClient";
 export const dynamic = "force-dynamic";
 
 export default async function KakaoSendPage() {
-  const [apiKey, sender, pfId] = await Promise.all([
+  const [apiKey, pfId] = await Promise.all([
     getSetting(SETTING_KEYS.solapiApiKey),
-    getSetting(SETTING_KEYS.solapiSenderNumber),
     getSetting(SETTING_KEYS.solapiKakaoPfId),
   ]);
-  const configured = !!(apiKey || process.env.SOLAPI_API_KEY) && !!(sender || process.env.SOLAPI_SENDER_NUMBER) && !!(pfId || process.env.SOLAPI_KAKAO_PFID);
+  // 카톡만 보내므로 발신번호(SMS 대체용)는 필수 아님 — API 키 + 채널 pfId만 있으면 발송 가능
+  const configured =
+    !!(apiKey || process.env.SOLAPI_API_KEY) && !!(pfId || process.env.SOLAPI_KAKAO_PFID);
 
   // 전화번호 보유 컨택트 수 / 마케팅(친구톡) 수신 동의 수
   const [phoneCount, consentCount, taggedContacts] = await Promise.all([
