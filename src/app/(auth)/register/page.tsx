@@ -13,7 +13,8 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
 
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirm: "" });
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,7 +37,13 @@ function RegisterForm() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          password: form.password,
+          marketingConsent,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -106,6 +113,32 @@ function RegisterForm() {
                 required
                 className="w-full px-4 py-3 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                전화번호 <span className="text-neutral-400 font-normal">(선택)</span>
+              </label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="01012345678"
+                inputMode="numeric"
+                className="w-full px-4 py-3 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-400"
+              />
+              <p className="text-xs text-neutral-400 mt-1">수업 안내·리마인드를 카카오톡으로 받을 번호예요.</p>
+              <label className="flex items-start gap-2 mt-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-neutral-300 text-pink-500 focus:ring-pink-400"
+                />
+                <span className="text-xs text-neutral-600">
+                  (선택) 카카오톡으로 이벤트·혜택 소식 받기에 동의합니다.
+                </span>
+              </label>
             </div>
 
             <div>

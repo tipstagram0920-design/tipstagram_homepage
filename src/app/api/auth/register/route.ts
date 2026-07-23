@@ -7,13 +7,14 @@ import { triggerWorkflow } from "@/lib/crm/workflow-engine";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, phone, password, marketingConsent } = await req.json();
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: "모든 필드를 입력해주세요." }, { status: 400 });
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedPhone = phone ? String(phone).replace(/[^\d+]/g, "").replace(/^\+82/, "0") : "";
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       return NextResponse.json({ error: "이미 사용 중인 이메일입니다." }, { status: 400 });
@@ -22,7 +23,16 @@ export async function POST(req: NextRequest) {
     const hashed = await bcrypt.hash(password, 12);
     const role = normalizedEmail === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
 
-    const contact = await upsertContactByEmail({ email: normalizedEmail, name, source: "register" });
+    const contact = await upsertContactByEmail({
+      email: normalizedEmail,
+      name,
+      phone: normalizedPhone || undefined,
+      source: "register",
+    });
+    // 카카오톡 마케팅 수신 동의 (알림톡/친구톡 발송 게이팅에 사용)
+    if (marketingConsent === true) {
+      await prisma.contact.update({ where: { id: contact.id }, data: { consentSms: true } });
+    }
 
     const user = await prisma.user.create({
       data: { name, email: normalizedEmail, password: hashed, role, contactId: contact.id },

@@ -49,7 +49,7 @@ export class SolapiKakaoChannel implements MessagingChannel {
         kakaoOptions: {
           pfId: cfg.pfId,
           templateId: args.templateKey,
-          disableSms: false, // 알림톡 실패 시 SMS fallback 허용
+          disableSms: true, // 카카오톡만 발송(실패 시 SMS로 새어나가지 않게)
         },
       });
       return { ok: true, externalId: res.groupInfo?.groupId };
