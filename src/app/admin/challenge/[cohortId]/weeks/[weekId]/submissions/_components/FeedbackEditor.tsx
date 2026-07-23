@@ -119,7 +119,7 @@ export function FeedbackEditor({
         )}
       </div>
       {mode === "preview" && text.trim() ? (
-        <div className="rounded-xl border border-neutral-100 bg-neutral-50/50 p-3 max-h-[420px] overflow-y-auto">
+        <div className="rounded-xl border border-neutral-100 bg-neutral-50/50 p-3">
           <FeedbackView text={text} />
         </div>
       ) : (

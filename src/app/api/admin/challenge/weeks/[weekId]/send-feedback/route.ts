@@ -42,6 +42,7 @@ export async function POST(
       contactId: s.user.contactId,
       weekIndex: s.week.weekIndex,
       cohortId: s.week.cohortId,
+      feedbackHtml: s.feedbackHtml ?? undefined,
     });
     if (ok) emailed++;
   }

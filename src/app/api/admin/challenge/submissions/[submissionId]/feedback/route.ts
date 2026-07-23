@@ -65,6 +65,7 @@ export async function POST(
       contactId: submission.user.contactId,
       weekIndex: submission.week.weekIndex,
       cohortId: submission.week.cohortId,
+      feedbackHtml,
     });
   }
 

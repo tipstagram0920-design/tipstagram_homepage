@@ -64,25 +64,33 @@ export function feedbackTextToHtml(text: string): string {
     .join("");
 }
 
-// 피드백 도착 이메일 발송 (1회). 성공 여부 반환.
+// 피드백 도착 이메일 발송 (1회). 피드백 내용을 디자인된 이메일에 담아 보낸다. 성공 여부 반환.
 export async function sendFeedbackEmail(opts: {
   email: string | null;
   name: string | null;
   contactId: string | null;
   weekIndex: number;
   cohortId: string;
+  feedbackHtml?: string; // 본문에 임베드할 피드백(feedbackTextToHtml 결과)
 }): Promise<boolean> {
   if (!opts.email) return false;
   const weekLabel = `Week ${opts.weekIndex}`;
   const link = `${SITE}/challenge/${opts.cohortId}/week/${opts.weekIndex}`;
+  const feedbackBlock = opts.feedbackHtml
+    ? `<div style="margin:20px 0;padding:18px 20px;border:1px solid #eee;border-radius:16px;background:#fff">${opts.feedbackHtml}</div>`
+    : "";
+
   const html = `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:0 auto;color:#111">
-      <p style="font-size:15px;line-height:1.7">안녕하세요, ${escapeHtml(opts.name || "회원")}님!</p>
-      <p style="font-size:15px;line-height:1.7"><strong>${weekLabel} 숙제에 강사 피드백이 도착했어요.</strong> 아래 버튼을 눌러 확인해 주세요.</p>
-      <div style="margin:24px 0">
-        <a href="${link}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 22px;border-radius:12px;font-weight:700;font-size:14px">피드백 확인하기</a>
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto;color:#111;padding:8px">
+      <div style="height:6px;border-radius:99px;background:linear-gradient(90deg,#833AB4,#FD1D1D,#FCAF45);margin-bottom:22px"></div>
+      <p style="font-size:16px;line-height:1.7;margin:0 0 4px">안녕하세요, <strong>${escapeHtml(opts.name || "회원")}</strong>님!</p>
+      <p style="font-size:15px;line-height:1.7;margin:0 0 4px"><strong>${weekLabel} 숙제 피드백</strong>이 도착했어요. 아래에서 바로 확인해 보세요.</p>
+      ${feedbackBlock}
+      <div style="margin:24px 0 8px">
+        <a href="${link}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 22px;border-radius:12px;font-weight:700;font-size:14px">사이트에서 보기 / 다음 주 이어가기</a>
       </div>
-      <p style="font-size:12px;color:#888;line-height:1.6">${COMPANY.serviceName} 5주 챌린지</p>
+      <div style="height:1px;background:#eee;margin:24px 0"></div>
+      <p style="font-size:12px;color:#888;line-height:1.6;margin:0">${COMPANY.serviceName} 5주 챌린지</p>
     </div>`;
   const res = await sendMessage({
     to: opts.email,
