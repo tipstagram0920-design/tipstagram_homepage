@@ -33,7 +33,6 @@ export class SolapiKakaoChannel implements MessagingChannel {
     const cfg = await getCfg();
     const svc = makeService(cfg.apiKey, cfg.apiSecret);
     if (!svc) return { ok: false, error: "Solapi API 키 미설정" };
-    if (!cfg.sender) return { ok: false, error: "Solapi 발신번호 미설정" };
     if (!cfg.pfId) return { ok: false, error: "카카오 채널 pfId 미설정" };
 
     // 알림톡: 사전등록 템플릿 코드 필요. SendArgs.templateKey를 templateId로 사용.
@@ -44,7 +43,8 @@ export class SolapiKakaoChannel implements MessagingChannel {
     try {
       const res = await svc.send({
         to: normalizePhone(args.to),
-        from: cfg.sender,
+        // 발신번호는 SMS 대체발송용. 카톡만 보내므로(disableSms) 없으면 생략.
+        ...(cfg.sender ? { from: cfg.sender } : {}),
         text: args.body,
         kakaoOptions: {
           pfId: cfg.pfId,
@@ -71,13 +71,12 @@ export class SolapiFriendtalkChannel implements MessagingChannel {
     const cfg = await getCfg();
     const svc = makeService(cfg.apiKey, cfg.apiSecret);
     if (!svc) return { ok: false, error: "Solapi API 키 미설정" };
-    if (!cfg.sender) return { ok: false, error: "Solapi 발신번호 미설정" };
     if (!cfg.pfId) return { ok: false, error: "카카오 채널 pfId 미설정" };
 
     try {
       const res = await svc.send({
         to: normalizePhone(args.to),
-        from: cfg.sender,
+        ...(cfg.sender ? { from: cfg.sender } : {}),
         text: args.body,
         kakaoOptions: {
           pfId: cfg.pfId,
