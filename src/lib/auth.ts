@@ -15,6 +15,13 @@ export function isPlaceholderEmail(email: string | null | undefined): boolean {
   return !!email && email.endsWith(`@${KAKAO_PLACEHOLDER_DOMAIN}`);
 }
 
+// 카카오가 준 전화번호("+82 10-1234-5678")를 국내 형식(01012345678)으로 정규화
+function normalizeKrPhone(p: string): string {
+  let s = p.replace(/[^\d+]/g, "");
+  if (s.startsWith("+82")) s = "0" + s.slice(3);
+  return s;
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -102,6 +109,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         await triggerWorkflow("register", contact.id, { userId: user.id, via: "kakao" });
       } catch {
         // CRM 훅 실패가 로그인 자체를 막지 않도록 삼킴
+      }
+    },
+    // 카카오 로그인 시 전화번호 동의값이 오면 Contact에 저장(비어있을 때만).
+    // 전화번호 동의항목 검수가 통과되어야 profile.kakao_account.phone_number가 들어온다.
+    async signIn({ user, account, profile }) {
+      if (account?.provider !== "kakao" || !profile || !user?.id) return;
+      const kakaoAccount = (profile as { kakao_account?: { phone_number?: string } }).kakao_account;
+      const raw = kakaoAccount?.phone_number;
+      if (!raw) return;
+      const phone = normalizeKrPhone(raw);
+      if (!phone) return;
+      try {
+        const u = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { contactId: true },
+        });
+        if (!u?.contactId) return; // 이메일 없는 카카오 유저는 Contact가 없어 저장 위치가 없음
+        const c = await prisma.contact.findUnique({
+          where: { id: u.contactId },
+          select: { phone: true },
+        });
+        if (c && !c.phone) {
+          await prisma.contact.update({ where: { id: u.contactId }, data: { phone } });
+        }
+      } catch {
+        // 실패해도 로그인은 계속
       }
     },
   },

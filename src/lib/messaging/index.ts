@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { logEvent } from "@/lib/crm/events";
 import { ResendEmailChannel } from "./email";
-import { SolapiKakaoChannel, SolapiSmsChannel } from "./kakao";
+import { SolapiKakaoChannel, SolapiFriendtalkChannel, SolapiSmsChannel } from "./kakao";
 import type { Channel, MessagingChannel, SendArgs, SendResult } from "./types";
 
 const CHANNELS: Record<Channel, MessagingChannel> = {
   email: new ResendEmailChannel(),
   kakao_alimtalk: new SolapiKakaoChannel(),
-  kakao_friendtalk: new SolapiKakaoChannel(),
+  kakao_friendtalk: new SolapiFriendtalkChannel(),
   sms: new SolapiSmsChannel(),
 };
 

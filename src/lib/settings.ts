@@ -23,6 +23,14 @@ export const SETTING_KEYS = {
   webinarFaqUrl: "webinar_faq_url",
   /** 50만+ 인스타 후킹 패턴 50선 파일 URL (강의 요약본과 함께 발송) */
   webinarHookUrl: "webinar_hook_url",
+  /** Solapi API 키 (카카오 알림톡/친구톡/SMS 발송) */
+  solapiApiKey: "solapi_api_key",
+  /** Solapi API 시크릿 */
+  solapiApiSecret: "solapi_api_secret",
+  /** Solapi 등록 발신번호 (알림톡 SMS fallback·문자) */
+  solapiSenderNumber: "solapi_sender_number",
+  /** 카카오 채널 pfId (@팁스타그램) */
+  solapiKakaoPfId: "solapi_kakao_pfid",
 } as const;
 
 export async function getSetting(key: string): Promise<string | null> {

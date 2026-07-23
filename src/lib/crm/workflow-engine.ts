@@ -253,8 +253,19 @@ async function executeStep(
     throw new Error("step에 subject/body 또는 templateKey가 없습니다");
   }
 
+  // 채널별 수신자: 이메일은 email, 카카오/문자는 전화번호가 필요
+  let to = contact.email;
+  if (channel === "kakao_alimtalk" || channel === "kakao_friendtalk" || channel === "sms") {
+    const c = await prisma.contact.findUnique({
+      where: { id: contact.id },
+      select: { phone: true },
+    });
+    if (!c?.phone) throw new Error("전화번호가 없어 카카오/문자를 보낼 수 없습니다");
+    to = c.phone;
+  }
+
   const result = await sendMessage({
-    to: contact.email,
+    to,
     contactId: contact.id,
     subject,
     body,

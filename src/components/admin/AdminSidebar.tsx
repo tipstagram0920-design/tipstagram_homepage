@@ -8,7 +8,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard, ShoppingBag, BookOpen, Users,
   FileText, SlidersHorizontal, Tag,
-  Mail, MailOpen, MessageSquare, PanelTop, Radio, Sparkles, Workflow, Calendar, CreditCard,
+  Mail, MailOpen, MessageSquare, MessageCircle, PanelTop, Radio, Sparkles, Workflow, Calendar, CreditCard,
   TrendingUp, Gift, BarChart3, RotateCcw, Trophy, Sparkles as SparklesIcon,
 } from "lucide-react";
 
@@ -42,7 +42,9 @@ const groups: NavGroup[] = [
       { label: "운영 to-do", href: "/admin/crm/tasks", icon: Calendar },
       { label: "예약 메시지", href: "/admin/crm/broadcast", icon: Calendar },
       { label: "메일 발송", href: "/admin/mail", icon: Mail },
+      { label: "카카오 발송", href: "/admin/kakao-send", icon: MessageCircle },
       { label: "이메일 템플릿", href: "/admin/email-templates", icon: MailOpen },
+      { label: "카카오·문자 발송 설정", href: "/admin/messaging-settings", icon: MessageCircle },
       { label: "라이브 / 전자책 설정", href: "/admin/live-settings", icon: Radio },
       { label: "무료 자료 (리드 마그넷)", href: "/admin/crm/freebies", icon: Gift },
       { label: "전자책 신청 현황", href: "/admin/crm/ebook", icon: BookOpen },

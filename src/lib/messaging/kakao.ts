@@ -59,6 +59,39 @@ export class SolapiKakaoChannel implements MessagingChannel {
   }
 }
 
+/**
+ * 카카오 친구톡: 사전등록 템플릿 없이 자유 텍스트 발송(마케팅성).
+ * 단, 발신 카카오 채널(@팁스타그램)을 '친구 추가'한 번호에만 도달한다.
+ */
+export class SolapiFriendtalkChannel implements MessagingChannel {
+  channel = "kakao_friendtalk" as const;
+  provider = "solapi";
+
+  async send(args: SendArgs): Promise<SendResult> {
+    const cfg = await getCfg();
+    const svc = makeService(cfg.apiKey, cfg.apiSecret);
+    if (!svc) return { ok: false, error: "Solapi API 키 미설정" };
+    if (!cfg.sender) return { ok: false, error: "Solapi 발신번호 미설정" };
+    if (!cfg.pfId) return { ok: false, error: "카카오 채널 pfId 미설정" };
+
+    try {
+      const res = await svc.send({
+        to: normalizePhone(args.to),
+        from: cfg.sender,
+        text: args.body,
+        kakaoOptions: {
+          pfId: cfg.pfId,
+          // 친구톡은 templateId 없이 발송. 채널 친구가 아니면 실패하므로 SMS fallback 비활성.
+          disableSms: true,
+        },
+      });
+      return { ok: true, externalId: res.groupInfo?.groupId };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+}
+
 export class SolapiSmsChannel implements MessagingChannel {
   channel = "sms" as const;
   provider = "solapi";
