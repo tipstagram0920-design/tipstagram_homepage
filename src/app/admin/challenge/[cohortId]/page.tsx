@@ -208,24 +208,37 @@ export default async function CohortDetailPage({
                       </td>
                       {openedWeeks.map((w) => {
                         const st = userStatus?.get(w.weekIndex);
+                        const href = `/admin/challenge/${cohort.id}/weeks/${w.id}/submissions#u-${u.id}`;
+                        const badge =
+                          st === "feedback" ? (
+                            <span className="inline-flex w-6 h-6 rounded-md bg-emerald-500 text-white items-center justify-center text-xs font-bold" title="피드백 완료 — 클릭해서 보기">
+                              ★
+                            </span>
+                          ) : st === "submitted" ? (
+                            <span className="inline-flex w-6 h-6 rounded-md bg-neutral-900 text-white items-center justify-center text-xs font-bold" title="제출됨 — 클릭해서 숙제·피드백 보기">
+                              ✓
+                            </span>
+                          ) : st === "draft" ? (
+                            <span className="inline-flex w-6 h-6 rounded-md bg-amber-400 text-white items-center justify-center text-xs font-bold" title="작성 중(임시저장) — 클릭해서 보기">
+                              …
+                            </span>
+                          ) : (
+                            <span className="inline-flex w-6 h-6 rounded-md border border-neutral-200 bg-white text-neutral-300 items-center justify-center text-xs" title="미제출">
+                              ·
+                            </span>
+                          );
                         return (
                           <td key={w.id} className="px-2 py-2.5 text-center">
-                            {st === "feedback" ? (
-                              <span className="inline-flex w-6 h-6 rounded-md bg-emerald-500 text-white items-center justify-center text-xs font-bold" title="피드백 완료">
-                                ★
-                              </span>
-                            ) : st === "submitted" ? (
-                              <span className="inline-flex w-6 h-6 rounded-md bg-neutral-900 text-white items-center justify-center text-xs font-bold" title="제출됨">
-                                ✓
-                              </span>
-                            ) : st === "draft" ? (
-                              <span className="inline-flex w-6 h-6 rounded-md bg-amber-400 text-white items-center justify-center text-xs font-bold" title="작성 중(임시저장)">
-                                …
-                              </span>
+                            {st ? (
+                              <Link
+                                href={href}
+                                className="inline-flex rounded-md hover:ring-2 hover:ring-pink-300 hover:ring-offset-1 transition-shadow"
+                                title="클릭해서 이 학생의 숙제·피드백 보기"
+                              >
+                                {badge}
+                              </Link>
                             ) : (
-                              <span className="inline-flex w-6 h-6 rounded-md border border-neutral-200 bg-white text-neutral-300 items-center justify-center text-xs" title="미제출">
-                                ·
-                              </span>
+                              badge
                             )}
                           </td>
                         );

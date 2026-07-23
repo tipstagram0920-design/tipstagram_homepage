@@ -73,7 +73,8 @@ export default async function WeekSubmissionsPage({
             return (
               <div
                 key={s.id}
-                className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6 space-y-4"
+                id={`u-${s.userId}`}
+                className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6 space-y-4 scroll-mt-24 target:ring-2 target:ring-pink-400 target:ring-offset-2"
               >
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
