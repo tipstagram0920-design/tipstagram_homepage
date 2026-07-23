@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { formatKstHuman } from "@/lib/kst";
 import { ChevronLeft, ChevronRight, Users, MessageSquareText, Video } from "lucide-react";
 import { AccessPasswordEditor } from "./_components/AccessPasswordEditor";
+import { ParticipantMatrix } from "./_components/ParticipantMatrix";
+import { GenerateAllButton } from "./weeks/[weekId]/submissions/_components/GenerateAllButton";
 
 export const dynamic = "force-dynamic";
 
@@ -52,17 +54,16 @@ export default async function CohortDetailPage({
   // 참여자별 주차별 제출 현황 (임시저장 draft는 제외 = 미제출로 취급)
   const allSubmissions = await prisma.homeworkSubmission.findMany({
     where: { week: { cohortId } },
-    select: { userId: true, status: true, feedbackAt: true, week: { select: { weekIndex: true } } },
+    select: { id: true, userId: true, status: true, feedbackAt: true, week: { select: { weekIndex: true } } },
   });
-  // userId -> weekIndex -> "submitted" | "feedback" | "draft"
-  const statusMap = new Map<string, Map<number, "submitted" | "feedback" | "draft">>();
+  // userId -> weekIndex -> { state, submissionId }  (클라이언트 매트릭스 모달용)
+  const cellMap: Record<string, Record<number, { state: "submitted" | "feedback" | "draft"; submissionId: string }>> = {};
   // weekIndex -> 정식 제출 수(draft 제외)
   const submittedByWeek = new Map<number, number>();
   let totalSubmissions = 0;
   for (const s of allSubmissions) {
-    if (!statusMap.has(s.userId)) statusMap.set(s.userId, new Map());
     const state = s.feedbackAt ? "feedback" : s.status === "draft" ? "draft" : "submitted";
-    statusMap.get(s.userId)!.set(s.week.weekIndex, state);
+    (cellMap[s.userId] ??= {})[s.week.weekIndex] = { state, submissionId: s.id };
     if (state !== "draft") {
       submittedByWeek.set(s.week.weekIndex, (submittedByWeek.get(s.week.weekIndex) ?? 0) + 1);
       totalSubmissions++;
@@ -76,6 +77,12 @@ export default async function CohortDetailPage({
   const openedWeeks = cohort.weeks.filter((w) => w.openAt.getTime() <= now.getTime());
   // 제출·피드백 리뷰 진입용: 가장 최근 오픈된 주차
   const reviewWeek = openedWeeks[openedWeeks.length - 1] ?? null;
+  // 리뷰 주차의 '정식 제출 & 미발송' 수 (전체 AI 초안 재생성 대상)
+  const reviewWeekPending = reviewWeek
+    ? allSubmissions.filter(
+        (s) => s.week.weekIndex === reviewWeek.weekIndex && s.status === "submitted" && !s.feedbackAt
+      ).length
+    : 0;
 
   return (
     <div>
@@ -152,6 +159,15 @@ export default async function CohortDetailPage({
           </div>
         </div>
 
+        {reviewWeek && reviewWeekPending > 0 && (
+          <div className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border border-violet-200 bg-violet-50/50 px-4 py-3 mb-3">
+            <p className="text-sm text-neutral-700">
+              Week {reviewWeek.weekIndex} 미발송 제출 <strong className="text-violet-700">{reviewWeekPending}건</strong>의 AI 피드백 초안을 한 번에 만들 수 있어요.
+            </p>
+            <GenerateAllButton weekId={reviewWeek.id} count={reviewWeekPending} />
+          </div>
+        )}
+
         {roster.length === 0 ? (
           <p className="text-sm text-neutral-400 bg-neutral-50 rounded-2xl p-5 border border-neutral-100">
             아직 참여자가 없어요. 위에서 입장 비밀번호를 공지하거나 구매가 연결되면 여기에 표시됩니다.
@@ -161,108 +177,14 @@ export default async function CohortDetailPage({
             아직 오픈된 주차가 없어요.
           </p>
         ) : (
-          <div className="rounded-2xl border border-neutral-100 bg-white overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-neutral-100">
-                  <th className="text-left font-semibold text-neutral-500 text-xs px-4 py-3 sticky left-0 bg-white">
-                    참여자
-                  </th>
-                  {openedWeeks.map((w) => (
-                    <th key={w.id} className="font-semibold text-neutral-500 text-xs px-2 py-3 text-center whitespace-nowrap">
-                      <Link
-                        href={`/admin/challenge/${cohort.id}/weeks/${w.id}/submissions`}
-                        className="hover:text-pink-600 hover:underline"
-                        title={`Week ${w.weekIndex} 제출·피드백`}
-                      >
-                        W{w.weekIndex}
-                      </Link>
-                    </th>
-                  ))}
-                  <th className="font-semibold text-neutral-500 text-xs px-3 py-3 text-center whitespace-nowrap">
-                    완료율
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {roster.map((u) => {
-                  const userStatus = statusMap.get(u.id);
-                  const doneCount = openedWeeks.filter((w) => {
-                    const st = userStatus?.get(w.weekIndex);
-                    return st === "submitted" || st === "feedback";
-                  }).length;
-                  return (
-                    <tr key={u.id} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50">
-                      <td className="px-4 py-2.5 sticky left-0 bg-white">
-                        <div className="min-w-0">
-                          <p className="font-semibold text-neutral-900 truncate flex items-center gap-1.5">
-                            {u.name || "이름 없음"}
-                            {u.via === "password" && (
-                              <span className="text-[9px] font-bold text-pink-600 bg-pink-50 rounded px-1 py-0.5 shrink-0">
-                                비번
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-[11px] text-neutral-400 truncate">{u.email}</p>
-                        </div>
-                      </td>
-                      {openedWeeks.map((w) => {
-                        const st = userStatus?.get(w.weekIndex);
-                        const href = `/admin/challenge/${cohort.id}/weeks/${w.id}/submissions?u=${u.id}`;
-                        const badge =
-                          st === "feedback" ? (
-                            <span className="inline-flex w-6 h-6 rounded-md bg-emerald-500 text-white items-center justify-center text-xs font-bold" title="피드백 완료 — 클릭해서 보기">
-                              ★
-                            </span>
-                          ) : st === "submitted" ? (
-                            <span className="inline-flex w-6 h-6 rounded-md bg-neutral-900 text-white items-center justify-center text-xs font-bold" title="제출됨 — 클릭해서 숙제·피드백 보기">
-                              ✓
-                            </span>
-                          ) : st === "draft" ? (
-                            <span className="inline-flex w-6 h-6 rounded-md bg-amber-400 text-white items-center justify-center text-xs font-bold" title="작성 중(임시저장) — 클릭해서 보기">
-                              …
-                            </span>
-                          ) : (
-                            <span className="inline-flex w-6 h-6 rounded-md border border-neutral-200 bg-white text-neutral-300 items-center justify-center text-xs" title="미제출">
-                              ·
-                            </span>
-                          );
-                        return (
-                          <td key={w.id} className="px-2 py-2.5 text-center">
-                            {st ? (
-                              <Link
-                                href={href}
-                                className="inline-flex rounded-md hover:ring-2 hover:ring-pink-300 hover:ring-offset-1 transition-shadow"
-                                title="클릭해서 이 학생의 숙제·피드백 보기"
-                              >
-                                {badge}
-                              </Link>
-                            ) : (
-                              badge
-                            )}
-                          </td>
-                        );
-                      })}
-                      <td className="px-3 py-2.5 text-center">
-                        <span
-                          className={
-                            "text-xs font-bold " +
-                            (doneCount === openedWeeks.length
-                              ? "text-emerald-600"
-                              : doneCount === 0
-                                ? "text-neutral-300"
-                                : "text-neutral-700")
-                          }
-                        >
-                          {doneCount}/{openedWeeks.length}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <p className="text-[11px] text-neutral-400 mb-2">셀을 클릭하면 그 학생의 숙제와 피드백을 나란히 볼 수 있어요.</p>
+            <ParticipantMatrix
+              roster={roster}
+              openedWeeks={openedWeeks.map((w) => ({ id: w.id, weekIndex: w.weekIndex }))}
+              cellMap={cellMap}
+            />
+          </>
         )}
       </div>
 
