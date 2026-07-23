@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Inbox, List } from "lucide-react";
 import { SubmissionView } from "@/app/challenge/[cohortId]/week/[weekIndex]/SubmissionView";
 import { FeedbackEditor } from "./_components/FeedbackEditor";
 import { SendAllFeedbackButton } from "./_components/SendAllFeedbackButton";
+import { GenerateAllButton } from "./_components/GenerateAllButton";
 
 export const dynamic = "force-dynamic";
 
@@ -186,6 +187,15 @@ export default async function WeekSubmissionsPage({
       ) : (
         /* ─── 전체 목록 ─── */
         <>
+          {pending > 0 && (
+            <div className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border border-violet-200 bg-violet-50/50 px-4 py-3 mb-4">
+              <p className="text-sm text-neutral-700">
+                미발송 제출 <strong className="text-violet-700">{pending}건</strong>에 대해 AI 피드백 초안을 한 번에 만들 수 있어요.
+              </p>
+              <GenerateAllButton weekId={week.id} count={pending} />
+            </div>
+          )}
+
           {readyToSend > 0 && (
             <div className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border border-pink-200 bg-pink-50/50 px-4 py-3 mb-8">
               <p className="text-sm text-neutral-700">
