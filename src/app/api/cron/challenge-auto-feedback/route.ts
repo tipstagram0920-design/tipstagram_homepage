@@ -13,9 +13,10 @@ function isAuthorized(req: NextRequest) {
   return auth === `Bearer ${secret}`;
 }
 
-// 제출 30분 경과 & 아직 피드백(초안 포함)이 없는 정식 제출을 찾아 AI 피드백 초안을 생성.
+// 주차 '숙제 마감' 시각 30분 경과 & 아직 피드백(초안 포함)이 없는 정식 제출을 찾아 AI 피드백 초안을 생성.
+// (제출 시점이 아니라 마감 시점 기준 — 마감 후 일괄로 초안이 준비됨)
 // 초안은 feedbackAt을 설정하지 않음 → 학생에게 안 보이고, 어드민이 검토 후 '전송'해야 발송됨.
-const DELAY_MS = 30 * 60 * 1000; // 30분
+const DELAY_MS = 30 * 60 * 1000; // 마감 후 30분
 const MAX_PER_RUN = 8; // 회당 처리량(비용·시간 제한)
 
 export async function GET(req: NextRequest) {
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
       status: "submitted", // 정식 제출(draft·이미 피드백 제외)
       feedbackAt: null, // 아직 발송 안 됨
       feedbackHtml: null, // 초안도 아직 없음
-      submittedAt: { lte: cutoff }, // 제출 30분 경과
+      week: { homeworkDueAt: { lte: cutoff } }, // 주차 마감 30분 경과
     },
     orderBy: { submittedAt: "asc" },
     take: MAX_PER_RUN,

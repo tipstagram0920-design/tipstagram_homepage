@@ -65,7 +65,8 @@
 - Prisma Studio: `npx prisma studio`
 
 ## 11. 5주 챌린지 자동 피드백 (규칙)
-- 학생이 숙제를 **정식 제출**하면, **제출 시각 30분 후** AI(Claude, `claude-opus-4-8`)가 강사 피드백 **초안을 자동 생성**한다.
+- 각 주차의 **숙제 마감 시각(`ChallengeWeek.homeworkDueAt`)이 지나고 30분 후**, 그 주에 정식 제출된 숙제들에 대해 AI(Claude, `claude-opus-4-8`)가 강사 피드백 **초안을 자동 생성**한다. (제출 시점 기준 아님 — 마감 시점 기준)
+- 마감 시각은 어드민 주차 편집(`/admin/challenge/[cohortId]/weeks/[weekId]/edit` → 일정 → 숙제 마감)에서 조정 가능. 바꾸면 자동 생성 시점도 따라감.
 - 자동 생성된 피드백은 **초안(미발송) 상태**로 저장된다 → `feedbackHtml`만 채우고 `feedbackAt`은 비움. **학생에게는 보이지 않음.**
 - 어드민(`/admin/challenge/[기수]/weeks/[주차]/submissions`)에서 **"🤖 AI 초안"** 으로 표시되고, 관리자가 **검토·수정 후 "확인 후 전송"(또는 일괄 전송)** 을 눌러야만 학생에게 공개·이메일 발송된다. **자동 발송 금지.**
 - 구현: 크론 `/api/cron/challenge-auto-feedback` (10분마다) + `src/lib/challenge-ai-feedback.ts`. 발송 로직은 `src/lib/challenge-feedback.ts` 재사용.

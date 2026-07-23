@@ -260,6 +260,11 @@ export function WeekEditor({
             />
           </div>
         </div>
+        <p className="text-xs text-neutral-500">
+          🤖 이 <strong>숙제 마감</strong> 시각이 지나고 <strong>30분 후</strong>, 제출된 숙제에 대해 AI가 피드백
+          초안을 자동 생성해요. 초안은 <strong>제출 &amp; 피드백</strong> 화면에서 검토·수정 후 직접 전송해야
+          학생에게 발송됩니다. (마감 시각을 바꾸면 자동 생성 시점도 함께 바뀝니다.)
+        </p>
       </section>
 
       <section className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-4">
