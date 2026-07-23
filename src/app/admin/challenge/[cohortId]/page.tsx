@@ -208,7 +208,7 @@ export default async function CohortDetailPage({
                       </td>
                       {openedWeeks.map((w) => {
                         const st = userStatus?.get(w.weekIndex);
-                        const href = `/admin/challenge/${cohort.id}/weeks/${w.id}/submissions#u-${u.id}`;
+                        const href = `/admin/challenge/${cohort.id}/weeks/${w.id}/submissions?u=${u.id}`;
                         const badge =
                           st === "feedback" ? (
                             <span className="inline-flex w-6 h-6 rounded-md bg-emerald-500 text-white items-center justify-center text-xs font-bold" title="피드백 완료 — 클릭해서 보기">
