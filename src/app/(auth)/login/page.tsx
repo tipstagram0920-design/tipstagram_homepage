@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { Eye, EyeOff } from "lucide-react";
+import { KakaoButton } from "../_components/KakaoButton";
 
 function LoginForm() {
   const router = useRouter();
@@ -99,6 +100,14 @@ function LoginForm() {
               {loading ? "로그인 중..." : "로그인"}
             </button>
           </form>
+
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-neutral-100" />
+            <span className="text-xs text-neutral-400">또는</span>
+            <div className="flex-1 h-px bg-neutral-100" />
+          </div>
+
+          <KakaoButton callbackUrl={redirect} />
 
           <p className="text-center text-sm text-neutral-500 mt-6">
             계정이 없으신가요?{" "}

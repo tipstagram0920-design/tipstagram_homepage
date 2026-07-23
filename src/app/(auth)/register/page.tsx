@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { Eye, EyeOff } from "lucide-react";
+import { KakaoButton } from "../_components/KakaoButton";
 
 function RegisterForm() {
   const router = useRouter();
@@ -148,6 +149,14 @@ function RegisterForm() {
               {loading ? "가입 중..." : "회원가입"}
             </button>
           </form>
+
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-neutral-100" />
+            <span className="text-xs text-neutral-400">또는</span>
+            <div className="flex-1 h-px bg-neutral-100" />
+          </div>
+
+          <KakaoButton callbackUrl={redirect} label="카카오로 가입하기" />
 
           <p className="text-center text-sm text-neutral-500 mt-6">
             이미 계정이 있으신가요?{" "}
