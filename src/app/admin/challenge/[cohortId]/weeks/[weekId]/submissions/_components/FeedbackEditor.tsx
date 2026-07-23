@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Check, Send, Save, MessageSquareText, Sparkles } from "lucide-react";
+import { Loader2, Check, Send, Save, MessageSquareText, Sparkles, Eye, Pencil } from "lucide-react";
+import { FeedbackView } from "./FeedbackView";
 
 export function FeedbackEditor({
   submissionId,
@@ -25,6 +26,8 @@ export function FeedbackEditor({
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState("");
   const [error, setError] = useState("");
+  // 기본은 '보기'(있을 때). 편집하려면 토글.
+  const [mode, setMode] = useState<"preview" | "edit">(initialText.trim() ? "preview" : "edit");
 
   const generateAi = async () => {
     setError("");
@@ -41,6 +44,7 @@ export function FeedbackEditor({
         return;
       }
       setText(data.text || "");
+      setMode("preview");
       setDone("AI 초안을 새로 만들었어요. 검토·수정 후 전송하세요.");
       router.refresh();
     } finally {
@@ -85,23 +89,48 @@ export function FeedbackEditor({
 
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-3">
-      <p className="text-sm font-bold text-neutral-800 inline-flex items-center gap-1.5 flex-wrap">
-        <MessageSquareText className="w-4 h-4 text-pink-500" /> 강사 피드백
-        {hasFeedback && feedbackAtHuman ? (
-          <span className="text-[11px] font-bold text-emerald-600">· 발송됨 {feedbackAtHuman}</span>
-        ) : hasDraft && isAuto ? (
-          <span className="text-[11px] font-bold text-violet-600">· 🤖 AI 초안 (검토 후 전송)</span>
-        ) : hasDraft ? (
-          <span className="text-[11px] font-bold text-amber-600">· 저장됨 (미발송)</span>
-        ) : null}
-      </p>
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={6}
-        placeholder="이 학생에게 보낼 피드백을 작성하세요. 줄바꿈은 그대로 전달됩니다."
-        className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400 resize-none"
-      />
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <p className="text-sm font-bold text-neutral-800 inline-flex items-center gap-1.5 flex-wrap">
+          <MessageSquareText className="w-4 h-4 text-pink-500" /> 강사 피드백
+          {hasFeedback && feedbackAtHuman ? (
+            <span className="text-[11px] font-bold text-emerald-600">· 발송됨 {feedbackAtHuman}</span>
+          ) : hasDraft && isAuto ? (
+            <span className="text-[11px] font-bold text-violet-600">· 🤖 AI 초안 (검토 후 전송)</span>
+          ) : hasDraft ? (
+            <span className="text-[11px] font-bold text-amber-600">· 저장됨 (미발송)</span>
+          ) : null}
+        </p>
+        {text.trim() && (
+          <button
+            type="button"
+            onClick={() => setMode((m) => (m === "preview" ? "edit" : "preview"))}
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-500 hover:text-neutral-900 border border-neutral-200 rounded-lg px-2 py-1"
+          >
+            {mode === "preview" ? (
+              <>
+                <Pencil className="w-3 h-3" /> 편집
+              </>
+            ) : (
+              <>
+                <Eye className="w-3 h-3" /> 보기
+              </>
+            )}
+          </button>
+        )}
+      </div>
+      {mode === "preview" && text.trim() ? (
+        <div className="rounded-xl border border-neutral-100 bg-neutral-50/50 p-3 max-h-[420px] overflow-y-auto">
+          <FeedbackView text={text} />
+        </div>
+      ) : (
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={10}
+          placeholder="이 학생에게 보낼 피드백을 작성하세요. 줄바꿈은 그대로 전달됩니다."
+          className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400 resize-none font-mono"
+        />
+      )}
       {error && <p className="text-sm text-red-500">{error}</p>}
       {done && (
         <p className="text-sm text-green-600 inline-flex items-center gap-1.5">
