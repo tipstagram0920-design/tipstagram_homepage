@@ -131,21 +131,20 @@ export function SubmissionPreviewModal({
             {/* 오른쪽: 피드백 */}
             <div className="overflow-y-auto p-5 bg-white">
               <p className="text-xs font-bold text-neutral-400 uppercase tracking-wide mb-3">피드백</p>
-              {detail.status === "draft" ? (
-                <p className="text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                  아직 정식 제출 전이에요 (임시저장). 학생이 제출을 완료하면 피드백을 보낼 수 있어요.
+              {detail.status === "draft" && (
+                <p className="text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-3">
+                  아직 임시저장(작성 중) 상태예요. 그래도 피드백을 만들어 보낼 수 있어요 — 전송하면 학생에게 공개됩니다.
                 </p>
-              ) : (
-                <FeedbackEditor
-                  key={detail.id}
-                  submissionId={detail.id}
-                  initialText={detail.feedbackText}
-                  hasFeedback={!!detail.feedbackAt}
-                  hasDraft={detail.hasDraft}
-                  isAuto={detail.isAuto}
-                  feedbackAtHuman={detail.feedbackAt ? formatKstHuman(detail.feedbackAt) : null}
-                />
               )}
+              <FeedbackEditor
+                key={detail.id}
+                submissionId={detail.id}
+                initialText={detail.feedbackText}
+                hasFeedback={!!detail.feedbackAt}
+                hasDraft={detail.hasDraft}
+                isAuto={detail.isAuto}
+                feedbackAtHuman={detail.feedbackAt ? formatKstHuman(detail.feedbackAt) : null}
+              />
             </div>
           </div>
         )}

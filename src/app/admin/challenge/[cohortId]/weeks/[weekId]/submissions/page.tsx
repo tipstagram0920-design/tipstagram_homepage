@@ -54,26 +54,25 @@ function SubmissionCard({ s }: { s: SubmissionRow }) {
         submittedAt={s.submittedAt.toISOString()}
       />
 
-      {s.status === "draft" ? (
+      {s.status === "draft" && (
         <p className="text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-          아직 정식 제출 전이에요 (임시저장). 학생이 제출을 완료하면 피드백을 보낼 수 있어요.
+          아직 임시저장(작성 중) 상태예요. 그래도 피드백을 만들어 보낼 수 있어요 — 전송하면 학생에게 공개됩니다.
         </p>
-      ) : (
-        <FeedbackEditor
-          submissionId={s.id}
-          initialText={feedbackText}
-          hasFeedback={!!s.feedbackAt}
-          hasDraft={!s.feedbackAt && !!s.feedbackHtml}
-          isAuto={
-            !s.feedbackAt &&
-            !!s.feedbackJson &&
-            typeof s.feedbackJson === "object" &&
-            "auto" in s.feedbackJson &&
-            !!(s.feedbackJson as { auto?: unknown }).auto
-          }
-          feedbackAtHuman={s.feedbackAt ? formatKstHuman(s.feedbackAt) : null}
-        />
       )}
+      <FeedbackEditor
+        submissionId={s.id}
+        initialText={feedbackText}
+        hasFeedback={!!s.feedbackAt}
+        hasDraft={!s.feedbackAt && !!s.feedbackHtml}
+        isAuto={
+          !s.feedbackAt &&
+          !!s.feedbackJson &&
+          typeof s.feedbackJson === "object" &&
+          "auto" in s.feedbackJson &&
+          !!(s.feedbackJson as { auto?: unknown }).auto
+        }
+        feedbackAtHuman={s.feedbackAt ? formatKstHuman(s.feedbackAt) : null}
+      />
     </div>
   );
 }
