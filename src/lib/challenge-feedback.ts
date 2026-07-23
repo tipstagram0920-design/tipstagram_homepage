@@ -20,28 +20,35 @@ export function feedbackTextToHtml(text: string): string {
     .map((b) => b.trim())
     .filter(Boolean);
 
-  const esc = (s: string) => escapeHtml(s);
+  // 이스케이프 후 URL을 클릭 가능한 링크로 변환
+  const esc = (s: string) =>
+    escapeHtml(s).replace(
+      /(https?:\/\/[^\s<]+)/g,
+      '<a href="$1" style="color:#be185d;text-decoration:underline;word-break:break-all">$1</a>'
+    );
 
   return blocks
     .map((block) => {
       const lines = block.split("\n");
       const first = lines[0].trim();
 
-      // [섹션] 예: [릴스 후킹 제목 10개]
+      // [섹션] 예: [릴스 후킹 제목 10개], [관련 참고 릴스]
       if (/^\[.+\]$/.test(first)) {
-        const title = esc(first.replace(/^\[|\]$/g, ""));
+        const title = escapeHtml(first.replace(/^\[|\]$/g, ""));
         const rest = lines.slice(1);
-        const numbered = rest.filter((l) => /^\d+[.)]\s+/.test(l.trim()));
-        const bodyHtml =
-          numbered.length > 0
-            ? `<ol style="margin:6px 0 0;padding-left:18px">${rest
-                .map((l) => {
-                  const m = l.trim().match(/^\d+[.)]\s+(.*)$/);
-                  return m ? `<li style="margin:3px 0;line-height:1.6">${esc(m[1])}</li>` : "";
-                })
-                .join("")}</ol>`
-            : `<div style="margin-top:4px;line-height:1.7">${esc(rest.join("\n")).replace(/\n/g, "<br/>")}</div>`;
-        return `<div style="margin:14px 0;padding:12px 14px;background:#f5f3ff;border:1px solid #ede9fe;border-radius:12px"><div style="font-weight:700;color:#6d28d9;font-size:14px">✦ ${title}</div>${bodyHtml}</div>`;
+        const bodyHtml = rest
+          .map((l) => {
+            const t = l.trim();
+            if (!t) return "";
+            const m = t.match(/^\d+[.)]\s+(.*)$/);
+            if (m) {
+              const num = t.match(/^(\d+)/)?.[1] ?? "";
+              return `<div style="margin:4px 0;line-height:1.6"><span style="font-weight:700;color:#6d28d9">${num}.</span> ${esc(m[1])}</div>`;
+            }
+            return `<div style="margin:4px 0;line-height:1.6;color:#4b5563">${esc(t)}</div>`;
+          })
+          .join("");
+        return `<div style="margin:14px 0;padding:12px 14px;background:#f5f3ff;border:1px solid #ede9fe;border-radius:12px"><div style="font-weight:700;color:#6d28d9;font-size:14px;margin-bottom:4px">✦ ${title}</div>${bodyHtml}</div>`;
       }
 
       // 총평
@@ -53,7 +60,7 @@ export function feedbackTextToHtml(text: string): string {
       // Q 항목
       if (/^Q\d+\.\s*/.test(first)) {
         const body = esc(lines.slice(1).join("\n")).replace(/\n/g, "<br/>");
-        return `<div style="margin:10px 0"><div style="font-weight:700;color:#111;font-size:14px">${esc(first)}</div>${
+        return `<div style="margin:10px 0"><div style="font-weight:700;color:#111;font-size:14px">${escapeHtml(first)}</div>${
           body ? `<div style="margin-top:2px;line-height:1.7;color:#374151">${body}</div>` : ""
         }</div>`;
       }

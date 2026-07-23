@@ -5,19 +5,6 @@ import { X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { formatKstHuman } from "@/lib/kst";
 import { SubmissionView } from "@/app/challenge/[cohortId]/week/[weekIndex]/SubmissionView";
 import { FeedbackEditor } from "../weeks/[weekId]/submissions/_components/FeedbackEditor";
-import { ReelspyPanel } from "./ReelspyPanel";
-
-// 제출물에서 릴스파이 검색용 키워드 추출 (상품명 → 소비자 문제 → 콘텐츠 순)
-function deriveKeyword(detail: Detail): string {
-  const fd = detail.formData as
-    | { products?: { name?: string }[]; answers?: Record<string, string> }
-    | null;
-  const product = fd?.products?.find((p) => p?.name)?.name?.trim();
-  if (product) return product.slice(0, 40);
-  const problem = fd?.answers?.q3_customer_problem?.trim();
-  if (problem) return problem.split(/[\s,.]/).filter(Boolean).slice(0, 2).join(" ");
-  return (detail.content || "").trim().split(/[\s,.]/).filter(Boolean).slice(0, 2).join(" ");
-}
 
 interface Detail {
   id: string;
@@ -159,8 +146,6 @@ export function SubmissionPreviewModal({
                   feedbackAtHuman={detail.feedbackAt ? formatKstHuman(detail.feedbackAt) : null}
                 />
               )}
-
-              <ReelspyPanel seedKeyword={deriveKeyword(detail)} />
             </div>
           </div>
         )}
