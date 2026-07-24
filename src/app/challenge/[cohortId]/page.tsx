@@ -8,6 +8,7 @@ import { assertCohortEnrollment } from "@/lib/challenge-enrollment";
 import { formatKstHuman } from "@/lib/kst";
 import { CheckCircle2, Circle, Lock, Trophy, ArrowRight, MessageSquareText, Calendar } from "lucide-react";
 import { PasswordGate } from "./_components/PasswordGate";
+import { ReelspyCouponCard } from "./_components/ReelspyCouponCard";
 
 export const dynamic = "force-dynamic";
 
@@ -295,6 +296,8 @@ export default async function ChallengeDashboardPage({
               );
             })}
           </div>
+
+          <ReelspyCouponCard />
         </div>
       </main>
       <Footer />
