@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2, Instagram, CheckCircle2, Link as LinkIcon, ImagePlus, X, Layers, Users, Save } from "lucide-react";
+import { Loader2, Plus, Trash2, Instagram, CheckCircle2, Link as LinkIcon, ImagePlus, X, Layers, Users, Save, Film } from "lucide-react";
 
 interface Initial {
   content: string;
@@ -26,6 +26,27 @@ function readWeek1FormData(formData: unknown): Week1FormData | null {
   if (!formData || typeof formData !== "object") return null;
   const fd = formData as Week1FormData;
   if (fd.kind !== "week1_product_customer") return null;
+  return fd;
+}
+
+// ── Week 2: 바이럴 릴스 레퍼런스 → 내 릴스 ──────────────────────────
+interface ReelEntry {
+  viralUrl: string; // 참고한 바이럴 릴스 URL
+  why: string; // 이 릴스가 왜 터졌나 (핵심 요소)
+  myHook: string; // 내가 만든 후킹 (핵심 유지·변형)
+  myUrl: string; // 내가 만들어 올린 릴스 URL
+}
+const EMPTY_REEL: ReelEntry = { viralUrl: "", why: "", myHook: "", myUrl: "" };
+const MIN_REELS = 3;
+
+interface Week2FormData {
+  kind?: string;
+  reels?: ReelEntry[];
+}
+function readWeek2FormData(formData: unknown): Week2FormData | null {
+  if (!formData || typeof formData !== "object") return null;
+  const fd = formData as Week2FormData;
+  if (fd.kind !== "week2_viral_reels") return null;
   return fd;
 }
 
@@ -144,8 +165,22 @@ function assembleContent(
   people: PersonEntry[],
   landingUrl: string,
   highlights: HighlightShots,
-  freeText: string
+  freeText: string,
+  reels: ReelEntry[]
 ): string {
+  if (weekIndex === 2) {
+    const valid = reels.filter((r) => r.viralUrl.trim() || r.myUrl.trim());
+    const parts: string[] = [`# 바이럴 릴스 레퍼런스 → 내 릴스 (${valid.length}개)`];
+    valid.forEach((r, i) => {
+      const lines = [`### ${i + 1}번 릴스`];
+      if (r.viralUrl.trim()) lines.push(`- 참고 바이럴 릴스: ${r.viralUrl.trim()}`);
+      if (r.why.trim()) lines.push(`- 왜 터졌나(핵심): ${r.why.trim()}`);
+      if (r.myHook.trim()) lines.push(`- 내 후킹: ${r.myHook.trim()}`);
+      if (r.myUrl.trim()) lines.push(`- 내 릴스: ${r.myUrl.trim()}`);
+      parts.push(lines.join("\n"));
+    });
+    return parts.join("\n\n");
+  }
   if (weekIndex === 1) {
     const parts: string[] = [];
     const validProducts = products.filter((p) => p.name.trim() || p.description.trim());
@@ -226,9 +261,18 @@ function QHeader({
 export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubmitted }: Props) {
   const router = useRouter();
   const isWeek1 = weekIndex === 1;
+  const isWeek2 = weekIndex === 2;
 
   // 마감 전 재편집을 위해 기존 제출 내용 프리필
   const w1Initial = readWeek1FormData(initial?.formData);
+  const w2Initial = readWeek2FormData(initial?.formData);
+  const [reels, setReels] = useState<ReelEntry[]>(
+    w2Initial?.reels && w2Initial.reels.length > 0
+      ? w2Initial.reels.map((r) => ({ ...EMPTY_REEL, ...r }))
+      : isWeek2
+        ? Array.from({ length: MIN_REELS }, () => ({ ...EMPTY_REEL }))
+        : []
+  );
 
   const [products, setProducts] = useState<ProductEntry[]>(
     w1Initial?.products && w1Initial.products.length > 0
@@ -320,15 +364,18 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
       if (!landingUrl.trim()) m.push("랜딩 URL");
       const missSlots = HIGHLIGHT_SLOTS.filter((s) => (highlights[s.key] ?? []).length === 0);
       if (missSlots.length) m.push(`하이라이트 ${missSlots.map((s) => s.label).join("·")}`);
+    } else if (isWeek2) {
+      const complete = reels.filter((r) => r.viralUrl.trim() && r.myUrl.trim()).length;
+      if (complete < MIN_REELS) m.push(`릴스 ${MIN_REELS - complete}개 더 (바이럴+내 릴스 URL)`);
     } else if (freeText.trim().length <= 30) {
       m.push("30자 이상 작성");
     }
     return m;
-  }, [isWeek1, answers, freeText, people, products, landingUrl, highlights]);
+  }, [isWeek1, isWeek2, answers, freeText, people, products, landingUrl, highlights, reels]);
 
   // 제출·임시저장 공통 payload 조립
   const buildPayload = () => {
-    const content = assembleContent(weekIndex, products, answers, people, landingUrl, highlights, freeText);
+    const content = assembleContent(weekIndex, products, answers, people, landingUrl, highlights, freeText, reels);
     const formData = isWeek1
       ? {
           kind: "week1_product_customer",
@@ -338,7 +385,12 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
           landingUrl: landingUrl.trim(),
           highlights,
         }
-      : { kind: "free_text", text: freeText };
+      : isWeek2
+        ? {
+            kind: "week2_viral_reels",
+            reels: reels.filter((r) => r.viralUrl.trim() || r.myUrl.trim() || r.why.trim() || r.myHook.trim()),
+          }
+        : { kind: "free_text", text: freeText };
     const highlightImageUrls = HIGHLIGHT_SLOTS.flatMap((s) => highlights[s.key] ?? []);
     return { content, formData, imageUrls: highlightImageUrls, instagramUrl };
   };
@@ -391,6 +443,12 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
       const missing = HIGHLIGHT_SLOTS.filter((s) => (highlights[s.key] ?? []).length === 0);
       if (missing.length > 0) {
         setError(`하이라이트 4종 모두 1장 이상 올려 주세요. (미제출: ${missing.map((s) => s.label).join(" · ")})`);
+        return;
+      }
+    } else if (isWeek2) {
+      const complete = reels.filter((r) => r.viralUrl.trim() && r.myUrl.trim()).length;
+      if (complete < MIN_REELS) {
+        setError(`릴스 ${MIN_REELS}개를 채워 주세요. 각 릴스마다 참고 바이럴 릴스 URL과 내가 만든 릴스 URL을 넣어야 해요. (현재 ${complete}개)`);
         return;
       }
     } else if (freeText.trim().length <= 30) {
@@ -694,6 +752,86 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
             </div>
           </div>
         </>
+      ) : isWeek2 ? (
+        <div className={SECTION}>
+          <div className="flex items-start gap-3 mb-4">
+            <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(220,38,38,0.4)]">
+              <Film className="w-4.5 h-4.5" strokeWidth={2.25} />
+            </span>
+            <div className="flex-1 pt-0.5">
+              <p className={LABEL_LG}>바이럴 릴스 3개 → 내 릴스로</p>
+              <p className={HELP + " mt-1"}>
+                터지고 있는 <strong>바이럴 릴스 3개</strong>를 찾아, <strong>왜 터졌는지 핵심</strong>을 파악하고, 그 핵심은 살린 채 <strong>내 상품·고객</strong>으로 변형해 릴스를 만들어 올리세요.
+                핵심(예: &lsquo;구체적 대상 지목&rsquo;)을 지우고 껍데기만 바꾸면 안 돼요. 참고한 릴스 URL과 내가 만든 릴스 URL을 함께 남겨 주세요.
+              </p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {reels.map((r, i) => (
+              <div key={i} className={NESTED_CARD}>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-neutral-500">릴스 {i + 1}</p>
+                  {reels.length > MIN_REELS && (
+                    <button
+                      type="button"
+                      onClick={() => setReels((prev) => prev.filter((_, idx) => idx !== i))}
+                      className="text-xs text-neutral-500 hover:text-red-600 inline-flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" /> 삭제
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[12px] font-semibold text-neutral-700 mb-1">참고한 바이럴 릴스 URL</label>
+                  <input
+                    type="url"
+                    value={r.viralUrl}
+                    onChange={(e) => setReels((prev) => prev.map((x, idx) => (idx === i ? { ...x, viralUrl: e.target.value } : x)))}
+                    placeholder="https://www.instagram.com/reel/..."
+                    className={INPUT}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-semibold text-neutral-700 mb-1">이 릴스가 왜 터졌나요? <span className="text-neutral-400 font-normal">(핵심 — 선택)</span></label>
+                  <textarea
+                    value={r.why}
+                    onChange={(e) => setReels((prev) => prev.map((x, idx) => (idx === i ? { ...x, why: e.target.value } : x)))}
+                    rows={2}
+                    placeholder="포맷·대상 지목·숫자·반전 중 무엇이 멈추게 했나. 그 핵심을 한 줄로."
+                    className={TEXTAREA}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-semibold text-neutral-700 mb-1">내 후킹 <span className="text-neutral-400 font-normal">(변형 — 선택)</span></label>
+                  <input
+                    type="text"
+                    value={r.myHook}
+                    onChange={(e) => setReels((prev) => prev.map((x, idx) => (idx === i ? { ...x, myHook: e.target.value } : x)))}
+                    placeholder="핵심은 살리고 내 주제로 바꾼 첫 3초 후킹 문구"
+                    className={INPUT}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-semibold text-neutral-700 mb-1">내가 만든 릴스 URL</label>
+                  <input
+                    type="url"
+                    value={r.myUrl}
+                    onChange={(e) => setReels((prev) => prev.map((x, idx) => (idx === i ? { ...x, myUrl: e.target.value } : x)))}
+                    placeholder="https://www.instagram.com/reel/... (내 계정에 올린 릴스)"
+                    className={INPUT}
+                  />
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setReels((prev) => [...prev, { ...EMPTY_REEL }])}
+              className={ADD_BUTTON}
+            >
+              <Plus className="w-4 h-4" /> 릴스 추가
+            </button>
+          </div>
+        </div>
       ) : (
         <div className={SECTION}>
           <p className={LABEL_LG + " mb-3"}>숙제 답변</p>

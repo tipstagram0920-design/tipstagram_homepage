@@ -40,6 +40,16 @@ interface Week1FormData {
   landingUrl?: string;
   highlights?: Record<string, string[]>;
 }
+interface ReelEntry {
+  viralUrl?: string;
+  why?: string;
+  myHook?: string;
+  myUrl?: string;
+}
+interface Week2FormData {
+  kind: "week2_viral_reels";
+  reels?: ReelEntry[];
+}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -66,6 +76,8 @@ export function SubmissionView({
   const fd = (formData ?? null) as { kind?: string } | null;
   const isWeek1 = fd?.kind === "week1_product_customer";
   const w1 = isWeek1 ? (fd as unknown as Week1FormData) : null;
+  const isWeek2 = fd?.kind === "week2_viral_reels";
+  const w2 = isWeek2 ? (fd as unknown as Week2FormData) : null;
 
   return (
     <div className="space-y-4">
@@ -80,7 +92,34 @@ export function SubmissionView({
         </span>
       </div>
 
-      {w1 ? (
+      {w2 ? (
+        <>
+          {(w2.reels ?? []).filter((r) => r.viralUrl || r.myUrl).map((r, i) => (
+            <Field key={i} label={`릴스 ${i + 1}`}>
+              <div className="space-y-1.5 text-[13px]">
+                {r.viralUrl && (
+                  <p className="text-neutral-700">
+                    <span className="font-semibold text-neutral-500">참고 바이럴 릴스: </span>
+                    <a href={r.viralUrl} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline break-all">{r.viralUrl}</a>
+                  </p>
+                )}
+                {r.why && (
+                  <p className="text-neutral-700 whitespace-pre-wrap"><span className="font-semibold text-neutral-500">왜 터졌나(핵심): </span>{r.why}</p>
+                )}
+                {r.myHook && (
+                  <p className="text-neutral-700"><span className="font-semibold text-neutral-500">내 후킹: </span>{r.myHook}</p>
+                )}
+                {r.myUrl && (
+                  <p className="text-neutral-700">
+                    <span className="font-semibold text-neutral-500">내 릴스: </span>
+                    <a href={r.myUrl} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline break-all">{r.myUrl}</a>
+                  </p>
+                )}
+              </div>
+            </Field>
+          ))}
+        </>
+      ) : w1 ? (
         <>
           {w1.products && w1.products.some((p) => p.name || p.description) && (
             <Field label="Q1. 팔고 싶은 것 · 팔고 있는 것">

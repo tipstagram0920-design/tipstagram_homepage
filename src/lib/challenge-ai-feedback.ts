@@ -66,6 +66,10 @@ interface Week1FormData {
   landingUrl?: string;
   highlights?: Record<string, string[]>;
 }
+interface Week2FormData {
+  kind?: string;
+  reels?: { viralUrl?: string; why?: string; myHook?: string; myUrl?: string }[];
+}
 
 /**
  * 제출물을 "질문 + 질문의 의도 + 학생 답변" 형태로 직렬화.
@@ -73,7 +77,24 @@ interface Week1FormData {
  * week1은 구조화 formData를, 그 외 주차는 자유 텍스트 content를 사용.
  */
 export function buildSubmissionTranscript(content: string, formData: unknown): string {
-  const fd = (formData ?? null) as Week1FormData | null;
+  const fd = (formData ?? null) as (Week1FormData & Week2FormData) | null;
+
+  if (fd?.kind === "week2_viral_reels") {
+    const reels = (fd.reels ?? []).filter((r) => r?.viralUrl || r?.myUrl);
+    const blocks: string[] = [
+      "이번 주 숙제: 바이럴 릴스 3개를 찾아 '왜 터졌는지 핵심'을 파악하고, 그 핵심은 유지한 채 자기 상품·고객으로 변형해 릴스를 만들어 올리는 것.",
+      "· 평가 관점: (1) 참고 릴스가 실제로 '바이럴'한 좋은 레퍼런스인가 (2) 왜 터졌는지 핵심을 제대로 짚었는가 (3) 그 핵심을 살려 변형했는가, 아니면 핵심을 지우고 껍데기만 바꿨는가('통통녀'→'고객님' 실수) (4) 내 릴스의 후킹·구조가 첫 3초에 멈추게 하는가.",
+    ];
+    reels.forEach((r, i) => {
+      const lines = [`[릴스 ${i + 1}]`];
+      lines.push(`- 참고 바이럴 릴스 URL: ${r.viralUrl?.trim() || "(미입력)"}`);
+      lines.push(`- 학생이 파악한 핵심(왜 터졌나): ${r.why?.trim() || "(미작성)"}`);
+      lines.push(`- 학생의 변형 후킹: ${r.myHook?.trim() || "(미작성)"}`);
+      lines.push(`- 학생이 만든 릴스 URL: ${r.myUrl?.trim() || "(미입력)"}`);
+      blocks.push(lines.join("\n"));
+    });
+    return blocks.join("\n\n").trim();
+  }
 
   if (fd?.kind === "week1_product_customer") {
     const blocks: string[] = [];
