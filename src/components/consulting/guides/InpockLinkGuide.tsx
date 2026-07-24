@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGuideSave, FeedbackButton, FeedbackBox, FIELD, FLABEL } from "./common";
+import { useGuideSave, useGuideAutosave, AutosaveStatus, FeedbackButton, FeedbackBox, FIELD, FLABEL } from "./common";
 import { Youtube, ExternalLink } from "lucide-react";
 
 interface Data {
@@ -24,6 +24,7 @@ export function InpockLinkGuide({ taskId, initialData }: { taskId: string; initi
   const [productUrl, setProductUrl] = useState(initialData?.productUrl ?? "");
   const [consultUrl, setConsultUrl] = useState(initialData?.consultUrl ?? "");
   const { saving, saved, save } = useGuideSave(taskId);
+  const auto = useGuideAutosave(taskId, { freeUrl, reviewUrl, productUrl, consultUrl });
 
   const setters = [setFreeUrl, setReviewUrl, setProductUrl, setConsultUrl];
   const values = [freeUrl, reviewUrl, productUrl, consultUrl];
@@ -43,6 +44,9 @@ export function InpockLinkGuide({ taskId, initialData }: { taskId: string; initi
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <AutosaveStatus saving={auto.saving} saved={auto.saved} />
+      </div>
       <a
         href="https://youtu.be/qYQd7ea3_oU"
         target="_blank"

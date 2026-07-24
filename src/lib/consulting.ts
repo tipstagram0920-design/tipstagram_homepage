@@ -3,6 +3,30 @@ import { getSetting } from "@/lib/settings";
 
 export const CONSULTING_DURATION_DAYS = 21;
 export const CONSULTING_PASSWORD_KEY = "consulting_access_password";
+// 카테고리(guideKey)별 참고 강의(marketing-booster lesson id) 매핑 저장 키
+export const CONSULTING_REF_VIDEO_KEY = "consulting_ref_videos";
+
+// 참고 영상을 붙일 수 있는 숙제 카테고리 (guideKey → 라벨)
+export const CONSULTING_REF_CATEGORIES: { guideKey: string; label: string }[] = [
+  { guideKey: "customer-select", label: "소비자 선정 · 프로필" },
+  { guideKey: "inpock-link", label: "인포크(링크인바이오) 링크" },
+  { guideKey: "highlight", label: "하이라이트" },
+  { guideKey: "landing-page", label: "랜딩페이지" },
+  { guideKey: "reels-reference", label: "릴스 기획" },
+  { guideKey: "reels-upload", label: "릴스 업로드" },
+];
+
+// 저장된 매핑을 파싱해 { guideKey: lessonId } 로 반환
+export async function getConsultingRefVideoMap(): Promise<Record<string, string>> {
+  const raw = await getSetting(CONSULTING_REF_VIDEO_KEY);
+  if (!raw) return {};
+  try {
+    const obj = JSON.parse(raw);
+    return obj && typeof obj === "object" ? (obj as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
 
 export interface TaskSeed {
   day: number;
@@ -53,8 +77,37 @@ export async function getConsultingPassword(): Promise<string | null> {
   return pw && pw.trim() ? pw.trim() : null;
 }
 
-// 등록: 이미 있으면 그대로 반환, 없으면 생성 + 기본 할 일 시드
+// 컨설팅 등록자에게 자동으로 열어줄 동영상 강의(메인 66강)
+export const CONSULTING_COURSE_SLUG = "marketing-booster";
+
+// 강의 접근권을 부여(멱등). classroom은 non-refunded Purchase 여부로 접근을 판단하므로 Purchase를 만든다.
+async function grantConsultingCourse(userId: string) {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { slug: CONSULTING_COURSE_SLUG },
+      select: { id: true },
+    });
+    if (!product) return;
+    const existing = await prisma.purchase.findFirst({
+      where: { userId, productId: product.id, refundedAt: null },
+    });
+    if (existing) return; // 이미 구매/부여됨
+    await prisma.purchase.create({
+      data: {
+        userId,
+        productId: product.id,
+        amount: 0, // 컨설팅 무료 제공분
+        orderId: `consulting-grant-${userId}`, // 유저당 1건(전역 unique)
+      },
+    });
+  } catch {
+    // 강의 부여 실패가 컨설팅 등록을 막지 않도록 삼킴
+  }
+}
+
+// 등록: 이미 있으면 그대로 반환, 없으면 생성 + 기본 할 일 시드. 강의 접근권은 항상 보장(멱등).
 export async function ensureConsultingEnrollment(userId: string) {
+  await grantConsultingCourse(userId); // 강의 자동 등록
   const existing = await prisma.consultingEnrollment.findUnique({
     where: { userId },
   });

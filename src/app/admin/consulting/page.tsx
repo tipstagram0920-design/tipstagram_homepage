@@ -1,14 +1,22 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatKstHuman } from "@/lib/kst";
-import { getConsultingPassword, currentDayIndex, CONSULTING_DURATION_DAYS } from "@/lib/consulting";
+import {
+  getConsultingPassword,
+  currentDayIndex,
+  CONSULTING_DURATION_DAYS,
+  CONSULTING_REF_CATEGORIES,
+  CONSULTING_COURSE_SLUG,
+  getConsultingRefVideoMap,
+} from "@/lib/consulting";
 import { ConsultingSettings } from "./_components/ConsultingSettings";
+import { RefVideoMapping } from "./_components/RefVideoMapping";
 import { Users, ChevronRight, Sparkles } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminConsultingPage() {
-  const [enrollments, password] = await Promise.all([
+  const [enrollments, password, refMap, booster] = await Promise.all([
     prisma.consultingEnrollment.findMany({
       orderBy: { createdAt: "desc" },
       include: {
@@ -17,7 +25,26 @@ export default async function AdminConsultingPage() {
       },
     }),
     getConsultingPassword(),
+    getConsultingRefVideoMap(),
+    prisma.product.findUnique({
+      where: { slug: CONSULTING_COURSE_SLUG },
+      include: {
+        course: {
+          include: {
+            sections: {
+              orderBy: { order: "asc" },
+              include: { lessons: { orderBy: { order: "asc" }, select: { id: true, title: true } } },
+            },
+          },
+        },
+      },
+    }),
   ]);
+
+  const lessonChoices =
+    booster?.course?.sections.flatMap((s) =>
+      s.lessons.map((l) => ({ id: l.id, title: l.title, sectionTitle: s.title }))
+    ) ?? [];
 
   return (
     <div className="max-w-3xl">
@@ -30,6 +57,12 @@ export default async function AdminConsultingPage() {
       </p>
 
       <ConsultingSettings initialPassword={password ?? ""} />
+
+      <RefVideoMapping
+        categories={CONSULTING_REF_CATEGORIES}
+        lessons={lessonChoices}
+        initialMap={refMap}
+      />
 
       <div className="mt-8">
         <h2 className="text-lg font-bold text-neutral-900 mb-3 inline-flex items-center gap-2">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGuideSave, FeedbackButton, FeedbackBox, FIELD, FLABEL } from "./common";
+import { useGuideSave, useGuideAutosave, AutosaveStatus, FeedbackButton, FeedbackBox, FIELD, FLABEL } from "./common";
 import { Film, ExternalLink } from "lucide-react";
 
 interface UploadItem {
@@ -21,6 +21,7 @@ export function ReelsUploadGuide({ taskId, initialData }: { taskId: string; init
       : Array.from({ length: 5 }, () => ({ ...EMPTY }));
   const [uploads, setUploads] = useState<UploadItem[]>(init);
   const { saving, saved, save } = useGuideSave(taskId);
+  const auto = useGuideAutosave(taskId, { uploads });
   const [show, setShow] = useState(Boolean(initialData?.uploads?.some((u) => (u.url || "").trim())));
 
   const update = (i: number, patch: Partial<UploadItem>) =>
@@ -34,9 +35,12 @@ export function ReelsUploadGuide({ taskId, initialData }: { taskId: string; init
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-neutral-500 leading-relaxed">
-        촬영한 5개를 <strong>하루에 하나씩</strong> 올리세요. 그날 업로드한 릴스 URL을 <strong>그 날짜 칸</strong>에 붙여넣고 저장하면 돼요. (관리자가 확인합니다)
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-neutral-500 leading-relaxed flex-1">
+          촬영한 5개를 <strong>하루에 하나씩</strong> 올리세요. 그날 업로드한 릴스 URL을 <strong>그 날짜 칸</strong>에 붙여넣고 저장하면 돼요. (관리자가 확인합니다)
+        </p>
+        <AutosaveStatus saving={auto.saving} saved={auto.saved} />
+      </div>
 
       <div className="space-y-2">
         {uploads.map((u, i) => (

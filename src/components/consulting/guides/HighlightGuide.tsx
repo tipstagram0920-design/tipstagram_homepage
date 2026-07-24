@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGuideSave, FeedbackButton, FeedbackBox, CopyButton, FIELD } from "./common";
+import { useGuideSave, useGuideAutosave, AutosaveStatus, FeedbackButton, FeedbackBox, CopyButton, FIELD } from "./common";
 import { ExternalLink, AlertCircle } from "lucide-react";
 
 interface Data {
@@ -20,6 +20,7 @@ const ORDER = ["무료 또는 이벤트", "고객후기", "자주묻는질문", 
 export function HighlightGuide({ taskId, initialData }: { taskId: string; initialData: Data | null }) {
   const [consultUrl, setConsultUrl] = useState(initialData?.consultUrl ?? "");
   const { saving, saved, save } = useGuideSave(taskId);
+  const auto = useGuideAutosave(taskId, { consultUrl });
   const [show, setShow] = useState(Boolean(initialData?.consultUrl));
   const getFeedback = () => {
     save({ consultUrl });
@@ -28,6 +29,9 @@ export function HighlightGuide({ taskId, initialData }: { taskId: string; initia
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <AutosaveStatus saving={auto.saving} saved={auto.saved} />
+      </div>
       {/* 순서 */}
       <div>
         <p className="text-[13px] font-bold text-neutral-800 mb-2">✅ 하이라이트 순서</p>

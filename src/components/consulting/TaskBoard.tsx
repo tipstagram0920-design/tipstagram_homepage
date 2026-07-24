@@ -13,8 +13,15 @@ import {
   GripVertical,
   Wand2,
   ChevronDown,
+  PlayCircle,
 } from "lucide-react";
 import { TaskGuide, GUIDE_LABELS } from "./guides/TaskGuide";
+import { parseVideoSource, getEmbedUrl } from "@/lib/video";
+
+export interface RefVideo {
+  title: string;
+  vimeoId: string;
+}
 
 export interface BoardTask {
   id: string;
@@ -51,12 +58,15 @@ export function TaskBoard({
   durationDays,
   tasks: initialTasks,
   manageEnrollmentId,
+  refVideos,
 }: {
   startAtIso: string;
   durationDays: number;
   tasks: BoardTask[];
   /** 관리자가 다른 고객 일정을 편집할 때만 전달 (할 일 추가 대상 지정용) */
   manageEnrollmentId?: string;
+  /** 숙제 카테고리(guideKey)별 참고 강의 영상 */
+  refVideos?: Record<string, RefVideo>;
 }) {
   const router = useRouter();
   const [tasks, setTasks] = useState<BoardTask[]>(initialTasks);
@@ -66,8 +76,11 @@ export function TaskBoard({
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverDay, setDragOverDay] = useState<number | null>(null);
   const [openGuideId, setOpenGuideId] = useState<string | null>(null);
+  const [openVideoId, setOpenVideoId] = useState<string | null>(null);
   const [resizingId, setResizingId] = useState<string | null>(null);
+  const [movingId, setMovingId] = useState<string | null>(null);
   const weekRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const weekBoxRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   const effEnd = (t: BoardTask) => Math.max(t.day, t.endDay ?? t.day);
 
@@ -104,6 +117,69 @@ export function TaskBoard({
       setTasks((prev) => {
         const t = prev.find((x) => x.id === task.id);
         if (t) persistEndDay(task.id, t.endDay ?? null);
+        return prev;
+      });
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+
+  const persistDayMove = (taskId: string, day: number, endDay: number | null) => {
+    fetch(`/api/consulting/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ day, endDay }),
+    }).catch(() => {});
+  };
+
+  // 달력 막대를 잡고 끌어 시작 날짜(day)를 옮기기. 기간(endDay-day)은 유지. 안 움직이면 클릭으로 처리(스크롤).
+  const startMove = (e: React.PointerEvent, task: BoardTask) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const dur = effEnd(task) - task.day; // 기간(0이면 하루짜리)
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let moved = false;
+    const apply = (ev: PointerEvent) => {
+      // 포인터가 올라가 있는 주(week) 행 찾기
+      let wi = -1;
+      for (const [k, el] of Object.entries(weekBoxRefs.current)) {
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (ev.clientY >= r.top && ev.clientY <= r.bottom) {
+          wi = Number(k);
+          break;
+        }
+      }
+      if (wi < 0) return;
+      const rowEl = weekRefs.current[wi];
+      if (!rowEl) return;
+      const rect = rowEl.getBoundingClientRect();
+      const col = Math.max(0, Math.min(6, Math.floor(((ev.clientX - rect.left) / rect.width) * 7)));
+      const weekStartDay = 1 - startDateDow + wi * 7;
+      let newDay = weekStartDay + col;
+      if (newDay < 1) newDay = 1;
+      const newEnd = dur > 0 ? newDay + dur : null;
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, day: newDay, endDay: newEnd } : t)));
+    };
+    const move = (ev: PointerEvent) => {
+      if (!moved && Math.abs(ev.clientX - startX) < 5 && Math.abs(ev.clientY - startY) < 5) return;
+      moved = true;
+      setMovingId(task.id);
+      apply(ev);
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      if (!moved) {
+        // 클릭으로 간주 → 해당 날짜 카드로 스크롤
+        document.getElementById(`cday-${task.day}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      setMovingId(null);
+      setTasks((prev) => {
+        const t = prev.find((x) => x.id === task.id);
+        if (t) persistDayMove(task.id, t.day, t.endDay ?? null);
         return prev;
       });
     };
@@ -308,7 +384,13 @@ export function TaskBoard({
             });
             const laneCount = laneEnd.length;
             return (
-              <div key={wi} className="space-y-1">
+              <div
+                key={wi}
+                className="space-y-1"
+                ref={(el) => {
+                  weekBoxRefs.current[wi] = el;
+                }}
+              >
                 {/* 날짜 행 */}
                 <div
                   ref={(el) => {
@@ -360,11 +442,9 @@ export function TaskBoard({
                           className="relative min-w-0"
                         >
                           <div
-                            onClick={() =>
-                              document.getElementById(`cday-${t.day}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
-                            }
+                            onPointerDown={(ev) => startMove(ev, t)}
                             className={
-                              "h-[18px] px-1.5 flex items-center text-[10px] font-semibold truncate cursor-pointer " +
+                              "h-[18px] px-1.5 flex items-center text-[10px] font-semibold truncate cursor-grab active:cursor-grabbing touch-none select-none " +
                               (startsHere ? "rounded-l-md " : "") +
                               (endsHere ? "rounded-r-md " : "") +
                               (done
@@ -372,7 +452,7 @@ export function TaskBoard({
                                 : inRangeToday
                                   ? "ig-gradient text-white"
                                   : "bg-neutral-700 text-white") +
-                              (resizingId === t.id ? " ring-2 ring-pink-400" : "")
+                              (resizingId === t.id || movingId === t.id ? " ring-2 ring-pink-400" : "")
                             }
                           >
                             {startsHere ? t.title : "…"}
@@ -396,7 +476,7 @@ export function TaskBoard({
           })}
         </div>
         <p className="text-[10px] text-neutral-400 mt-3">
-          막대 오른쪽 끝을 잡고 드래그하면 여러 날에 걸치도록 마감일을 늘릴 수 있어요. · 초록=완료
+          막대를 잡고 다른 날짜로 끌면 일정이 옮겨져요. 오른쪽 끝을 잡고 끌면 마감일을 늘릴 수 있어요. · 초록=완료
         </p>
       </div>
 
@@ -600,6 +680,38 @@ export function TaskBoard({
                       <TaskGuide guideKey={task.guideKey} taskId={task.id} data={task.data} />
                     </div>
                   )}
+                  {(() => {
+                    const rv = task.guideKey ? refVideos?.[task.guideKey] : undefined;
+                    if (!rv) return null;
+                    const parsed = parseVideoSource(rv.vimeoId);
+                    const open = openVideoId === task.id;
+                    return (
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          onClick={() => setOpenVideoId(open ? null : task.id)}
+                          className="inline-flex items-center gap-1.5 text-[12px] font-bold text-indigo-600 hover:text-indigo-700"
+                        >
+                          <PlayCircle className="w-4 h-4" /> 참고 강의: {rv.title}
+                          <ChevronDown className={"w-3.5 h-3.5 transition-transform " + (open ? "rotate-180" : "")} />
+                        </button>
+                        {open && parsed && (
+                          <div className="mt-2 rounded-xl overflow-hidden border border-neutral-200 bg-black aspect-video">
+                            <iframe
+                              src={getEmbedUrl(parsed)}
+                              className="w-full h-full"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              title={rv.title}
+                            />
+                          </div>
+                        )}
+                        {open && !parsed && (
+                          <p className="mt-2 text-[12px] text-neutral-400">영상을 불러올 수 없어요.</p>
+                        )}
+                      </div>
+                    );
+                  })()}
                   </div>
                 )
               )}

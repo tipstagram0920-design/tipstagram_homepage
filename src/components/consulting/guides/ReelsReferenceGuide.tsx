@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useGuideSave, FeedbackButton, FeedbackBox, FIELD, FLABEL } from "./common";
-import { AlertCircle, Film } from "lucide-react";
+import { useGuideSave, useGuideAutosave, AutosaveStatus, FeedbackButton, FeedbackBox, FIELD, FLABEL } from "./common";
+import { AlertCircle, Film, ExternalLink, Ticket } from "lucide-react";
+
+const REELSPY_URL = "https://reelspy.vercel.app";
 
 interface RefItem {
   url?: string;
@@ -22,6 +24,7 @@ export function ReelsReferenceGuide({ taskId, initialData }: { taskId: string; i
       : Array.from({ length: 5 }, () => ({ ...EMPTY }));
   const [refs, setRefs] = useState<RefItem[]>(init);
   const { saving, saved, save } = useGuideSave(taskId);
+  const auto = useGuideAutosave(taskId, { refs }); // 작성 중 자동 임시저장
 
   const update = (i: number, patch: Partial<RefItem>) =>
     setRefs((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -36,10 +39,37 @@ export function ReelsReferenceGuide({ taskId, initialData }: { taskId: string; i
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-neutral-500 leading-relaxed">
-        1~4번 숙제에서 정한 <strong>내 주제·소비자 문제·상품</strong>을 기준으로, 이번 주 릴스 기획에 쓸{" "}
-        <strong>레퍼런스 릴스 5개</strong>를 찾아 저장하세요. (기획은 <strong>Reelspy</strong>에서 진행)
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-neutral-500 leading-relaxed flex-1">
+          1~4번 숙제에서 정한 <strong>내 주제·소비자 문제·상품</strong>을 기준으로, 이번 주 릴스 기획에 쓸{" "}
+          <strong>레퍼런스 릴스 5개</strong>를 찾아 저장하세요. (기획은 <strong>릴스파이</strong>에서 진행)
+        </p>
+        <AutosaveStatus saving={auto.saving} saved={auto.saved} />
+      </div>
+
+      {/* 릴스파이로 기획 + 쿠폰 */}
+      <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <p className="text-[13px] font-bold text-violet-700 inline-flex items-center gap-1.5">
+            <Film className="w-4 h-4" /> 릴스 기획은 릴스파이에서
+          </p>
+          <a
+            href={REELSPY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-bold hover:bg-violet-700"
+          >
+            릴스파이 열기 <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
+        <p className="text-[12px] text-neutral-700 inline-flex items-start gap-1.5">
+          <Ticket className="w-4 h-4 text-violet-500 mt-0.5 shrink-0" />
+          <span>
+            릴스파이에서 쿠폰 <strong className="text-violet-700">PROMONTH</strong> 입력하면 <strong>30회 무료</strong>로 분석할 수 있어요.
+            레퍼런스 릴스를 분석해 후킹·구성을 내 콘텐츠로 변형해 보세요.
+          </span>
+        </p>
+      </div>
 
       {/* 핵심 강조 */}
       <div className="rounded-xl border border-pink-200 bg-pink-50/50 p-3">

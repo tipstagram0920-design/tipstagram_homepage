@@ -1,7 +1,67 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, Check, Loader2, Save, Sparkles, MessageSquareText } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Copy, Check, Loader2, Save, Sparkles, MessageSquareText, CloudUpload } from "lucide-react";
+
+/**
+ * 입력값이 바뀌면 잠시 뒤 자동으로 임시 저장(디바운스). 버튼 없이도 작성 중인 내용이 보존된다.
+ * 초기값(initialData로 세팅된 상태)은 저장하지 않는다.
+ */
+export function useGuideAutosave(taskId: string, data: unknown, delay = 900) {
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const lastSaved = useRef<string>(JSON.stringify(data ?? null));
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const serialized = JSON.stringify(data ?? null);
+    if (serialized === lastSaved.current) return; // 변화 없음 → 저장 안 함
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(async () => {
+      setSaving(true);
+      setSaved(false);
+      try {
+        const res = await fetch(`/api/consulting/tasks/${taskId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data }),
+        });
+        if (res.ok) {
+          lastSaved.current = serialized;
+          setSaved(true);
+          setTimeout(() => setSaved(false), 2000);
+        }
+      } finally {
+        setSaving(false);
+      }
+    }, delay);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [taskId, data, delay]);
+
+  return { saving, saved };
+}
+
+export function AutosaveStatus({ saving, saved }: { saving: boolean; saved: boolean }) {
+  return (
+    <span className="text-[11px] text-neutral-400 inline-flex items-center gap-1">
+      {saving ? (
+        <>
+          <Loader2 className="w-3 h-3 animate-spin" /> 자동 저장 중…
+        </>
+      ) : saved ? (
+        <>
+          <Check className="w-3 h-3 text-green-600" /> 임시 저장됨
+        </>
+      ) : (
+        <>
+          <CloudUpload className="w-3 h-3" /> 자동 저장
+        </>
+      )}
+    </span>
+  );
+}
 
 export function useGuideSave(taskId: string) {
   const [saving, setSaving] = useState(false);

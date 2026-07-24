@@ -3,6 +3,8 @@
 import { useState } from "react";
 import {
   useGuideSave,
+  useGuideAutosave,
+  AutosaveStatus,
   FeedbackButton,
   FeedbackBox,
   CopyButton,
@@ -68,6 +70,7 @@ export function CustomerSelectGuide({ taskId, initialData }: { taskId: string; i
   const [personaDetail, setPersonaDetail] = useState(initialData?.personaDetail ?? "");
   const [expertise, setExpertise] = useState(initialData?.expertise ?? "");
   const { saving, saved, save } = useGuideSave(taskId);
+  const auto = useGuideAutosave(taskId, { problems, change, personaLine, personaDetail, expertise });
   const [show, setShow] = useState(Boolean(initialData?.problems?.some((p) => p.trim())));
 
   const setProblem = (i: number, v: string) =>
@@ -84,6 +87,9 @@ export function CustomerSelectGuide({ taskId, initialData }: { taskId: string; i
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <AutosaveStatus saving={auto.saving} saved={auto.saved} />
+      </div>
       {/* 3가지 방법 */}
       <div>
         <p className="text-[13px] font-bold text-neutral-800 mb-2">🔎 소비자를 선정하는 3가지 방법</p>

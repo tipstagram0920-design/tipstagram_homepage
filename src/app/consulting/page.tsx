@@ -3,7 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { getConsultingPassword, CONSULTING_DURATION_DAYS, currentDayIndex } from "@/lib/consulting";
+import { getConsultingPassword, CONSULTING_DURATION_DAYS, currentDayIndex, getConsultingRefVideoMap } from "@/lib/consulting";
+import type { RefVideo } from "@/components/consulting/TaskBoard";
 import { TaskBoard, type BoardTask } from "@/components/consulting/TaskBoard";
 import { PasswordGate } from "./_components/PasswordGate";
 import { Sparkles, CalendarDays } from "lucide-react";
@@ -61,6 +62,22 @@ export default async function ConsultingPage() {
   const total = tasks.length;
   const done = tasks.filter((t) => t.doneAt).length;
 
+  // 숙제 카테고리별 참고 강의 영상 매핑 → { guideKey: {title, vimeoId} }
+  const refMap = await getConsultingRefVideoMap();
+  const refLessonIds = Object.values(refMap).filter(Boolean);
+  const refLessons = refLessonIds.length
+    ? await prisma.lesson.findMany({
+        where: { id: { in: refLessonIds } },
+        select: { id: true, title: true, vimeoId: true },
+      })
+    : [];
+  const lessonById = new Map(refLessons.map((l) => [l.id, l]));
+  const refVideos: Record<string, RefVideo> = {};
+  for (const [gk, lid] of Object.entries(refMap)) {
+    const l = lessonById.get(lid);
+    if (l && l.vimeoId) refVideos[gk] = { title: l.title, vimeoId: l.vimeoId };
+  }
+
   return (
     <>
       <Navbar />
@@ -91,6 +108,7 @@ export default async function ConsultingPage() {
             startAtIso={enrollment.startAt.toISOString()}
             durationDays={CONSULTING_DURATION_DAYS}
             tasks={tasks}
+            refVideos={refVideos}
           />
         </div>
       </main>

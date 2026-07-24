@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGuideSave, FeedbackButton, FeedbackBox, CopyButton, FIELD_TA, FLABEL } from "./common";
+import { useGuideSave, useGuideAutosave, AutosaveStatus, FeedbackButton, FeedbackBox, CopyButton, FIELD_TA, FLABEL } from "./common";
 
 type Key =
   | "problem"
@@ -52,6 +52,7 @@ function assemble(d: Data): string {
 export function LandingPageGuide({ taskId, initialData }: { taskId: string; initialData: Data | null }) {
   const [data, setData] = useState<Data>(initialData ?? {});
   const { saving, saved, save } = useGuideSave(taskId);
+  const auto = useGuideAutosave(taskId, data);
   const hasPrior = Boolean(initialData && Object.values(initialData).some((v) => (v || "").trim()));
   const [show, setShow] = useState(hasPrior);
   const set = (k: Key, v: string) => setData((prev) => ({ ...prev, [k]: v }));
@@ -64,9 +65,12 @@ export function LandingPageGuide({ taskId, initialData }: { taskId: string; init
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-neutral-500 leading-relaxed">
-        아래 항목을 채우면 순서대로 조립된 <strong>복붙용 랜딩페이지 글</strong>이 아래에 완성돼요. 인포크·리틀리 등에 붙여넣고 다듬으세요.
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-neutral-500 leading-relaxed flex-1">
+          아래 항목을 채우면 순서대로 조립된 <strong>복붙용 랜딩페이지 글</strong>이 아래에 완성돼요. 인포크·리틀리 등에 붙여넣고 다듬으세요.
+        </p>
+        <AutosaveStatus saving={auto.saving} saved={auto.saved} />
+      </div>
 
       <div className="space-y-3">
         {FIELDS.map((f) => (
