@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { HomeworkForm } from "./HomeworkForm";
 import { SubmissionView } from "./SubmissionView";
+import { ReelspyCouponCard } from "../../_components/ReelspyCouponCard";
 import type { LucideIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -375,6 +376,13 @@ export default async function ChallengeWeekPage({
                 </div>
               </div>
             </section>
+          )}
+
+          {/* 릴스파이 쿠폰 (릴스 기획·제작 주차) */}
+          {idx === 2 && (
+            <div className="mb-10">
+              <ReelspyCouponCard />
+            </div>
           )}
 
           {/* 6. 숙제 */}
