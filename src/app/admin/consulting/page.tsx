@@ -10,6 +10,7 @@ import {
   getConsultingRefVideoMap,
 } from "@/lib/consulting";
 import { ConsultingSettings } from "./_components/ConsultingSettings";
+import { EnrollCustomerForm } from "./_components/EnrollCustomerForm";
 import { RefVideoMapping } from "./_components/RefVideoMapping";
 import { Users, ChevronRight, Sparkles } from "lucide-react";
 
@@ -57,6 +58,8 @@ export default async function AdminConsultingPage() {
       </p>
 
       <ConsultingSettings initialPassword={password ?? ""} />
+
+      <EnrollCustomerForm />
 
       <RefVideoMapping
         categories={CONSULTING_REF_CATEGORIES}

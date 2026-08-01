@@ -72,6 +72,45 @@ export const DEFAULT_CONSULTING_TASKS: TaskSeed[] = [
   { day: 21, title: "3주 회고 + 다음 액션 플랜", description: "3주 성과를 정리하고 앞으로의 콘텐츠·판매 계획을 세우세요." },
 ];
 
+// ---------------------------------------------------------------------------
+// 등록 메모 (관리자가 등록 시 입력한 내용) — 첫 번째 할 일 설명 맨 위에 붙는다.
+// 별도 컬럼 없이 첫 할 일 description에 마커로 보관하므로, 할 일 초기화 시에도
+// 아래 extractIntakeNote()로 읽어 복원한다.
+// ---------------------------------------------------------------------------
+const INTAKE_HEAD = "[등록 메모]";
+const INTAKE_SEP = "———";
+
+/** 첫 할 일 설명 앞에 등록 메모를 덧붙인다. 메모가 비어 있으면 원본 그대로. */
+export function buildFirstTaskDescription(base: string, note?: string | null): string {
+  const n = (note ?? "").trim();
+  if (!n) return base;
+  return `${INTAKE_HEAD}\n${n}\n${INTAKE_SEP}\n${base}`;
+}
+
+/** 첫 할 일 설명에서 등록 메모만 뽑아낸다. 없으면 null. */
+export function extractIntakeNote(description: string): string | null {
+  if (!description.startsWith(`${INTAKE_HEAD}\n`)) return null;
+  const sepIdx = description.indexOf(`\n${INTAKE_SEP}\n`);
+  if (sepIdx < 0) return null;
+  const note = description.slice(INTAKE_HEAD.length + 1, sepIdx).trim();
+  return note || null;
+}
+
+/** 템플릿 시드 → ConsultingTask create 입력으로 변환 (첫 항목에 등록 메모 주입) */
+function buildTaskRows(intakeNote?: string | null) {
+  return DEFAULT_CONSULTING_TASKS.map((t, i) => ({
+    day: t.day,
+    endDay: t.endDay ?? null,
+    order: i,
+    title: t.title,
+    description:
+      i === 0
+        ? buildFirstTaskDescription(t.description ?? "", intakeNote)
+        : (t.description ?? ""),
+    guideKey: t.guideKey ?? null,
+  }));
+}
+
 export async function getConsultingPassword(): Promise<string | null> {
   const pw = await getSetting(CONSULTING_PASSWORD_KEY);
   return pw && pw.trim() ? pw.trim() : null;
@@ -105,8 +144,14 @@ async function grantConsultingCourse(userId: string) {
   }
 }
 
-// 등록: 이미 있으면 그대로 반환, 없으면 생성 + 기본 할 일 시드. 강의 접근권은 항상 보장(멱등).
-export async function ensureConsultingEnrollment(userId: string) {
+// 등록: 이미 있으면 그대로 반환, 없으면 생성 + 기본 21일(3주) 할 일 시드.
+// opts.intakeNote — 등록 시 입력한 내용. 첫 번째 할 일 설명 맨 위에 들어간다.
+// opts.startAt   — Day 1 기준일. 생략하면 지금.
+// 강의 접근권은 항상 보장(멱등).
+export async function ensureConsultingEnrollment(
+  userId: string,
+  opts?: { intakeNote?: string | null; startAt?: Date }
+) {
   await grantConsultingCourse(userId); // 강의 자동 등록
   const existing = await prisma.consultingEnrollment.findUnique({
     where: { userId },
@@ -115,33 +160,25 @@ export async function ensureConsultingEnrollment(userId: string) {
   return prisma.consultingEnrollment.create({
     data: {
       userId,
-      tasks: {
-        create: DEFAULT_CONSULTING_TASKS.map((t, i) => ({
-          day: t.day,
-          endDay: t.endDay ?? null,
-          order: i,
-          title: t.title,
-          description: t.description ?? "",
-          guideKey: t.guideKey ?? null,
-        })),
-      },
+      ...(opts?.startAt ? { startAt: opts.startAt } : {}),
+      tasks: { create: buildTaskRows(opts?.intakeNote) },
     },
   });
 }
 
-// 이 등록의 할 일을 최신 기본 템플릿으로 초기화 (기존 할 일·입력값 삭제 후 재생성)
+// 이 등록의 할 일을 최신 기본 템플릿으로 초기화 (기존 할 일·입력값 삭제 후 재생성).
+// 등록 시 입력한 메모는 기존 첫 할 일에서 읽어 그대로 복원한다.
 export async function resetEnrollmentTasks(enrollmentId: string) {
+  const first = await prisma.consultingTask.findFirst({
+    where: { enrollmentId },
+    orderBy: [{ day: "asc" }, { order: "asc" }],
+    select: { description: true },
+  });
+  const intakeNote = first ? extractIntakeNote(first.description) : null;
+
   await prisma.consultingTask.deleteMany({ where: { enrollmentId } });
   await prisma.consultingTask.createMany({
-    data: DEFAULT_CONSULTING_TASKS.map((t, i) => ({
-      enrollmentId,
-      day: t.day,
-      endDay: t.endDay ?? null,
-      order: i,
-      title: t.title,
-      description: t.description ?? "",
-      guideKey: t.guideKey ?? null,
-    })),
+    data: buildTaskRows(intakeNote).map((t) => ({ ...t, enrollmentId })),
   });
 }
 
