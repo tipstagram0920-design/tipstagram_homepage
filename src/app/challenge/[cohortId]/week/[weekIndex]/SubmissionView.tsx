@@ -52,28 +52,20 @@ interface Week2FormData {
 }
 interface Week3Reel {
   url?: string;
-  views?: string;
-  saves?: string;
-  profileVisits?: string;
-  newFollows?: string;
-  myRead?: string;
+  note?: string;
 }
 interface Week3FormData {
-  kind: "week3_offline_diagnosis";
-  attend?: string;
-  preferredSlot?: string;
-  attendNote?: string;
-  account?: {
-    followers?: string;
-    reach30d?: string;
-    profileVisits30d?: string;
-    mainTopic?: string;
-  };
+  kind: "week3_reels_upload";
   reels?: Week3Reel[];
-  stuckPoint?: string;
-  goal?: string;
-  questions?: string[];
-  insightShots?: string[];
+}
+interface Week4Reel {
+  refUrl?: string;
+  myUrl?: string;
+  note?: string;
+}
+interface Week4FormData {
+  kind: "week4_reels_5";
+  reels?: Week4Reel[];
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -103,8 +95,10 @@ export function SubmissionView({
   const w1 = isWeek1 ? (fd as unknown as Week1FormData) : null;
   const isWeek2 = fd?.kind === "week2_viral_reels";
   const w2 = isWeek2 ? (fd as unknown as Week2FormData) : null;
-  const isWeek3 = fd?.kind === "week3_offline_diagnosis";
+  const isWeek3 = fd?.kind === "week3_reels_upload";
   const w3 = isWeek3 ? (fd as unknown as Week3FormData) : null;
+  const isWeek4 = fd?.kind === "week4_reels_5";
+  const w4 = isWeek4 ? (fd as unknown as Week4FormData) : null;
 
   return (
     <div className="space-y-4">
@@ -119,129 +113,74 @@ export function SubmissionView({
         </span>
       </div>
 
-      {w3 ? (
+      {w4 ? (
         <>
-          <Field label="오프라인 1:1 참석">
-            <div className="space-y-1.5 text-[13px] text-neutral-700">
-              <p>
-                <span className="font-semibold text-neutral-500">참석 여부: </span>
-                {w3.attend === "yes" ? "참석" : w3.attend === "no" ? "불참" : "(미선택)"}
-              </p>
-              {w3.preferredSlot && (
-                <p>
-                  <span className="font-semibold text-neutral-500">희망 시간대: </span>
-                  {w3.preferredSlot}
-                </p>
-              )}
-              {w3.attendNote && (
-                <p className="whitespace-pre-wrap">
-                  <span className="font-semibold text-neutral-500">남긴 말: </span>
-                  {w3.attendNote}
-                </p>
-              )}
-            </div>
-          </Field>
-
-          {w3.account &&
-            Object.values(w3.account).some((v) => (v ?? "").trim()) && (
-              <Field label="내 계정 현황">
-                <div className="grid grid-cols-3 gap-2 mb-2">
-                  {[
-                    { v: w3.account.followers, l: "팔로워" },
-                    { v: w3.account.reach30d, l: "30일 도달" },
-                    { v: w3.account.profileVisits30d, l: "30일 프로필 방문" },
-                  ].map((m, i) => (
-                    <div key={i} className="rounded-xl bg-white border border-neutral-200/70 p-3 text-center">
-                      <p className="text-[11px] text-neutral-500">{m.l}</p>
-                      <p className="text-sm font-bold text-neutral-900 mt-0.5">{m.v?.trim() || "-"}</p>
-                    </div>
-                  ))}
-                </div>
-                {w3.account.mainTopic && (
-                  <p className="text-[13px] text-neutral-700">
-                    <span className="font-semibold text-neutral-500">주력 주제·상품: </span>
-                    {w3.account.mainTopic}
-                  </p>
-                )}
-              </Field>
-            )}
-
-          {(w3.reels ?? []).filter((r) => r.url).length > 0 && (
-            <Field label={`2주차 릴스 성과 (${(w3.reels ?? []).filter((r) => r.url).length}개)`}>
-              <div className="space-y-2">
-                {(w3.reels ?? [])
-                  .filter((r) => r.url)
-                  .map((r, i) => (
-                    <div key={i} className="rounded-xl bg-white border border-neutral-200/70 p-3">
+          {(w4.reels ?? [])
+            .filter((r) => r.refUrl || r.myUrl)
+            .map((r, i) => (
+              <Field key={i} label={`릴스 ${i + 1}`}>
+                <div className="space-y-1.5 text-[13px]">
+                  {r.refUrl && (
+                    <p className="text-neutral-700">
+                      <span className="font-semibold text-neutral-500">레퍼런스: </span>
                       <a
-                        href={r.url}
+                        href={r.refUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[12px] text-pink-600 hover:underline break-all"
+                        className="text-pink-600 hover:underline break-all"
                       >
-                        {i + 1}. {r.url}
+                        {r.refUrl}
                       </a>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[12px] text-neutral-600">
-                        {r.views && <span>조회 {r.views}</span>}
-                        {r.saves && <span>저장 {r.saves}</span>}
-                        {r.profileVisits && <span>프로필 방문 {r.profileVisits}</span>}
-                        {r.newFollows && <span>신규 팔로우 {r.newFollows}</span>}
-                      </div>
-                      {r.myRead && (
-                        <p className="text-[12px] text-neutral-600 mt-1 whitespace-pre-wrap">
-                          <span className="font-semibold text-neutral-500">내 해석: </span>
-                          {r.myRead}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-              </div>
-            </Field>
-          )}
-
-          {w3.stuckPoint && (
-            <Field label="지금 가장 막힌 지점">
-              <p className="text-[13px] text-neutral-700 whitespace-pre-wrap leading-relaxed">{w3.stuckPoint}</p>
-            </Field>
-          )}
-
-          {w3.goal && (
-            <Field label="챌린지 끝날 때 원하는 상태">
-              <p className="text-[13px] text-neutral-700 whitespace-pre-wrap leading-relaxed">{w3.goal}</p>
-            </Field>
-          )}
-
-          {(w3.questions ?? []).filter(Boolean).length > 0 && (
-            <Field label="20분 안에 꼭 묻고 싶은 질문">
-              <ol className="space-y-1.5">
-                {(w3.questions ?? []).filter(Boolean).map((q, i) => (
-                  <li key={i} className="text-[13px] text-neutral-700 whitespace-pre-wrap">
-                    {i + 1}. {q}
-                  </li>
-                ))}
-              </ol>
-            </Field>
-          )}
-
-          {(w3.insightShots ?? []).length > 0 && (
-            <Field label={`인사이트 스크린샷 (${(w3.insightShots ?? []).length}장)`}>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {(w3.insightShots ?? []).map((url, i) => (
+                    </p>
+                  )}
+                  {r.myUrl && (
+                    <p className="text-neutral-700">
+                      <span className="font-semibold text-neutral-500">내 릴스: </span>
+                      <a
+                        href={r.myUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-pink-600 hover:underline break-all"
+                      >
+                        {r.myUrl}
+                      </a>
+                    </p>
+                  )}
+                  {r.note && (
+                    <p className="text-neutral-700 whitespace-pre-wrap">
+                      <span className="font-semibold text-neutral-500">어떻게 바꿨나: </span>
+                      {r.note}
+                    </p>
+                  )}
+                </div>
+              </Field>
+            ))}
+        </>
+      ) : w3 ? (
+        <Field label={`이번 주 올린 릴스 (${(w3.reels ?? []).filter((r) => r.url).length}개)`}>
+          <div className="space-y-2">
+            {(w3.reels ?? [])
+              .filter((r) => r.url)
+              .map((r, i) => (
+                <div key={i} className="rounded-xl bg-white border border-neutral-200/70 p-3">
                   <a
-                    key={i}
-                    href={url}
+                    href={r.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50 aspect-square block"
+                    className="text-[12px] text-pink-600 hover:underline break-all"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt={`인사이트 ${i + 1}`} className="w-full h-full object-cover" />
+                    {i + 1}. {r.url}
                   </a>
-                ))}
-              </div>
-            </Field>
-          )}
-        </>
+                  {r.note && (
+                    <p className="text-[12px] text-neutral-600 mt-1 whitespace-pre-wrap">
+                      <span className="font-semibold text-neutral-500">주제·후킹: </span>
+                      {r.note}
+                    </p>
+                  )}
+                </div>
+              ))}
+          </div>
+        </Field>
       ) : w2 ? (
         <>
           {(w2.reels ?? []).filter((r) => r.viralUrl || r.myUrl).map((r, i) => (

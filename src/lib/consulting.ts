@@ -87,6 +87,14 @@ export function buildFirstTaskDescription(base: string, note?: string | null): s
   return `${INTAKE_HEAD}\n${n}\n${INTAKE_SEP}\n${base}`;
 }
 
+/** 설명을 { 등록 메모, 본문 }으로 분리한다. 메모가 없으면 note = null. */
+export function splitIntakeNote(description: string): { note: string | null; body: string } {
+  const note = extractIntakeNote(description);
+  if (!note) return { note: null, body: description };
+  const sepIdx = description.indexOf(`\n${INTAKE_SEP}\n`);
+  return { note, body: description.slice(sepIdx + INTAKE_SEP.length + 2) };
+}
+
 /** 첫 할 일 설명에서 등록 메모만 뽑아낸다. 없으면 null. */
 export function extractIntakeNote(description: string): string | null {
   if (!description.startsWith(`${INTAKE_HEAD}\n`)) return null;

@@ -14,7 +14,8 @@ import {
   charLen,
   compress,
 } from "./common";
-import { Search, Swords, Star } from "lucide-react";
+import { Search, Swords, Star, Loader2, Sparkles } from "lucide-react";
+import type { ProfileSuggestion as Suggestion } from "@/lib/consulting-profile-ai";
 
 interface Data {
   problems?: string[];
@@ -78,11 +79,38 @@ export function CustomerSelectGuide({ taskId, initialData }: { taskId: string; i
 
   const filledProblems = problems.filter((p) => p.trim());
   const topProblem = filledProblems[0] ?? "";
-  const versions = buildProfiles(topProblem, change, personaLine, expertise);
 
-  const getFeedback = () => {
+  // AI 추천 결과. 없으면(키 미설정·실패) 기존 템플릿으로 폴백한다.
+  const [ai, setAi] = useState<Suggestion | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [aiFailed, setAiFailed] = useState(false);
+
+  const fallbackVersions = buildProfiles(topProblem, change, personaLine, expertise).map((v) => ({
+    ...v,
+    angle: "",
+    reason: "",
+  }));
+  const versions = ai?.versions ?? fallbackVersions;
+
+  const getFeedback = async () => {
     save({ problems, change, personaLine, personaDetail, expertise });
     setShow(true);
+    setGenerating(true);
+    setAiFailed(false);
+    try {
+      const res = await fetch("/api/consulting/profile-suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, problems, change, personaLine, personaDetail, expertise }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.suggestion) setAi(data.suggestion as Suggestion);
+      else setAiFailed(true);
+    } catch {
+      setAiFailed(true);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   return (
@@ -154,38 +182,75 @@ export function CustomerSelectGuide({ taskId, initialData }: { taskId: string; i
 
       {show && (
         <FeedbackBox>
-          <p className="text-[12px] text-neutral-600 mb-2">
-            선정한 <strong>핵심 문제</strong> {filledProblems.length}개 · 타겟 <strong>{compress(personaLine, 16) || "미입력"}</strong> 기준으로 만든 프로필 추천 3버전이에요. (인스타 {IG_LIMIT}자 이내)
-          </p>
-          {filledProblems.length < 3 && (
-            <p className="text-[12px] text-amber-600 mb-2">⚠️ 문제를 최소 3~5개 채우면 훨씬 정확한 추천이 나와요.</p>
-          )}
-          <div className="space-y-3">
-            {versions.map((v) => {
-              const text = v.lines.join("\n");
-              const len = charLen(text);
-              const over = len > IG_LIMIT;
-              return (
-                <div key={v.name} className="rounded-xl border border-neutral-200 bg-white p-3">
-                  <div className="flex items-center justify-between mb-2 gap-2">
-                    <div className="inline-flex items-center gap-2">
-                      <p className="text-xs font-bold text-neutral-700">{v.name}</p>
-                      <span
-                        className={
-                          "text-[10px] font-bold rounded-full px-1.5 py-0.5 " +
-                          (over ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-700")
-                        }
-                      >
-                        {len}자{over ? " · 초과" : ""}
-                      </span>
+          {generating ? (
+            <div className="flex items-center gap-2 py-6 justify-center text-[13px] font-semibold text-neutral-500">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              입력하신 내용을 읽고 프로필을 쓰는 중이에요… (20초쯤 걸려요)
+            </div>
+          ) : (
+            <>
+              <p className="text-[12px] text-neutral-600 mb-2">
+                선정한 <strong>핵심 문제</strong> {filledProblems.length}개 · 타겟 <strong>{compress(personaLine, 16) || "미입력"}</strong> 기준으로 만든 프로필 추천 3버전이에요. (인스타 {IG_LIMIT}자 이내)
+              </p>
+              {ai && (
+                <p className="mb-2 inline-flex items-center gap-1 text-[11px] font-bold text-pink-600">
+                  <Sparkles className="w-3 h-3" /> 입력하신 내용을 실제로 읽고 쓴 추천이에요
+                </p>
+              )}
+              {aiFailed && (
+                <p className="text-[12px] text-amber-600 mb-2">
+                  지금은 자동 작성이 안 돼서 기본 양식으로 보여드려요. 잠시 뒤 다시 눌러보세요.
+                </p>
+              )}
+              {filledProblems.length < 3 && (
+                <p className="text-[12px] text-amber-600 mb-2">⚠️ 문제를 최소 3~5개 채우면 훨씬 정확한 추천이 나와요.</p>
+              )}
+              <div className="space-y-3">
+                {versions.map((v, i) => {
+                  const text = v.lines.join("\n");
+                  const len = charLen(text);
+                  const over = len > IG_LIMIT;
+                  return (
+                    <div key={`${v.name}-${i}`} className="rounded-xl border border-neutral-200 bg-white p-3">
+                      <div className="flex items-center justify-between mb-2 gap-2">
+                        <div className="inline-flex items-center gap-2 min-w-0">
+                          <p className="text-xs font-bold text-neutral-700 truncate">{v.name}</p>
+                          <span
+                            className={
+                              "shrink-0 text-[10px] font-bold rounded-full px-1.5 py-0.5 " +
+                              (over ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-700")
+                            }
+                          >
+                            {len}자{over ? " · 초과" : ""}
+                          </span>
+                        </div>
+                        <CopyButton text={text} />
+                      </div>
+                      {v.angle && (
+                        <p className="text-[11px] text-neutral-500 mb-2">{v.angle}</p>
+                      )}
+                      <div className="text-sm text-neutral-900 whitespace-pre-wrap leading-relaxed">{text}</div>
+                      {v.reason && (
+                        <p className="mt-2 border-t border-neutral-100 pt-2 text-[11px] leading-5 text-neutral-500">
+                          {v.reason}
+                        </p>
+                      )}
                     </div>
-                    <CopyButton text={text} />
-                  </div>
-                  <div className="text-sm text-neutral-900 whitespace-pre-wrap leading-relaxed">{text}</div>
+                  );
+                })}
+              </div>
+              {ai && ai.tips.length > 0 && (
+                <div className="mt-3 rounded-xl border border-pink-200 bg-pink-50 p-3">
+                  <p className="text-[12px] font-bold text-pink-700 mb-1.5">더 좋아지려면</p>
+                  <ul className="list-disc space-y-1 pl-4 text-[12px] leading-5 text-pink-700/90">
+                    {ai.tips.map((t, i) => (
+                      <li key={i}>{t}</li>
+                    ))}
+                  </ul>
                 </div>
-              );
-            })}
-          </div>
+              )}
+            </>
+          )}
         </FeedbackBox>
       )}
     </div>

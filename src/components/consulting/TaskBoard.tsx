@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Check,
@@ -12,11 +13,10 @@ import {
   CalendarDays,
   GripVertical,
   Wand2,
-  ChevronDown,
+  ChevronRight,
   PlayCircle,
 } from "lucide-react";
-import { TaskGuide, GUIDE_LABELS } from "./guides/TaskGuide";
-import { parseVideoSource, getEmbedUrl } from "@/lib/video";
+import { GUIDE_LABELS } from "./guides/TaskGuide";
 
 export interface RefVideo {
   title: string;
@@ -75,8 +75,6 @@ export function TaskBoard({
   const [addDay, setAddDay] = useState<number | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverDay, setDragOverDay] = useState<number | null>(null);
-  const [openGuideId, setOpenGuideId] = useState<string | null>(null);
-  const [openVideoId, setOpenVideoId] = useState<string | null>(null);
   const [resizingId, setResizingId] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
   const weekRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -492,7 +490,8 @@ export function TaskBoard({
       </div>
 
       <p className="text-[11px] text-neutral-400 px-1">
-        <GripVertical className="w-3 h-3 inline -mt-0.5" /> 손잡이를 잡고 끌어서 다른 날로 옮기거나 순서를 바꿀 수 있어요.
+        숙제 제목을 누르면 그 숙제만 보는 페이지가 열려요. 왼쪽 네모는 완료 체크,
+        <GripVertical className="w-3 h-3 inline -mt-0.5" /> 손잡이는 끌어서 날짜·순서 바꾸기예요.
       </p>
 
       {days.map((day) => {
@@ -618,18 +617,13 @@ export function TaskBoard({
                     >
                       {task.doneAt && <Check className="w-3.5 h-3.5" />}
                     </button>
-                    <div
-                      className={"flex-1 min-w-0 " + (task.guideKey ? "cursor-pointer" : "")}
-                      onClick={
-                        task.guideKey
-                          ? () => setOpenGuideId(openGuideId === task.id ? null : task.id)
-                          : undefined
-                      }
-                    >
+                    <Link href={`/consulting/${task.id}`} className="flex-1 min-w-0 group/link">
                       <p
                         className={
                           "text-sm font-medium inline-flex items-center gap-1.5 " +
-                          (task.doneAt ? "text-neutral-400 line-through" : "text-neutral-900")
+                          (task.doneAt
+                            ? "text-neutral-400 line-through"
+                            : "text-neutral-900 group-hover/link:text-pink-600")
                         }
                       >
                         {task.title}
@@ -638,23 +632,33 @@ export function TaskBoard({
                             D{task.day}~D{task.endDay}
                           </span>
                         )}
-                        {task.guideKey && (
-                          <ChevronDown
-                            className={"w-3.5 h-3.5 text-pink-500 transition-transform " + (openGuideId === task.id ? "rotate-180" : "")}
-                          />
-                        )}
                       </p>
                       {task.description && (
-                        <p className={"text-[12px] mt-0.5 whitespace-pre-wrap " + (task.doneAt ? "text-neutral-300" : "text-neutral-500")}>
+                        <p
+                          className={
+                            "text-[12px] mt-0.5 line-clamp-2 whitespace-pre-wrap " +
+                            (task.doneAt ? "text-neutral-300" : "text-neutral-500")
+                          }
+                        >
                           {task.description}
                         </p>
                       )}
-                      {task.guideKey && openGuideId !== task.id && (
-                        <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-pink-600">
-                          <Wand2 className="w-3 h-3" /> 탭하면 {GUIDE_LABELS[task.guideKey] ?? "도우미"} 열려요
+                      <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-neutral-600 group-hover/link:text-pink-600">
+                          숙제 열기 <ChevronRight className="w-3 h-3" />
                         </span>
-                      )}
-                    </div>
+                        {task.guideKey && (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-pink-50 px-1.5 py-0.5 text-[10px] font-bold text-pink-600">
+                            <Wand2 className="w-2.5 h-2.5" /> {GUIDE_LABELS[task.guideKey] ?? "도우미"}
+                          </span>
+                        )}
+                        {task.guideKey && refVideos?.[task.guideKey] && (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-600">
+                            <PlayCircle className="w-2.5 h-2.5" /> 참고 강의
+                          </span>
+                        )}
+                      </span>
+                    </Link>
                     <div className="shrink-0 flex items-center gap-1 opacity-60 group-hover:opacity-100">
                       <button
                         type="button"
@@ -675,43 +679,6 @@ export function TaskBoard({
                       </button>
                     </div>
                   </div>
-                  {task.guideKey && openGuideId === task.id && (
-                    <div className="mt-2 rounded-xl border border-pink-200 bg-white p-4">
-                      <TaskGuide guideKey={task.guideKey} taskId={task.id} data={task.data} />
-                    </div>
-                  )}
-                  {(() => {
-                    const rv = task.guideKey ? refVideos?.[task.guideKey] : undefined;
-                    if (!rv) return null;
-                    const parsed = parseVideoSource(rv.vimeoId);
-                    const open = openVideoId === task.id;
-                    return (
-                      <div className="mt-2">
-                        <button
-                          type="button"
-                          onClick={() => setOpenVideoId(open ? null : task.id)}
-                          className="inline-flex items-center gap-1.5 text-[12px] font-bold text-indigo-600 hover:text-indigo-700"
-                        >
-                          <PlayCircle className="w-4 h-4" /> 참고 강의: {rv.title}
-                          <ChevronDown className={"w-3.5 h-3.5 transition-transform " + (open ? "rotate-180" : "")} />
-                        </button>
-                        {open && parsed && (
-                          <div className="mt-2 rounded-xl overflow-hidden border border-neutral-200 bg-black aspect-video">
-                            <iframe
-                              src={getEmbedUrl(parsed)}
-                              className="w-full h-full"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                              title={rv.title}
-                            />
-                          </div>
-                        )}
-                        {open && !parsed && (
-                          <p className="mt-2 text-[12px] text-neutral-400">영상을 불러올 수 없어요.</p>
-                        )}
-                      </div>
-                    );
-                  })()}
                   </div>
                 )
               )}

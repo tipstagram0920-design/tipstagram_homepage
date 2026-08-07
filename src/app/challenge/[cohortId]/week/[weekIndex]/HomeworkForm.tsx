@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2, Instagram, CheckCircle2, Link as LinkIcon, ImagePlus, X, Layers, Users, Save, Film, CalendarCheck2, BarChart3, HelpCircle, Target, MapPin } from "lucide-react";
+import { Loader2, Plus, Trash2, Instagram, CheckCircle2, Link as LinkIcon, ImagePlus, X, Layers, Users, Save, Film } from "lucide-react";
 
 interface Initial {
   content: string;
@@ -50,50 +50,42 @@ function readWeek2FormData(formData: unknown): Week2FormData | null {
   return fd;
 }
 
-// ── Week 3: 오프라인 1:1 진단 사전 제출 ────────────────────────────
+// ── Week 3: 릴스 3개 이상 올리고 URL 제출 ──────────────────────────
 interface Week3Reel {
-  url: string; // 2주차에 올린 내 릴스
-  views: string;
-  saves: string;
-  profileVisits: string;
-  newFollows: string;
-  myRead: string; // 내가 보기에 왜 이런 결과가 나왔나
+  url: string; // 이번 주에 올린 내 릴스 URL
+  note: string; // 주제·후킹 한 줄 (선택)
 }
-const EMPTY_W3_REEL: Week3Reel = {
-  url: "",
-  views: "",
-  saves: "",
-  profileVisits: "",
-  newFollows: "",
-  myRead: "",
-};
+const EMPTY_W3_REEL: Week3Reel = { url: "", note: "" };
 const MIN_W3_REELS = 3;
-const W3_QUESTION_SLOTS = 3;
-const MAX_INSIGHT_SHOTS = 10;
-
-interface Week3Account {
-  followers?: string;
-  reach30d?: string;
-  profileVisits30d?: string;
-  mainTopic?: string;
-}
 
 interface Week3FormData {
   kind?: string;
-  attend?: string; // "yes" | "no"
-  preferredSlot?: string;
-  attendNote?: string;
-  account?: Week3Account;
   reels?: Week3Reel[];
-  stuckPoint?: string;
-  goal?: string;
-  questions?: string[];
-  insightShots?: string[];
 }
 function readWeek3FormData(formData: unknown): Week3FormData | null {
   if (!formData || typeof formData !== "object") return null;
   const fd = formData as Week3FormData;
-  if (fd.kind !== "week3_offline_diagnosis") return null;
+  if (fd.kind !== "week3_reels_upload") return null;
+  return fd;
+}
+
+// ── Week 4: 레퍼런스 → 내 릴스 5개 ────────────────────────────────
+interface Week4Reel {
+  refUrl: string; // 참고한 레퍼런스 릴스 URL
+  myUrl: string; // 내가 만들어 올린 릴스 URL
+  note: string; // 무엇을 바꿔서 내 것으로 만들었는지 (선택)
+}
+const EMPTY_W4_REEL: Week4Reel = { refUrl: "", myUrl: "", note: "" };
+const MIN_W4_REELS = 5;
+
+interface Week4FormData {
+  kind?: string;
+  reels?: Week4Reel[];
+}
+function readWeek4FormData(formData: unknown): Week4FormData | null {
+  if (!formData || typeof formData !== "object") return null;
+  const fd = formData as Week4FormData;
+  if (fd.kind !== "week4_reels_5") return null;
   return fd;
 }
 
@@ -214,50 +206,29 @@ function assembleContent(
   highlights: HighlightShots,
   freeText: string,
   reels: ReelEntry[],
-  w3: Required<Omit<Week3FormData, "kind">>
+  w3: Required<Omit<Week3FormData, "kind">>,
+  w4: Required<Omit<Week4FormData, "kind">>
 ): string {
+  if (weekIndex === 4) {
+    const valid = w4.reels.filter((r) => r.refUrl.trim() || r.myUrl.trim());
+    const parts: string[] = [`# 이번 주 만든 릴스 (${valid.length}개)`];
+    valid.forEach((r, i) => {
+      const lines = [`### ${i + 1}번 릴스`];
+      if (r.refUrl.trim()) lines.push(`- 레퍼런스: ${r.refUrl.trim()}`);
+      if (r.myUrl.trim()) lines.push(`- 내 릴스: ${r.myUrl.trim()}`);
+      if (r.note.trim()) lines.push(`- 어떻게 바꿨나: ${r.note.trim()}`);
+      parts.push(lines.join("\n"));
+    });
+    return parts.join("\n\n");
+  }
   if (weekIndex === 3) {
-    const parts: string[] = [];
-    parts.push(
-      `# 오프라인 1:1 참석\n\n- 참석 여부: ${
-        w3.attend === "yes" ? "참석" : w3.attend === "no" ? "불참" : "(미선택)"
-      }` +
-        (w3.preferredSlot.trim() ? `\n- 희망 시간대: ${w3.preferredSlot.trim()}` : "") +
-        (w3.attendNote.trim() ? `\n- 남길 말: ${w3.attendNote.trim()}` : "")
-    );
-    const acc = w3.account;
-    const accLines = [
-      acc.followers?.trim() ? `- 팔로워: ${acc.followers.trim()}` : "",
-      acc.reach30d?.trim() ? `- 최근 30일 도달: ${acc.reach30d.trim()}` : "",
-      acc.profileVisits30d?.trim() ? `- 최근 30일 프로필 방문: ${acc.profileVisits30d.trim()}` : "",
-      acc.mainTopic?.trim() ? `- 주력 주제·상품: ${acc.mainTopic.trim()}` : "",
-    ].filter(Boolean);
-    if (accLines.length) parts.push(`# 내 계정 현황\n\n${accLines.join("\n")}`);
-
     const validReels = w3.reels.filter((r) => r.url.trim());
-    if (validReels.length) {
-      parts.push(`# 2주차 릴스 성과 (${validReels.length}개)`);
-      validReels.forEach((r, i) => {
-        const lines = [`### ${i + 1}번 릴스`, `- URL: ${r.url.trim()}`];
-        const metrics = [
-          r.views.trim() ? `조회수 ${r.views.trim()}` : "",
-          r.saves.trim() ? `저장 ${r.saves.trim()}` : "",
-          r.profileVisits.trim() ? `프로필 방문 ${r.profileVisits.trim()}` : "",
-          r.newFollows.trim() ? `신규 팔로우 ${r.newFollows.trim()}` : "",
-        ].filter(Boolean);
-        if (metrics.length) lines.push(`- 지표: ${metrics.join(" · ")}`);
-        if (r.myRead.trim()) lines.push(`- 내 해석: ${r.myRead.trim()}`);
-        parts.push(lines.join("\n"));
-      });
-    }
-    if (w3.stuckPoint.trim()) parts.push(`# 지금 가장 막힌 지점\n\n${w3.stuckPoint.trim()}`);
-    if (w3.goal.trim()) parts.push(`# 이번 챌린지가 끝날 때 원하는 상태\n\n${w3.goal.trim()}`);
-    const qs = w3.questions.map((q) => q.trim()).filter(Boolean);
-    if (qs.length) {
-      parts.push(`# 20분 안에 꼭 묻고 싶은 질문 (${qs.length}개)`);
-      qs.forEach((q, i) => parts.push(`${i + 1}. ${q}`));
-    }
-    if (w3.insightShots.length) parts.push(`# 인사이트 스크린샷 (${w3.insightShots.length}장)`);
+    const parts: string[] = [`# 이번 주 올린 릴스 (${validReels.length}개)`];
+    validReels.forEach((r, i) => {
+      const lines = [`### ${i + 1}번 릴스`, `- URL: ${r.url.trim()}`];
+      if (r.note.trim()) lines.push(`- 주제·후킹: ${r.note.trim()}`);
+      parts.push(lines.join("\n"));
+    });
     return parts.join("\n\n");
   }
   if (weekIndex === 2) {
@@ -355,16 +326,21 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
   const isWeek1 = weekIndex === 1;
   const isWeek2 = weekIndex === 2;
   const isWeek3 = weekIndex === 3;
+  const isWeek4 = weekIndex === 4;
 
   // 마감 전 재편집을 위해 기존 제출 내용 프리필
   const w1Initial = readWeek1FormData(initial?.formData);
   const w2Initial = readWeek2FormData(initial?.formData);
   const w3Initial = readWeek3FormData(initial?.formData);
+  const w4Initial = readWeek4FormData(initial?.formData);
 
-  const [attend, setAttend] = useState<string>(w3Initial?.attend ?? "");
-  const [preferredSlot, setPreferredSlot] = useState<string>(w3Initial?.preferredSlot ?? "");
-  const [attendNote, setAttendNote] = useState<string>(w3Initial?.attendNote ?? "");
-  const [account, setAccount] = useState<Week3Account>(w3Initial?.account ?? {});
+  const [w4Reels, setW4Reels] = useState<Week4Reel[]>(
+    w4Initial?.reels && w4Initial.reels.length > 0
+      ? w4Initial.reels.map((r) => ({ ...EMPTY_W4_REEL, ...r }))
+      : isWeek4
+        ? Array.from({ length: MIN_W4_REELS }, () => ({ ...EMPTY_W4_REEL }))
+        : []
+  );
   const [w3Reels, setW3Reels] = useState<Week3Reel[]>(
     w3Initial?.reels && w3Initial.reels.length > 0
       ? w3Initial.reels.map((r) => ({ ...EMPTY_W3_REEL, ...r }))
@@ -372,15 +348,6 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
         ? Array.from({ length: MIN_W3_REELS }, () => ({ ...EMPTY_W3_REEL }))
         : []
   );
-  const [stuckPoint, setStuckPoint] = useState<string>(w3Initial?.stuckPoint ?? "");
-  const [goal, setGoal] = useState<string>(w3Initial?.goal ?? "");
-  const [questions, setQuestions] = useState<string[]>(() => {
-    const base = w3Initial?.questions ?? [];
-    return Array.from({ length: Math.max(W3_QUESTION_SLOTS, base.length) }, (_, i) => base[i] ?? "");
-  });
-  const [insightShots, setInsightShots] = useState<string[]>(w3Initial?.insightShots ?? []);
-  const [insightUploading, setInsightUploading] = useState(false);
-  const insightFileRef = useRef<HTMLInputElement | null>(null);
   const [reels, setReels] = useState<ReelEntry[]>(
     w2Initial?.reels && w2Initial.reels.length > 0
       ? w2Initial.reels.map((r) => ({ ...EMPTY_REEL, ...r }))
@@ -467,52 +434,19 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
     });
   };
 
-  // Week3 인사이트 스크린샷 업로드
-  const uploadInsightShots = async (files: FileList | File[]) => {
-    setError("");
-    const list = Array.from(files);
-    if (list.length === 0) return;
-    const room = MAX_INSIGHT_SHOTS - insightShots.length;
-    if (room <= 0) {
-      setError(`인사이트 스크린샷은 최대 ${MAX_INSIGHT_SHOTS}장까지 올릴 수 있어요.`);
-      return;
-    }
-    setInsightUploading(true);
-    try {
-      for (const file of list.slice(0, room)) {
-        if (!file.type.startsWith("image/")) {
-          setError("이미지 파일만 첨부할 수 있어요.");
-          continue;
-        }
-        if (file.size > 10 * 1024 * 1024) {
-          setError("10MB 이하 이미지만 첨부할 수 있어요.");
-          continue;
-        }
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/homework/upload", { method: "POST", body: fd });
-        const data = await res.json();
-        if (!res.ok || !data.url) {
-          setError(data.error || "업로드 실패");
-          continue;
-        }
-        setInsightShots((prev) => [...prev, data.url as string]);
-      }
-    } finally {
-      setInsightUploading(false);
-    }
-  };
-
   // 제출까지 남은 항목 (버튼 옆 안내용)
   const missing = useMemo(() => {
     const m: string[] = [];
+    if (isWeek4) {
+      const done = w4Reels.filter((r) => r.myUrl.trim()).length;
+      if (done < MIN_W4_REELS) m.push(`내 릴스 URL ${MIN_W4_REELS - done}개 더`);
+      const refs = w4Reels.filter((r) => r.refUrl.trim()).length;
+      if (refs < MIN_W4_REELS) m.push(`레퍼런스 URL ${MIN_W4_REELS - refs}개 더`);
+      return m;
+    }
     if (isWeek3) {
-      if (!attend) m.push("오프라인 참석 여부");
-      const done = w3Reels.filter((r) => r.url.trim() && r.views.trim()).length;
-      if (done < MIN_W3_REELS) m.push(`릴스 성과 ${MIN_W3_REELS - done}개 더 (URL+조회수)`);
-      if (stuckPoint.trim().length < 20) m.push("막힌 지점 20자 이상");
-      const qn = questions.filter((q) => q.trim()).length;
-      if (qn < 2) m.push(`질문 ${2 - qn}개 더`);
+      const done = w3Reels.filter((r) => r.url.trim()).length;
+      if (done < MIN_W3_REELS) m.push(`릴스 URL ${MIN_W3_REELS - done}개 더`);
       return m;
     }
     if (isWeek1) {
@@ -535,6 +469,7 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
     isWeek1,
     isWeek2,
     isWeek3,
+    isWeek4,
     answers,
     freeText,
     people,
@@ -542,25 +477,14 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
     landingUrl,
     highlights,
     reels,
-    attend,
     w3Reels,
-    stuckPoint,
-    questions,
+    w4Reels,
   ]);
 
   // 제출·임시저장 공통 payload 조립
   const buildPayload = () => {
-    const w3 = {
-      attend,
-      preferredSlot,
-      attendNote,
-      account,
-      reels: w3Reels,
-      stuckPoint,
-      goal,
-      questions,
-      insightShots,
-    };
+    const w3 = { reels: w3Reels };
+    const w4 = { reels: w4Reels };
     const content = assembleContent(
       weekIndex,
       products,
@@ -570,24 +494,28 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
       highlights,
       freeText,
       reels,
-      w3
+      w3,
+      w4
     );
+    if (isWeek4) {
+      return {
+        content,
+        formData: {
+          kind: "week4_reels_5",
+          reels: w4Reels.filter((r) => r.refUrl.trim() || r.myUrl.trim() || r.note.trim()),
+        },
+        imageUrls: [] as string[],
+        instagramUrl,
+      };
+    }
     if (isWeek3) {
       return {
         content,
         formData: {
-          kind: "week3_offline_diagnosis",
-          attend,
-          preferredSlot: preferredSlot.trim(),
-          attendNote: attendNote.trim(),
-          account,
-          reels: w3Reels.filter((r) => r.url.trim() || r.myRead.trim()),
-          stuckPoint: stuckPoint.trim(),
-          goal: goal.trim(),
-          questions: questions.map((q) => q.trim()).filter(Boolean),
-          insightShots,
+          kind: "week3_reels_upload",
+          reels: w3Reels.filter((r) => r.url.trim() || r.note.trim()),
         },
-        imageUrls: insightShots,
+        imageUrls: [] as string[],
         instagramUrl,
       };
     }
@@ -635,29 +563,27 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
 
   const submit = async () => {
     setError("");
-    if (isWeek3) {
-      if (!attend) {
-        setError("오프라인 1:1 참석 여부를 선택해 주세요.");
-        return;
-      }
-      if (attend === "yes" && !preferredSlot.trim()) {
-        setError("참석 시 희망 시간대를 남겨 주세요.");
-        return;
-      }
-      const done = w3Reels.filter((r) => r.url.trim() && r.views.trim()).length;
-      if (done < MIN_W3_REELS) {
+    if (isWeek4) {
+      const mine = w4Reels.filter((r) => r.myUrl.trim()).length;
+      if (mine < MIN_W4_REELS) {
         setError(
-          `2주차에 올린 릴스 ${MIN_W3_REELS}개의 URL과 조회수를 채워 주세요. (현재 ${done}개)`
+          `내가 올린 릴스 URL을 ${MIN_W4_REELS}개 채워 주세요. (현재 ${mine}개)`
         );
         return;
       }
-      if (stuckPoint.trim().length < 20) {
-        setError("지금 가장 막힌 지점을 20자 이상 구체적으로 적어 주세요.");
+      const refs = w4Reels.filter((r) => r.refUrl.trim()).length;
+      if (refs < MIN_W4_REELS) {
+        setError(
+          `각 릴스마다 참고한 레퍼런스 URL도 함께 남겨 주세요. (현재 ${refs}개)`
+        );
         return;
       }
-      const qn = questions.filter((q) => q.trim()).length;
-      if (qn < 2) {
-        setError(`꼭 묻고 싶은 질문을 최소 2개 이상 적어 주세요. (현재 ${qn}개)`);
+    } else if (isWeek3) {
+      const done = w3Reels.filter((r) => r.url.trim()).length;
+      if (done < MIN_W3_REELS) {
+        setError(
+          `인스타그램에 올린 릴스 URL을 최소 ${MIN_W3_REELS}개 남겨 주세요. (현재 ${done}개)`
+        );
         return;
       }
     } else if (isWeek1) {
@@ -717,376 +643,181 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
 
   return (
     <div className="space-y-4 pb-28">
-      {isWeek3 ? (
-        <>
-          {/* 1. 오프라인 1:1 참석 */}
-          <div className={SECTION}>
-            <div className="flex items-start gap-3 mb-4">
-              <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-700 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_4px_10px_-4px_rgba(0,0,0,0.3)]">
-                <CalendarCheck2 className="w-4.5 h-4.5" strokeWidth={2.25} />
-              </span>
-              <div className="flex-1 pt-0.5">
-                <p className={LABEL_LG}>오프라인 1:1 진단 참석</p>
+      {isWeek4 ? (
+        <div className={SECTION}>
+          <div className="flex items-start gap-3 mb-4">
+            <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(220,38,38,0.4)]">
+              <Film className="w-4.5 h-4.5" strokeWidth={2.25} />
+            </span>
+            <div className="flex-1 pt-0.5 flex items-start justify-between gap-3">
+              <div>
+                <p className={LABEL_LG}>레퍼런스 → 내 릴스 5개</p>
                 <p className={HELP + " mt-1"}>
-                  <span className="inline-flex items-center gap-1 font-semibold text-neutral-700">
-                    <MapPin className="w-3 h-3" /> 서울 종로
-                  </span>{" "}
-                  · 1인당 20분. 이번 주는 제가 여러분 계정을 직접 뜯어보는 날이에요. 참석 여부를 먼저 알려 주세요.
+                  잘 된 릴스 <strong>레퍼런스 5개</strong>를 찾아 저장하고, 각각을 내 콘텐츠로 변형해{" "}
+                  <strong>릴스 5개</strong>를 만들어 올린 뒤 URL을 남겨 주세요. 릴스 게시물에서{" "}
+                  <strong>공유 → 링크 복사</strong>로 주소를 가져올 수 있어요.
                 </p>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              {[
-                { value: "yes", label: "참석합니다" },
-                { value: "no", label: "참석이 어려워요" },
-              ].map((o) => (
-                <button
-                  key={o.value}
-                  type="button"
-                  onClick={() => setAttend(o.value)}
-                  className={
-                    "py-3 rounded-xl border text-sm font-bold transition-colors " +
-                    (attend === o.value
-                      ? "border-neutral-900 bg-neutral-900 text-white"
-                      : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400")
-                  }
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-            {attend === "yes" && (
-              <div className="mb-3">
-                <label className="block text-[12px] font-semibold text-neutral-700 mb-1">희망 시간대</label>
-                <input
-                  type="text"
-                  value={preferredSlot}
-                  onChange={(e) => setPreferredSlot(e.target.value)}
-                  placeholder="예: 토요일 오후 2시~4시 사이 · 오전은 어려움"
-                  className={INPUT}
-                />
-              </div>
-            )}
-            <div>
-              <label className="block text-[12px] font-semibold text-neutral-700 mb-1">
-                남길 말 <span className="text-neutral-400 font-normal">(선택)</span>
-              </label>
-              <textarea
-                value={attendNote}
-                onChange={(e) => setAttendNote(e.target.value)}
-                rows={2}
-                placeholder={
-                  attend === "no"
-                    ? "참석이 어려운 사정과, 대신 어떤 방식으로 진단받고 싶은지 적어 주세요."
-                    : "이동 시간·동행 여부 등 미리 알아야 할 게 있다면 적어 주세요."
-                }
-                className={TEXTAREA}
-              />
+              <span className="text-[11px] text-neutral-500 shrink-0 whitespace-nowrap">
+                총 <strong className="text-neutral-900">{MIN_W4_REELS}개</strong>
+              </span>
             </div>
           </div>
 
-          {/* 2. 내 계정 현황 */}
-          <div className={SECTION}>
-            <div className="flex items-start gap-3 mb-4">
-              <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(37,99,235,0.4)]">
-                <BarChart3 className="w-4.5 h-4.5" strokeWidth={2.25} />
-              </span>
-              <div className="flex-1 pt-0.5">
-                <p className={LABEL_LG}>지금 내 계정 현황</p>
-                <p className={HELP + " mt-1"}>
-                  인스타 앱 → 프로페셔널 대시보드 → 인사이트에서 <strong>최근 30일</strong> 기준 숫자를 그대로 옮겨 주세요. 정확한 숫자가 있어야 20분을 진단에만 쓸 수 있어요.
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {[
-                { key: "followers" as const, label: "팔로워 수", ph: "예: 1,240" },
-                { key: "reach30d" as const, label: "30일 도달", ph: "예: 8,500" },
-                { key: "profileVisits30d" as const, label: "30일 프로필 방문", ph: "예: 420" },
-              ].map((f) => (
-                <div key={f.key}>
-                  <label className="block text-[12px] font-semibold text-neutral-700 mb-1">{f.label}</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={account[f.key] ?? ""}
-                    onChange={(e) => setAccount((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                    placeholder={f.ph}
-                    className={INPUT}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="mt-3">
-              <label className="block text-[12px] font-semibold text-neutral-700 mb-1">주력 주제 · 팔고 있는 상품</label>
-              <input
-                type="text"
-                value={account.mainTopic ?? ""}
-                onChange={(e) => setAccount((prev) => ({ ...prev, mainTopic: e.target.value }))}
-                placeholder="1주차에 정한 방향에서 달라진 게 있다면 지금 기준으로 적어 주세요"
-                className={INPUT}
-              />
-            </div>
+          <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 mb-4">
+            <p className="text-[12px] font-bold text-neutral-800 mb-1.5">이렇게 하면 됩니다</p>
+            <ol className="list-decimal space-y-1 pl-4 text-[12px] leading-5 text-neutral-600">
+              <li>내 주제로 검색해서 반응 좋은 릴스 5개를 저장한다.</li>
+              <li>그 릴스가 왜 잘 됐는지(첫 3초·구성·자막) 한 줄로 파악한다.</li>
+              <li>같은 구조를 내 상품·내 고객 이야기로 바꿔 5개를 만든다.</li>
+              <li>올린 뒤 레퍼런스와 내 릴스 URL을 짝지어 아래에 남긴다.</li>
+            </ol>
           </div>
 
-          {/* 3. 2주차 릴스 성과 */}
-          <div className={SECTION}>
-            <div className="flex items-start gap-3 mb-4">
-              <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(220,38,38,0.4)]">
-                <Film className="w-4.5 h-4.5" strokeWidth={2.25} />
-              </span>
-              <div className="flex-1 pt-0.5 flex items-start justify-between gap-3">
-                <div>
-                  <p className={LABEL_LG}>2주차에 올린 릴스 성과</p>
-                  <p className={HELP + " mt-1"}>
-                    지난주에 만든 릴스의 <strong>실제 숫자</strong>를 넣어 주세요. 잘 된 것·안 된 것 섞여 있을수록 좋습니다. 마지막 칸에는 <strong>내가 보기에 왜 이런 결과가 나왔는지</strong> 한 줄로 적어 주세요. 정답이 아니어도 됩니다 — 그걸 제가 뜯어봅니다.
-                  </p>
-                </div>
-                <span className="text-[11px] text-neutral-500 shrink-0 whitespace-nowrap">
-                  최소 <strong className="text-neutral-900">{MIN_W3_REELS}개</strong>
-                </span>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {w3Reels.map((r, i) => (
-                <div key={i} className={NESTED_CARD}>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold text-neutral-500">릴스 {i + 1}</p>
-                    {w3Reels.length > MIN_W3_REELS && (
-                      <button
-                        type="button"
-                        onClick={() => setW3Reels((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="text-xs text-neutral-500 hover:text-red-600 inline-flex items-center gap-1"
-                      >
-                        <Trash2 className="w-3 h-3" /> 삭제
-                      </button>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-semibold text-neutral-700 mb-1">릴스 URL</label>
-                    <input
-                      type="url"
-                      value={r.url}
-                      onChange={(e) =>
-                        setW3Reels((prev) => prev.map((x, idx) => (idx === i ? { ...x, url: e.target.value } : x)))
-                      }
-                      placeholder="https://www.instagram.com/reel/..."
-                      className={INPUT}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[
-                      { key: "views" as const, label: "조회수" },
-                      { key: "saves" as const, label: "저장" },
-                      { key: "profileVisits" as const, label: "프로필 방문" },
-                      { key: "newFollows" as const, label: "신규 팔로우" },
-                    ].map((f) => (
-                      <div key={f.key}>
-                        <label className="block text-[12px] font-semibold text-neutral-700 mb-1">{f.label}</label>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          value={r[f.key]}
-                          onChange={(e) =>
-                            setW3Reels((prev) =>
-                              prev.map((x, idx) => (idx === i ? { ...x, [f.key]: e.target.value } : x))
-                            )
-                          }
-                          placeholder="0"
-                          className={INPUT}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-semibold text-neutral-700 mb-1">
-                      내가 보기에 왜 이런 결과가 나왔나 <span className="text-neutral-400 font-normal">(선택)</span>
-                    </label>
-                    <textarea
-                      value={r.myRead}
-                      onChange={(e) =>
-                        setW3Reels((prev) => prev.map((x, idx) => (idx === i ? { ...x, myRead: e.target.value } : x)))
-                      }
-                      rows={2}
-                      placeholder="후킹이 약했다 / 대상 지목이 흐렸다 / 저장은 많은데 프로필 방문이 없다 등"
-                      className={TEXTAREA}
-                    />
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setW3Reels((prev) => [...prev, { ...EMPTY_W3_REEL }])}
-                className={ADD_BUTTON}
-              >
-                <Plus className="w-4 h-4" /> 릴스 추가
-              </button>
-            </div>
-          </div>
-
-          {/* 4. 막힌 지점 + 목표 */}
-          <div className={SECTION}>
-            <div className="flex items-start gap-3 mb-4">
-              <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(234,88,12,0.4)]">
-                <Target className="w-4.5 h-4.5" strokeWidth={2.25} />
-              </span>
-              <div className="flex-1 pt-0.5">
-                <p className={LABEL_LG}>지금 가장 막힌 지점</p>
-                <p className={HELP + " mt-1"}>
-                  &ldquo;잘 안 돼요&rdquo; 말고, <strong>어디에서 무엇이 안 되는지</strong> 한 장면으로. 조회수인지, 프로필 방문인지, DM은 오는데 결제로 안 넘어가는지.
-                </p>
-              </div>
-            </div>
-            <textarea
-              value={stuckPoint}
-              onChange={(e) => setStuckPoint(e.target.value)}
-              rows={5}
-              placeholder="예: 조회수는 3천까지 나오는데 프로필 방문이 20명대라 팔로우로 이어지지 않아요. 릴스 마지막에 뭘 말해야 할지 모르겠습니다."
-              className={TEXTAREA}
-              maxLength={2000}
-            />
-            <p className="mt-1 text-[11px] text-neutral-400 text-right">{stuckPoint.length} / 2000</p>
-            <div className="mt-4">
-              <label className="block text-[12px] font-semibold text-neutral-700 mb-1">
-                챌린지 끝날 때 원하는 상태 <span className="text-neutral-400 font-normal">(선택)</span>
-              </label>
-              <textarea
-                value={goal}
-                onChange={(e) => setGoal(e.target.value)}
-                rows={3}
-                placeholder="예: 5주차 안에 첫 결제 1건. 최소한 상담 DM 5건은 받고 싶어요."
-                className={TEXTAREA}
-              />
-            </div>
-          </div>
-
-          {/* 5. 질문 3개 */}
-          <div className={SECTION}>
-            <div className="flex items-start gap-3 mb-4">
-              <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(124,58,237,0.4)]">
-                <HelpCircle className="w-4.5 h-4.5" strokeWidth={2.25} />
-              </span>
-              <div className="flex-1 pt-0.5 flex items-start justify-between gap-3">
-                <div>
-                  <p className={LABEL_LG}>20분 안에 꼭 묻고 싶은 질문</p>
-                  <p className={HELP + " mt-1"}>
-                    현장에서 이 순서대로 답해 드립니다. 검색하면 나오는 질문 말고, <strong>내 계정이라서 생기는 질문</strong>을 적어 주세요.
-                  </p>
-                </div>
-                <span className="text-[11px] text-neutral-500 shrink-0 whitespace-nowrap">
-                  최소 <strong className="text-neutral-900">2개</strong>
-                </span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {questions.map((q, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="shrink-0 mt-2.5 w-6 h-6 rounded-lg bg-neutral-900 text-white text-[11px] font-bold flex items-center justify-center">
-                    {i + 1}
-                  </span>
-                  <textarea
-                    value={q}
-                    onChange={(e) =>
-                      setQuestions((prev) => prev.map((x, idx) => (idx === i ? e.target.value : x)))
-                    }
-                    rows={2}
-                    placeholder={
-                      i === 0
-                        ? "예: 제 주제로는 릴스 후킹을 어디까지 자극적으로 가도 되나요?"
-                        : "궁금한 걸 그대로 적어 주세요"
-                    }
-                    className={TEXTAREA}
-                  />
-                  {questions.length > W3_QUESTION_SLOTS && (
+          <div className="space-y-3">
+            {w4Reels.map((r, i) => (
+              <div key={i} className={NESTED_CARD}>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-neutral-500">릴스 {i + 1}</p>
+                  {w4Reels.length > MIN_W4_REELS && (
                     <button
                       type="button"
-                      onClick={() => setQuestions((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="shrink-0 mt-2.5 text-neutral-400 hover:text-red-600"
-                      aria-label="질문 삭제"
+                      onClick={() => setW4Reels((prev) => prev.filter((_, idx) => idx !== i))}
+                      className="text-xs text-neutral-500 hover:text-red-600 inline-flex items-center gap-1"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3" /> 삭제
                     </button>
                   )}
                 </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setQuestions((prev) => [...prev, ""])}
-                className={ADD_BUTTON}
-              >
-                <Plus className="w-4 h-4" /> 질문 추가
-              </button>
-            </div>
+                <div>
+                  <label className="block text-[12px] font-semibold text-neutral-700 mb-1">
+                    참고한 레퍼런스 릴스 URL
+                  </label>
+                  <input
+                    type="url"
+                    value={r.refUrl}
+                    onChange={(e) =>
+                      setW4Reels((prev) =>
+                        prev.map((x, idx) => (idx === i ? { ...x, refUrl: e.target.value } : x))
+                      )
+                    }
+                    placeholder="https://www.instagram.com/reel/..."
+                    className={INPUT}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-semibold text-neutral-700 mb-1">
+                    내가 올린 릴스 URL
+                  </label>
+                  <input
+                    type="url"
+                    value={r.myUrl}
+                    onChange={(e) =>
+                      setW4Reels((prev) =>
+                        prev.map((x, idx) => (idx === i ? { ...x, myUrl: e.target.value } : x))
+                      )
+                    }
+                    placeholder="https://www.instagram.com/reel/..."
+                    className={INPUT}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-semibold text-neutral-700 mb-1">
+                    어떻게 바꿨나 <span className="text-neutral-400 font-normal">(선택)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={r.note}
+                    onChange={(e) =>
+                      setW4Reels((prev) =>
+                        prev.map((x, idx) => (idx === i ? { ...x, note: e.target.value } : x))
+                      )
+                    }
+                    placeholder="레퍼런스의 무엇을 살리고 무엇을 내 것으로 바꿨는지 한 줄로"
+                    className={INPUT}
+                  />
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setW4Reels((prev) => [...prev, { ...EMPTY_W4_REEL }])}
+              className={ADD_BUTTON}
+            >
+              <Plus className="w-4 h-4" /> 릴스 추가
+            </button>
           </div>
-
-          {/* 6. 인사이트 스크린샷 */}
-          <div className={SECTION}>
-            <div className="flex items-start gap-3 mb-4">
-              <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(219,39,119,0.4)]">
-                <Layers className="w-4.5 h-4.5" strokeWidth={2.25} />
-              </span>
-              <div className="flex-1 pt-0.5">
-                <p className={LABEL_LG}>
-                  인사이트 스크린샷 <span className="text-neutral-500 font-normal text-[13px]">(선택)</span>
-                </p>
+        </div>
+      ) : isWeek3 ? (
+        <div className={SECTION}>
+          <div className="flex items-start gap-3 mb-4">
+            <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(220,38,38,0.4)]">
+              <Film className="w-4.5 h-4.5" strokeWidth={2.25} />
+            </span>
+            <div className="flex-1 pt-0.5 flex items-start justify-between gap-3">
+              <div>
+                <p className={LABEL_LG}>이번 주 올린 릴스 URL</p>
                 <p className={HELP + " mt-1"}>
-                  프로페셔널 대시보드 · 릴스 인사이트 화면을 캡처해 올려주시면 현장에서 바로 같이 봅니다. 최대 {MAX_INSIGHT_SHOTS}장.
+                  인스타그램에 <strong>릴스 3개 이상</strong>을 올리고, 각 릴스의 URL을 남겨 주세요. 릴스 게시물에서 <strong>공유 → 링크 복사</strong>로 주소를 가져올 수 있어요. 완벽하게 만들려 하지 말고 일단 올리는 게 이번 주 목표입니다.
                 </p>
               </div>
+              <span className="text-[11px] text-neutral-500 shrink-0 whitespace-nowrap">
+                최소 <strong className="text-neutral-900">{MIN_W3_REELS}개</strong>
+              </span>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {insightShots.map((url, i) => (
-                <div
-                  key={i}
-                  className="relative rounded-xl overflow-hidden border border-neutral-200 bg-neutral-50 aspect-square"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={`인사이트 ${i + 1}`} className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => setInsightShots((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-neutral-900/80 text-white flex items-center justify-center hover:bg-neutral-900"
-                    aria-label="삭제"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-              {insightShots.length < MAX_INSIGHT_SHOTS && (
-                <button
-                  type="button"
-                  onClick={() => insightFileRef.current?.click()}
-                  disabled={insightUploading}
-                  className="aspect-square rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 text-neutral-500 hover:border-neutral-900 hover:text-neutral-900 hover:bg-white flex flex-col items-center justify-center gap-1 disabled:opacity-60 transition-colors"
-                >
-                  {insightUploading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-[10px]">업로드 중</span>
-                    </>
-                  ) : (
-                    <>
-                      <ImagePlus className="w-4 h-4" />
-                      <span className="text-[10px]">추가</span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-            <input
-              ref={insightFileRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                const files = e.target.files;
-                if (files && files.length > 0) uploadInsightShots(files);
-                if (insightFileRef.current) insightFileRef.current.value = "";
-              }}
-            />
           </div>
-        </>
+          <div className="space-y-3">
+            {w3Reels.map((r, i) => (
+              <div key={i} className={NESTED_CARD}>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-neutral-500">릴스 {i + 1}</p>
+                  {w3Reels.length > MIN_W3_REELS && (
+                    <button
+                      type="button"
+                      onClick={() => setW3Reels((prev) => prev.filter((_, idx) => idx !== i))}
+                      className="text-xs text-neutral-500 hover:text-red-600 inline-flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" /> 삭제
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[12px] font-semibold text-neutral-700 mb-1">릴스 URL</label>
+                  <input
+                    type="url"
+                    value={r.url}
+                    onChange={(e) =>
+                      setW3Reels((prev) => prev.map((x, idx) => (idx === i ? { ...x, url: e.target.value } : x)))
+                    }
+                    placeholder="https://www.instagram.com/reel/..."
+                    className={INPUT}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-semibold text-neutral-700 mb-1">
+                    주제 · 후킹 한 줄 <span className="text-neutral-400 font-normal">(선택)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={r.note}
+                    onChange={(e) =>
+                      setW3Reels((prev) => prev.map((x, idx) => (idx === i ? { ...x, note: e.target.value } : x)))
+                    }
+                    placeholder="이 릴스에서 노린 대상과 첫 3초 후킹을 한 줄로"
+                    className={INPUT}
+                  />
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setW3Reels((prev) => [...prev, { ...EMPTY_W3_REEL }])}
+              className={ADD_BUTTON}
+            >
+              <Plus className="w-4 h-4" /> 릴스 추가
+            </button>
+          </div>
+        </div>
       ) : isWeek1 ? (
         <>
           {/* Q1. 상품 · 다중 카드 */}

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -7,7 +8,7 @@ import { getConsultingPassword, CONSULTING_DURATION_DAYS, currentDayIndex, getCo
 import type { RefVideo } from "@/components/consulting/TaskBoard";
 import { TaskBoard, type BoardTask } from "@/components/consulting/TaskBoard";
 import { PasswordGate } from "./_components/PasswordGate";
-import { Sparkles, CalendarDays } from "lucide-react";
+import { Sparkles, CalendarDays, BookOpen } from "lucide-react";
 import { formatKstHuman } from "@/lib/kst";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,10 @@ export default async function ConsultingPage() {
   const total = tasks.length;
   const done = tasks.filter((t) => t.doneAt).length;
 
+  // 지금 해야 할 숙제 — 오늘까지 열린 것 중 아직 안 끝낸 첫 번째, 없으면 다음 예정 숙제
+  const pending = tasks.filter((t) => !t.doneAt);
+  const todayTask = pending.find((t) => t.day <= dayIdx) ?? pending[0] ?? null;
+
   // 숙제 카테고리별 참고 강의 영상 매핑 → { guideKey: {title, vimeoId} }
   const refMap = await getConsultingRefVideoMap();
   const refLessonIds = Object.values(refMap).filter(Boolean);
@@ -103,6 +108,20 @@ export default async function ConsultingPage() {
               시작일 {formatKstHuman(enrollment.startAt)} · {done}/{total} 완료
             </p>
           </div>
+
+          {todayTask && (
+            <Link
+              href={`/consulting/${todayTask.id}`}
+              className="mb-4 flex items-center gap-3 rounded-2xl border border-pink-200 bg-pink-50 p-4 transition-colors hover:border-pink-400"
+            >
+              <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-pink-600" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold text-pink-600">지금 할 숙제부터 시작하세요</p>
+                <p className="mt-0.5 truncate text-sm font-semibold text-pink-800">{todayTask.title}</p>
+              </div>
+              <span className="shrink-0 text-[12px] font-bold text-pink-600">열기</span>
+            </Link>
+          )}
 
           <TaskBoard
             startAtIso={enrollment.startAt.toISOString()}

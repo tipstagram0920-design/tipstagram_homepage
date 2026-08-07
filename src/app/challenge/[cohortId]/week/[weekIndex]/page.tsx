@@ -28,6 +28,15 @@ import type { LucideIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
+// 주차별 상시 공개 강의 노트(사이트 내 페이지). 업로드 자료와 별개로 항상 노출된다.
+const WEEK_GUIDE: Record<number, { href: string; title: string; desc: string }> = {
+  4: {
+    href: "/resources/claude-code-card-news",
+    title: "4주차 강의 노트 · Claude Code로 내 일 자동화하기",
+    desc: "VS Code 설치부터 기획 · 규칙 · 스킬 · 에이전트까지 순서대로 · 다시보기용",
+  },
+};
+
 function detectEmbed(url: string | null | undefined): { kind: "youtube" | "vimeo" | "raw"; embedUrl: string } | null {
   if (!url) return null;
   const s = url.trim();
@@ -249,6 +258,27 @@ export default async function ChallengeWeekPage({
           {/* 2. 강의 자료 다운로드 */}
           <section className="mb-10">
             <SectionHeader icon={FileText} title="강의 자료" gradient="bg-gradient-to-br from-emerald-500 to-teal-600" />
+            {WEEK_GUIDE[week.weekIndex] && (
+              <Link
+                href={WEEK_GUIDE[week.weekIndex].href}
+                className="mb-3 flex items-center gap-4 rounded-3xl border border-pink-200 bg-pink-50 px-5 py-4 transition-colors hover:border-pink-400"
+              >
+                <div className="shrink-0 w-10 h-10 rounded-xl ig-gradient text-white flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_10px_-4px_rgba(219,39,119,0.4)]">
+                  <BookOpen className="w-4.5 h-4.5" strokeWidth={2.25} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-neutral-900">
+                    {WEEK_GUIDE[week.weekIndex].title}
+                  </p>
+                  <p className="text-[11.5px] text-neutral-500 mt-0.5">
+                    {WEEK_GUIDE[week.weekIndex].desc}
+                  </p>
+                </div>
+                <span className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl ig-gradient text-white text-xs font-bold">
+                  강의 노트 보기
+                </span>
+              </Link>
+            )}
             {materials.length === 0 ? (
               <div className="rounded-3xl border border-neutral-200/70 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-6 text-center text-sm text-neutral-500">
                 아직 강의 자료가 업로드되지 않았어요. 준비되는 대로 여기에서 다운로드할 수 있어요.

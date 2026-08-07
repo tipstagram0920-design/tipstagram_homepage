@@ -70,23 +70,13 @@ interface Week2FormData {
   kind?: string;
   reels?: { viralUrl?: string; why?: string; myHook?: string; myUrl?: string }[];
 }
+interface Week4FormData {
+  kind?: string;
+  reels?: { refUrl?: string; myUrl?: string; note?: string }[];
+}
 interface Week3FormData {
   kind?: string;
-  attend?: string;
-  preferredSlot?: string;
-  attendNote?: string;
-  account?: { followers?: string; reach30d?: string; profileVisits30d?: string; mainTopic?: string };
-  reels?: {
-    url?: string;
-    views?: string;
-    saves?: string;
-    profileVisits?: string;
-    newFollows?: string;
-    myRead?: string;
-  }[];
-  stuckPoint?: string;
-  goal?: string;
-  questions?: string[];
+  reels?: { url?: string; note?: string }[];
 }
 
 /**
@@ -95,70 +85,53 @@ interface Week3FormData {
  * week1은 구조화 formData를, 그 외 주차는 자유 텍스트 content를 사용.
  */
 export function buildSubmissionTranscript(content: string, formData: unknown): string {
-  const fd = (formData ?? null) as (Week1FormData & Week2FormData & Week3FormData) | null;
+  const fd = (formData ?? null) as
+    | (Week1FormData & Week2FormData & Week3FormData & Week4FormData)
+    | null;
 
-  if (fd?.kind === "week3_offline_diagnosis") {
-    const w3 = fd as Week3FormData;
+  if (fd?.kind === "week4_reels_5") {
+    const w4 = fd as Week4FormData;
+    const reels = (w4.reels ?? []).filter((r) => r?.refUrl || r?.myUrl);
     const blocks: string[] = [
-      "이번 주 숙제: 오프라인 1:1 진단(서울 종로 · 1인 20분)을 앞두고, 계정 현황과 2주차 릴스의 실제 지표, 지금 막힌 지점, 현장에서 묻고 싶은 질문을 미리 제출하는 것.",
-      "· 평가 관점: (1) 숫자를 실제로 확인하고 가져왔는가(추측·공란이 아닌가) (2) 지표들 사이의 병목을 스스로 읽어냈는가(조회수 vs 프로필 방문 vs 팔로우 전환 중 어디가 끊기는가) (3) '막힌 지점'이 진단 가능한 수준으로 구체적인가 (4) 질문이 검색으로 풀리는 일반론이 아니라 이 계정에 고유한가.",
-      "· 피드백에는 반드시 포함할 것: 제출된 지표에서 읽히는 병목이 어디인지 진단하고, 오프라인 20분에서 무엇을 집중해서 다루면 좋을지 우선순위를 제시한다.",
+      "이번 주 숙제: 잘 된 릴스 레퍼런스 5개를 찾아, 각각을 자기 콘텐츠로 변형해 릴스 5개를 만들어 올리고 레퍼런스 URL과 내 릴스 URL을 짝지어 제출하는 것.",
+      "· 평가 관점: (1) 5개를 실제로 채웠는가(실행량) (2) 레퍼런스를 그대로 베낀 게 아니라 자기 상품·고객 이야기로 변형했는가 (3) 레퍼런스에서 '왜 잘 됐는지'의 핵심(첫 3초·구성·자막)을 제대로 가져왔는가 (4) 5개가 서로 다른 각도를 시도했는가, 같은 포맷만 반복했는가 (5) 1주차에 정의한 소비자·상품과 이어지는가.",
+      "· 피드백에는 반드시 포함할 것: 릴스마다 레퍼런스와 내 릴스를 비교해 개별 코멘트를 주고, 다음 주에 무엇을 하나만 바꾸면 되는지 한 줄 액션을 제시한다.",
+      `· 제출 개수: ${reels.length}개 (요구 5개)`,
     ];
-    const attendLine =
-      w3.attend === "yes"
-        ? `참석${w3.preferredSlot ? ` / 희망 시간대: ${w3.preferredSlot}` : ""}`
-        : w3.attend === "no"
-          ? "불참"
-          : "(미선택)";
-    blocks.push(
-      `[오프라인 1:1 참석]\n- 참석 여부: ${attendLine}${w3.attendNote ? `\n- 남긴 말: ${w3.attendNote}` : ""}`
-    );
-
-    const acc = w3.account ?? {};
-    blocks.push(
-      [
-        "[계정 현황 · 최근 30일]",
-        `- 팔로워: ${acc.followers?.trim() || "(미입력)"}`,
-        `- 도달: ${acc.reach30d?.trim() || "(미입력)"}`,
-        `- 프로필 방문: ${acc.profileVisits30d?.trim() || "(미입력)"}`,
-        `- 주력 주제·상품: ${acc.mainTopic?.trim() || "(미입력)"}`,
-      ].join("\n")
-    );
-
-    const reels = (w3.reels ?? []).filter((r) => r?.url);
     reels.forEach((r, i) => {
       blocks.push(
         [
-          `[2주차 릴스 ${i + 1}]`,
-          `- URL: ${r.url?.trim() || "(미입력)"}`,
-          `- 조회수: ${r.views?.trim() || "(미입력)"} / 저장: ${r.saves?.trim() || "(미입력)"} / 프로필 방문: ${
-            r.profileVisits?.trim() || "(미입력)"
-          } / 신규 팔로우: ${r.newFollows?.trim() || "(미입력)"}`,
-          `- 학생의 해석: ${r.myRead?.trim() || "(미작성)"}`,
+          `[릴스 ${i + 1}]`,
+          `- 참고 레퍼런스: ${r.refUrl?.trim() || "(미입력)"}`,
+          `- 내 릴스: ${r.myUrl?.trim() || "(미입력)"}`,
+          `- 학생이 적은 변형 포인트: ${r.note?.trim() || "(미작성)"}`,
         ].join("\n")
       );
     });
-
-    blocks.push(
-      [
-        "[지금 가장 막힌 지점]",
-        "· 질문의 의도: 진단 가능한 수준으로 병목을 특정하게 하는 질문. 감정 토로가 아니라 어느 단계에서 무엇이 끊기는지 장면이 그려져야 한다.",
-        `· 제출한 답변: ${w3.stuckPoint?.trim() || "(미작성)"}`,
-      ].join("\n")
-    );
-    if (w3.goal?.trim()) blocks.push(`[챌린지 끝날 때 원하는 상태]\n${w3.goal.trim()}`);
-
-    const qs = (w3.questions ?? []).map((q) => (q || "").trim()).filter(Boolean);
-    blocks.push(
-      [
-        `[현장에서 묻고 싶은 질문 (${qs.length}개)]`,
-        "· 질문의 의도: 20분을 무엇에 쓸지 학생 스스로 정하게 하는 항목. 각 질문에 대해 짧은 선답변을 주고, 현장에서 더 깊게 볼 지점을 짚어준다.",
-        qs.length ? qs.map((q, i) => `  ${i + 1}) ${q}`).join("\n") : "  (미작성)",
-      ].join("\n")
-    );
-
     return blocks.join("\n\n").trim();
   }
+
+  if (fd?.kind === "week3_reels_upload") {
+    const w3 = fd as Week3FormData;
+    const reels = (w3.reels ?? []).filter((r) => r?.url);
+    const blocks: string[] = [
+      "이번 주 숙제: 인스타그램에 릴스를 최소 3개 올리고, 각 릴스의 URL을 제출하는 것. 이번 주는 '양'을 만드는 주차다.",
+      "· 평가 관점: (1) 최소 개수를 실제로 채웠는가(실행량) (2) 각 릴스의 대상과 첫 3초 후킹이 뚜렷한가 (3) 1주차에 정의한 소비자·상품과 릴스 주제가 이어지는가 (4) 3개가 서로 다른 각도를 시도했는가, 아니면 같은 걸 반복했는가.",
+      "· 피드백에는 반드시 포함할 것: 각 릴스 URL마다 개별 코멘트를 주고(URL과 학생이 적은 주제·후킹을 근거로), 다음 주에 무엇을 하나만 바꾸면 되는지 한 줄 액션을 제시한다.",
+      `· 제출 개수: ${reels.length}개 (요구 최소 3개)`,
+    ];
+    reels.forEach((r, i) => {
+      blocks.push(
+        [
+          `[릴스 ${i + 1}]`,
+          `- URL: ${r.url?.trim() || "(미입력)"}`,
+          `- 학생이 적은 주제·후킹: ${r.note?.trim() || "(미작성)"}`,
+        ].join("\n")
+      );
+    });
+    return blocks.join("\n\n").trim();
+  }
+
 
   if (fd?.kind === "week2_viral_reels") {
     const reels = (fd.reels ?? []).filter((r) => r?.viralUrl || r?.myUrl);
