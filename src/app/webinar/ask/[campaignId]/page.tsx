@@ -9,18 +9,11 @@ import { WebinarAskForm } from "./WebinarAskForm";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ campaignId: string }>;
-}): Promise<Metadata> {
-  const { campaignId } = await params;
-  const c = await prisma.webinarCampaign.findUnique({ where: { id: campaignId } });
-  return {
-    title: `사전 질문 보내기 — ${c?.name || COMPANY.serviceName}`,
-    description: "라이브에서 직접 답해드릴 질문을 미리 보내주세요.",
-  };
-}
+// 캠페인 이름에 날짜가 들어가는 경우가 많아, 탭 제목에도 날짜가 노출되지 않도록 고정 문구를 쓴다.
+export const metadata: Metadata = {
+  title: `사전 질문 보내기 — ${COMPANY.serviceName}`,
+  description: "라이브에서 직접 답해드릴 질문을 미리 보내주세요.",
+};
 
 export default async function WebinarAskPage({
   params,
@@ -30,17 +23,9 @@ export default async function WebinarAskPage({
   const { campaignId } = await params;
   const campaign = await prisma.webinarCampaign.findUnique({
     where: { id: campaignId },
-    select: { id: true, name: true, webinarDate: true },
+    select: { id: true },
   });
   if (!campaign) notFound();
-
-  const kst = new Date(campaign.webinarDate.getTime() + 9 * 60 * 60 * 1000);
-  const month = kst.getUTCMonth() + 1;
-  const day = kst.getUTCDate();
-  const hour = kst.getUTCHours();
-  const ampm = hour < 12 ? "오전" : "오후";
-  const h12 = hour % 12 === 0 ? 12 : hour % 12;
-  const dateStr = `${month}월 ${day}일 ${ampm} ${h12}시`;
 
   return (
     <>
@@ -54,7 +39,7 @@ export default async function WebinarAskPage({
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-white/80 text-[11px] sm:text-xs font-semibold mb-5">
                 <HelpCircle className="w-3.5 h-3.5 text-amber-300" />
-                {dateStr} 무료 라이브 · 사전 질문
+                무료 라이브 · 사전 질문
               </div>
               <h1 className="text-[26px] sm:text-4xl font-black text-white mb-3 leading-[1.25] tracking-tight">
                 <span className="ig-gradient-text">가장 궁금한 것</span> 하나만<br/>미리 알려주세요
