@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { ArrowLeft, MessageSquare, User as UserIcon, Mail, Clock } from "lucide-react";
+import { ArrowLeft, MessageSquare, User as UserIcon, Mail, Clock, Instagram, Briefcase, Tag } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { instagramHandle } from "@/lib/webinar-question";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,30 @@ export default async function WebinarQuestionsPage({
                   </Link>
                 )}
               </div>
+              {(q.instagramUrl || q.accountCategory || q.industry) && (
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  {q.instagramUrl && (
+                    <a
+                      href={q.instagramUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-lg bg-pink-50 px-2 py-1 text-[11px] font-bold text-pink-600 hover:bg-pink-100"
+                    >
+                      <Instagram className="w-3 h-3" /> {instagramHandle(q.instagramUrl)}
+                    </a>
+                  )}
+                  {q.accountCategory && (
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-neutral-100 px-2 py-1 text-[11px] font-bold text-neutral-600">
+                      <Tag className="w-3 h-3" /> {q.accountCategory}
+                    </span>
+                  )}
+                  {q.industry && (
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-neutral-100 px-2 py-1 text-[11px] font-bold text-neutral-600">
+                      <Briefcase className="w-3 h-3" /> {q.industry}
+                    </span>
+                  )}
+                </div>
+              )}
               <p className="text-sm text-neutral-800 whitespace-pre-wrap leading-relaxed">{q.question}</p>
             </div>
           ))}

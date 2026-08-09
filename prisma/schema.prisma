@@ -506,13 +506,16 @@ model WebinarCampaign {
 }
 
 model WebinarQuestion {
-  id         String   @id @default(cuid())
-  campaignId String
-  name       String?
-  email      String
-  question   String   @db.Text
-  contactId  String?
-  createdAt  DateTime @default(now())
+  id              String   @id @default(cuid())
+  campaignId      String
+  name            String?
+  email           String
+  question        String   @db.Text
+  instagramUrl    String? // 질문자의 인스타 계정 (핸들 또는 URL)
+  accountCategory String? // 인스타 계정 카테고리 (개인 브랜드/매장/쇼핑몰 등)
+  industry        String? // 업종 (자유 입력)
+  contactId       String?
+  createdAt       DateTime @default(now())
 
   campaign   WebinarCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   contact    Contact?        @relation(fields: [contactId], references: [id], onDelete: SetNull)

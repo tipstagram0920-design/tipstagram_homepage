@@ -2,11 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { upsertContactByEmail } from "@/lib/crm/contact";
 import { logEvent } from "@/lib/crm/events";
+import { isValidAccountCategory, normalizeInstagramUrl } from "@/lib/webinar-question";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const INDUSTRY_MAX = 100;
 
 export async function POST(req: NextRequest) {
-  let body: { campaignId?: string; name?: string; email?: string; question?: string };
+  let body: {
+    campaignId?: string;
+    name?: string;
+    email?: string;
+    instagram?: string;
+    accountCategory?: string;
+    industry?: string;
+    question?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -16,11 +26,24 @@ export async function POST(req: NextRequest) {
   const name = body.name?.trim() || "";
   const email = body.email?.trim().toLowerCase() || "";
   const question = body.question?.trim() || "";
+  const instagramUrl = normalizeInstagramUrl(body.instagram || "");
+  const accountCategory = body.accountCategory?.trim() || "";
+  const industry = body.industry?.trim().slice(0, INDUSTRY_MAX) || "";
 
   if (!campaignId) return NextResponse.json({ error: "campaignId 누락" }, { status: 400 });
   if (!email || !EMAIL_RE.test(email)) {
     return NextResponse.json({ error: "올바른 이메일을 입력해주세요." }, { status: 400 });
   }
+  if (!instagramUrl) {
+    return NextResponse.json(
+      { error: "인스타그램 계정을 확인해주세요. (예: @myaccount)" },
+      { status: 400 }
+    );
+  }
+  if (!isValidAccountCategory(accountCategory)) {
+    return NextResponse.json({ error: "계정 카테고리를 선택해주세요." }, { status: 400 });
+  }
+  if (!industry) return NextResponse.json({ error: "업종을 입력해주세요." }, { status: 400 });
   if (!question) return NextResponse.json({ error: "질문을 입력해주세요." }, { status: 400 });
 
   const campaign = await prisma.webinarCampaign.findUnique({
@@ -41,6 +64,9 @@ export async function POST(req: NextRequest) {
       name: name || null,
       email,
       question,
+      instagramUrl,
+      accountCategory,
+      industry,
       contactId: contact.id,
     },
   });

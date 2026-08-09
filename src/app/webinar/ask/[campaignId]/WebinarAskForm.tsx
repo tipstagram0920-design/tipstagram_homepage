@@ -1,11 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Mail, User as UserIcon, MessageSquare, Loader2 } from "lucide-react";
+import {
+  CheckCircle2,
+  Mail,
+  User as UserIcon,
+  MessageSquare,
+  Loader2,
+  Instagram,
+  Briefcase,
+} from "lucide-react";
+import { ACCOUNT_CATEGORIES, normalizeInstagramUrl } from "@/lib/webinar-question";
 
 export function WebinarAskForm({ campaignId }: { campaignId: string }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [accountCategory, setAccountCategory] = useState("");
+  const [industry, setIndustry] = useState("");
   const [question, setQuestion] = useState("");
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,6 +30,18 @@ export function WebinarAskForm({ campaignId }: { campaignId: string }) {
       setError("개인정보 수집·이용에 동의해주세요.");
       return;
     }
+    if (!normalizeInstagramUrl(instagram)) {
+      setError("인스타그램 계정을 확인해주세요. (예: @myaccount)");
+      return;
+    }
+    if (!accountCategory) {
+      setError("계정 카테고리를 선택해주세요.");
+      return;
+    }
+    if (!industry.trim()) {
+      setError("업종을 입력해주세요.");
+      return;
+    }
     if (!question.trim()) {
       setError("질문을 입력해주세요.");
       return;
@@ -28,7 +52,15 @@ export function WebinarAskForm({ campaignId }: { campaignId: string }) {
       const res = await fetch("/api/webinar/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId, name, email, question }),
+        body: JSON.stringify({
+          campaignId,
+          name,
+          email,
+          instagram,
+          accountCategory,
+          industry,
+          question,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -88,6 +120,66 @@ export function WebinarAskForm({ campaignId }: { campaignId: string }) {
             inputMode="email"
             placeholder="example@email.com"
             autoComplete="email"
+            className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-white/30 text-sm focus:outline-none focus:border-pink-400 focus:bg-white/[0.08]"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-white/85 mb-2">인스타그램 계정</label>
+        <div className="relative">
+          <Instagram className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <input
+            type="text"
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            required
+            placeholder="@myaccount"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-white/30 text-sm focus:outline-none focus:border-pink-400 focus:bg-white/[0.08]"
+          />
+        </div>
+        <p className="text-xs text-white/40 mt-1.5">
+          계정을 직접 보고 답변드려요. 주소를 통째로 붙여넣으셔도 됩니다.
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-white/85 mb-2">계정 카테고리</label>
+        <div className="grid grid-cols-2 gap-2">
+          {ACCOUNT_CATEGORIES.map((c) => {
+            const active = accountCategory === c;
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setAccountCategory(c)}
+                className={
+                  "px-3 py-3 rounded-xl border text-[13px] font-semibold text-left transition-colors " +
+                  (active
+                    ? "ig-gradient text-white border-transparent"
+                    : "bg-white/[0.06] border-white/10 text-white/70 hover:border-white/30")
+                }
+              >
+                {c}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-white/85 mb-2">업종</label>
+        <div className="relative">
+          <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <input
+            type="text"
+            value={industry}
+            onChange={(e) => setIndustry(e.target.value)}
+            required
+            placeholder="예: 필라테스 스튜디오 · 수제 디저트 · 세무사"
             className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-white/30 text-sm focus:outline-none focus:border-pink-400 focus:bg-white/[0.08]"
           />
         </div>
