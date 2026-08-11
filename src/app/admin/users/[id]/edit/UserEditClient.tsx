@@ -11,6 +11,15 @@ interface User {
   tags: string[];
 }
 
+// 헷갈리는 글자(0/O, 1/l/I) 제외
+const TEMP_CHARSET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+function generateTempPassword(length = 10) {
+  const bytes = new Uint32Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => TEMP_CHARSET[b % TEMP_CHARSET.length]).join("");
+}
+
 export function UserEditClient({ user }: { user: User }) {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -80,9 +89,19 @@ export function UserEditClient({ user }: { user: User }) {
           <label className="block text-sm font-medium text-neutral-700 mb-1.5">
             새 비밀번호 <span className="text-xs text-neutral-400">(변경 시에만 입력)</span>
           </label>
-          <input type="password" value={form.newPassword} onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
-            placeholder="비워두면 변경 안 됨"
-            className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400" />
+          <div className="flex gap-2">
+            <input type="text" value={form.newPassword} onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
+              placeholder="비워두면 변경 안 됨"
+              autoComplete="off"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-mono focus:outline-none focus:border-pink-400" />
+            <button type="button" onClick={() => setForm({ ...form, newPassword: generateTempPassword() })}
+              className="shrink-0 px-3 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-700 hover:bg-neutral-50">
+              임시 생성
+            </button>
+          </div>
+          <p className="text-xs text-neutral-400 mt-1.5">
+            기존 비밀번호는 암호화(단방향 해시) 저장이라 조회할 수 없습니다. 새 값으로 재설정한 뒤 회원에게 전달해 주세요.
+          </p>
         </div>
       </div>
 
