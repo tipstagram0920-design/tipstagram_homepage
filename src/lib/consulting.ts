@@ -8,10 +8,13 @@ export const CONSULTING_REF_VIDEO_KEY = "consulting_ref_videos";
 
 // 참고 영상을 붙일 수 있는 숙제 카테고리 (guideKey → 라벨)
 export const CONSULTING_REF_CATEGORIES: { guideKey: string; label: string }[] = [
+  { guideKey: "my-story", label: "나의 스토리 · 전문성" },
   { guideKey: "customer-select", label: "소비자 선정 · 프로필" },
+  { guideKey: "link-pages", label: "링크에 넣을 페이지 4종" },
   { guideKey: "inpock-link", label: "인포크(링크인바이오) 링크" },
   { guideKey: "highlight", label: "하이라이트" },
   { guideKey: "landing-page", label: "랜딩페이지" },
+  { guideKey: "reels-reference-first", label: "릴스 기획 (1회차·스토리)" },
   { guideKey: "reels-reference", label: "릴스 기획" },
   { guideKey: "reels-upload", label: "릴스 업로드" },
 ];
@@ -40,22 +43,27 @@ export interface TaskSeed {
 // 이후 고객·관리자가 자유롭게 수정/추가/삭제할 수 있다.
 // guideKey가 있는 할 일에는 입력→결과 도우미/생성기가 붙는다.
 export const DEFAULT_CONSULTING_TASKS: TaskSeed[] = [
-  // 1주차 — 세팅(Day 1~3) + 릴스 1회차(Day 4~6)
-  { day: 1, title: "소비자 선정 → 프로필 추천", description: "3가지 방법으로 소비자 문제 5개를 찾고, 변화·페르소나를 입력하면 프로필 추천이 나와요. 탭해서 작성하세요.", guideKey: "customer-select" },
-  { day: 1, title: "인포크(링크인바이오) 링크 만들기", description: "무료·이벤트 → 후기 → 상품안내·FAQ → 상담 순서로 버튼을 배치하세요. 도우미에 영상·순서 가이드가 있어요.", guideKey: "inpock-link" },
-  { day: 2, title: "하이라이트 수정", description: "무료·이벤트 → 후기 → FAQ → 상담하러가기 순으로. 커버 이모티콘 사이트와 제작 순서는 도우미 참고.", guideKey: "highlight" },
-  { day: 2, title: "무료자료(리드마그넷) 만들기", description: "잠재 고객을 모을 무료 자료를 하나 만들어 배포 준비하세요." },
-  { day: 3, title: "랜딩페이지 만들기", description: "항목을 채우면 복붙용 랜딩페이지 글이 완성돼요. 탭해서 작성하세요.", guideKey: "landing-page" },
-  { day: 3, title: "이벤트 만들기", description: "참여를 유도할 이벤트(체험·챌린지·할인 등)를 기획해 공지하세요." },
+  // 1주차 — 나를 정리(Day 1) → 페이지(Day 2) → 링크·하이라이트(Day 3) → 릴스 1회차(Day 4~)
+  //
+  // 순서 원칙: "내가 누구인가"가 먼저다.
+  // 소비자·프로필·릴스가 전부 여기서 나오고, 링크는 넣을 페이지가 있어야 만들 수 있다.
+  { day: 1, title: "나의 스토리 · 전문성 정리", description: "이 일을 시작한 계기, 문제를 넘은 방법, 내 전문성을 정리해요. 이후 모든 숙제(소비자·프로필·릴스)의 재료가 되니 여기부터 채워주세요.", guideKey: "my-story" },
+  { day: 1, title: "소비자 선정 → 프로필 추천", description: "3가지 방법으로 소비자 문제 5개를 찾고, 변화·페르소나를 입력하면 프로필 추천이 나와요. 앞 숙제에 쓴 내 스토리가 함께 반영됩니다.", guideKey: "customer-select" },
 
-  { day: 4, title: "릴스 기획 (1회차) — 레퍼런스 5개 찾기 + 변형 기획", description: "레퍼런스 5개를 찾아 저장하고 계정에 들어가 더 모은 뒤, 내 콘텐츠로 변형해 5개를 기획하세요.", guideKey: "reels-reference" },
-  { day: 5, title: "릴스 5개 촬영 (1회차)", description: "기획한 릴스 5개를 촬영하세요." },
-  { day: 6, endDay: 10, title: "릴스 업로드 (1회차) — 5일간 매일 1개", description: "촬영 다음날부터 하루에 하나씩 5일간 업로드하세요. 그날 올린 릴스 URL을 도우미에 붙여넣으면 관리자가 확인해요.", guideKey: "reels-upload" },
+  { day: 2, title: "링크에 넣을 페이지 4개 만들기", description: "무료자료·이벤트 → 후기·변화 스토리 → 자주 묻는 질문 → 상담·주문. 이 4개를 먼저 만들어야 링크가 채워집니다. 주소를 도우미에 모아두세요.", guideKey: "link-pages" },
+  { day: 2, title: "상담·주문 페이지 글 쓰기", description: "항목을 채우면 복붙용 랜딩페이지 글이 완성돼요. 위 4번 페이지에 그대로 넣으면 됩니다.", guideKey: "landing-page" },
+
+  { day: 3, title: "인포크(링크인바이오) 링크 만들기", description: "앞에서 만든 페이지 4개를 무료·이벤트 → 후기 → FAQ → 상담 순서로 배치하세요. 도우미에 영상·순서 가이드가 있어요.", guideKey: "inpock-link" },
+  { day: 3, title: "하이라이트 수정", description: "무료·이벤트 → 후기 → FAQ → 상담하러가기 순으로. 커버 이모티콘 사이트와 제작 순서는 도우미 참고.", guideKey: "highlight" },
+
+  { day: 4, title: "릴스 기획 (1회차) — 퍼스널 스토리 1개 + 레퍼런스 변형 4개", description: "1회차에는 내 과거 스토리 영상을 반드시 1개 넣습니다. 나머지 4개는 레퍼런스를 찾아 내 콘텐츠로 변형하세요.", guideKey: "reels-reference-first" },
+  { day: 5, title: "릴스 5개 촬영 (1회차)", description: "기획한 릴스 5개를 촬영하세요. 퍼스널 스토리 영상부터 찍는 걸 권합니다." },
+  { day: 6, endDay: 10, title: "릴스 업로드 (1회차) — 5일간 매일 1개", description: "촬영 다음날부터 하루에 하나씩 5일간 업로드하세요. 퍼스널 스토리 영상을 가장 먼저 올리세요. 그날 올린 릴스 URL을 도우미에 붙여넣으면 관리자가 확인해요.", guideKey: "reels-upload" },
   { day: 7, title: "1주차 점검 · 반응 확인", description: "조회수·저장·프로필 방문 등 반응을 확인하고 잘 된 포맷을 메모하세요." },
 
   // 2주차 — 보완(Day 8~10) + 릴스 2회차(Day 11~13)
-  { day: 8, title: "프로필·하이라이트 보완", description: "반응을 보고 프로필/하이라이트를 다듬으세요." },
-  { day: 9, title: "랜딩페이지·무료자료 보완", description: "전환이 잘 되는지 점검하고 문구·구성을 보완하세요." },
+  { day: 8, title: "프로필·하이라이트 보완", description: "반응을 보고 프로필/하이라이트를 다듬으세요. 프로필 3줄이 여전히 맞는지 다시 보세요." },
+  { day: 9, title: "페이지 4종 보완", description: "무료자료·후기·FAQ·상담 페이지에서 어디서 이탈하는지 보고 문구를 보완하세요." },
   { day: 10, title: "이벤트 반응 점검", description: "이벤트 참여·문의 반응을 확인하고 다음 액션을 정하세요." },
   { day: 11, title: "릴스 기획 (2회차) — 레퍼런스 5개 찾기 + 변형 기획", description: "이번 주 레퍼런스 5개를 저장하고 계정에서 더 모은 뒤, 5개를 기획하세요.", guideKey: "reels-reference" },
   { day: 12, title: "릴스 5개 촬영 (2회차)", description: "기획한 릴스 5개를 촬영하세요." },

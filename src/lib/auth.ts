@@ -51,8 +51,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        // 가입 시 이메일을 소문자로 저장하므로 조회도 동일하게 정규화한다.
+        const email = String(credentials.email).trim().toLowerCase();
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email },
         });
 
         if (!user || !user.password) return null;

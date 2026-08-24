@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 팁스타그램 — 실전 강의 플랫폼. 인스타그램 그라디언트 + 재생 -->
+  <defs>
+    <linearGradient id="tg" x1="2" y1="30" x2="30" y2="2" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fcaf45"/>
+      <stop offset=".38" stop-color="#fd1d1d"/>
+      <stop offset=".72" stop-color="#e1306c"/>
+      <stop offset="1" stop-color="#833ab4"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7.5" fill="url(#tg)"/>
+  <path d="M12.8 10.2 22 16l-9.2 5.8z" fill="#fff"/>
+</svg>

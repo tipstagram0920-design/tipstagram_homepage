@@ -27,6 +27,9 @@ interface Data {
 
 const IG_LIMIT = 150;
 
+/** 프로필 3줄이 각각 맡는 역할 (결과 화면 라벨) */
+const LINE_ROLE = ["전문가", "누구에게", "변화"];
+
 const METHODS = [
   {
     icon: Search,
@@ -50,12 +53,32 @@ export function buildProfiles(topProblem: string, change: string, persona: strin
   const c = compress(change, 16) || "○○한 변화";
   const who = compress(persona, 16) || "○○";
   const exp = compress(expertise, 22);
+  // 3줄 구조: [내가 어떤 전문가인지] → [누구에게 어떤 가치] → [팔로우 후의 변화]
+  // AI 호출이 실패했을 때만 쓰는 폴백이라 문장만 겨우 되게 맞춰둔다.
   return [
-    { name: "① 타겟 지목형", lines: [`${who}을 위한 계정`, `${p} 해결 꿀팁 매일`, `팔로우 → ${c}`] },
-    { name: "② 공감형", lines: [`${p}, 저도 그랬어요`, `${who} 위한 진짜 정보만`, `함께하면 ${c} ✨`] },
     {
-      name: "③ 전문가형",
-      lines: [exp || `${who}의 ${p} 해결사`, `📌 ${p} 정보 매일`, `👇 팔로우하고 ${c}`],
+      name: "① 전문가 신뢰형",
+      lines: [
+        exp || `${p}를 다루는 사람`,
+        `${who}의 ${p}을 해결합니다`,
+        `${c}을 만들어 드려요`,
+      ],
+    },
+    {
+      name: "② 문제 공감형",
+      lines: [
+        `저도 ${p}으로 오래 고생했어요`,
+        `${who}에게 필요한 것만 알려드려요`,
+        `${c}에 한 걸음씩 가까워집니다`,
+      ],
+    },
+    {
+      name: "③ 변화 약속형",
+      lines: [
+        `${c}을 만드는 곳`,
+        `${who}의 ${p}부터 함께 풉니다`,
+        exp ? `${exp}가 도와드려요` : `오늘부터 달라집니다`,
+      ],
     },
   ];
 }
@@ -229,7 +252,17 @@ export function CustomerSelectGuide({ taskId, initialData }: { taskId: string; i
                       {v.angle && (
                         <p className="text-[11px] text-neutral-500 mb-2">{v.angle}</p>
                       )}
-                      <div className="text-sm text-neutral-900 whitespace-pre-wrap leading-relaxed">{text}</div>
+                      {/* 3줄의 역할을 옆에 붙여 "왜 이 순서인지"가 보이게 한다 */}
+                      <div className="space-y-1">
+                        {v.lines.map((line, li) => (
+                          <div key={li} className="flex items-start gap-2">
+                            <span className="shrink-0 mt-[3px] w-[52px] text-[10px] font-bold text-neutral-400">
+                              {LINE_ROLE[li] ?? ""}
+                            </span>
+                            <span className="flex-1 text-sm text-neutral-900 leading-relaxed">{line}</span>
+                          </div>
+                        ))}
+                      </div>
                       {v.reason && (
                         <p className="mt-2 border-t border-neutral-100 pt-2 text-[11px] leading-5 text-neutral-500">
                           {v.reason}

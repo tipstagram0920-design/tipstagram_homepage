@@ -75,7 +75,7 @@ const DESCRIPTION_HTML = `
         <p style="font-size:12px;opacity:.8;margin:4px 0 0;">팔로워 달성</p>
       </div>
       <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:16px 20px;">
-        <p style="font-size:28px;font-weight:900;margin:0;">6천명+</p>
+        <p style="font-size:28px;font-weight:900;margin:0;">5천명+</p>
         <p style="font-size:12px;opacity:.8;margin:4px 0 0;">수강생 달성</p>
       </div>
       <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:16px 20px;">
