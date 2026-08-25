@@ -7,6 +7,13 @@ import Link from "next/link";
 
 const COURSES_HIDDEN = false;
 
+/**
+ * 가운데(추천) 자리에 놓을 상품.
+ * 순서 자체는 Product.order 로 정하고(부스터 → 챌린지 → 컨설팅), 강조는 여기서 고른다.
+ * 위치(index 1)로 잡지 않는 이유: 상품이 하나 늘면 엉뚱한 카드가 추천이 된다.
+ */
+const RECOMMENDED_SLUG = "5-week-challenge";
+
 async function getProducts() {
   try {
     return await prisma.product.findMany({
@@ -47,13 +54,24 @@ export default async function CoursesPage() {
               <p className="text-neutral-500 mt-2">곧 새로운 강의가 등록될 예정입니다.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((product) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+              {products.map((product) => {
+                const isRecommended = product.slug === RECOMMENDED_SLUG;
+                return (
                 <Link
                   key={product.id}
                   href={`/courses/${product.slug}`}
-                  className="group bg-white rounded-2xl border border-neutral-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  className={
+                    isRecommended
+                      ? "group relative bg-white rounded-2xl overflow-hidden ring-2 ring-pink-500 shadow-2xl transition-all duration-300 lg:-translate-y-3 hover:-translate-y-4"
+                      : "group relative bg-white rounded-2xl border border-neutral-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  }
                 >
+                  {isRecommended && (
+                    <span className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-full ig-gradient text-white text-[11px] font-black tracking-wider shadow-lg">
+                      추천
+                    </span>
+                  )}
                   <div className="aspect-[4/3] bg-neutral-100 relative overflow-hidden">
                     {product.thumbnail ? (
                       <img
@@ -88,13 +106,20 @@ export default async function CoursesPage() {
                       <span className="text-xl font-black text-neutral-900">
                         {formatPrice(product.price)}
                       </span>
-                      <span className="text-sm font-semibold px-4 py-2 rounded-xl ig-gradient text-white">
+                      <span
+                        className={
+                          isRecommended
+                            ? "text-sm font-bold px-5 py-2.5 rounded-xl ig-gradient text-white shadow-lg"
+                            : "text-sm font-semibold px-4 py-2 rounded-xl ig-gradient text-white"
+                        }
+                      >
                         수강 신청
                       </span>
                     </div>
                   </div>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

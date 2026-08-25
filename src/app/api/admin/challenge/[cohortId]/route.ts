@@ -24,6 +24,10 @@ export async function PUT(
   if (typeof body.weeksTotal === "number") data.weeksTotal = Math.max(1, Math.min(12, body.weeksTotal));
   if (body.week1StartAt) data.week1StartAt = new Date(body.week1StartAt);
   if (typeof body.isActive === "boolean") data.isActive = body.isActive;
+  if (typeof body.openChatUrl === "string") {
+    const url = body.openChatUrl.trim();
+    data.openChatUrl = url ? url : null; // 빈 값이면 입장 버튼을 숨긴다
+  }
   if (typeof body.accessPassword === "string") {
     const pw = body.accessPassword.trim();
     data.accessPassword = pw ? pw : null;

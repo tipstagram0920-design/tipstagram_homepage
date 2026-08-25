@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatKstHuman } from "@/lib/kst";
 import { ChevronLeft, ChevronRight, Users, MessageSquareText, Video } from "lucide-react";
+import { OpenChatUrlEditor } from "./_components/OpenChatUrlEditor";
 import { AccessPasswordEditor } from "./_components/AccessPasswordEditor";
 import { ParticipantMatrix } from "./_components/ParticipantMatrix";
 import { GenerateAllButton } from "./weeks/[weekId]/submissions/_components/GenerateAllButton";
@@ -269,6 +270,10 @@ export default async function CohortDetailPage({
           cohortUrl={`/challenge/${cohort.id}`}
           initialPassword={cohort.accessPassword ?? ""}
         />
+      </div>
+
+      <div className="mt-6">
+        <OpenChatUrlEditor cohortId={cohort.id} initialUrl={cohort.openChatUrl ?? ""} />
       </div>
 
       <div className="mt-6">

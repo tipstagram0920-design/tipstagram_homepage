@@ -630,6 +630,7 @@ model ChallengeCohort {
   weeksTotal     Int      @default(5)
   isActive       Boolean  @default(true)
   accessPassword String? // 공용 입장 비밀번호. 참여자가 최초 1회 입력 → 등록됨. 비우면 비번 입장 비활성
+  openChatUrl    String? // 이 기수 전용 카카오 오픈채팅방. 기수마다 새로 열므로 기수에 매단다. 비우면 입장 버튼 숨김
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

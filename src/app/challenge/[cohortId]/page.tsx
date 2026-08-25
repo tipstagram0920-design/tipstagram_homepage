@@ -6,7 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { assertCohortEnrollment } from "@/lib/challenge-enrollment";
 import { formatKstHuman } from "@/lib/kst";
-import { CheckCircle2, Circle, Lock, Trophy, ArrowRight, MessageSquareText, Calendar } from "lucide-react";
+import { CheckCircle2, Circle, Lock, Trophy, ArrowRight, MessageSquareText, Calendar, MessageCircle } from "lucide-react";
 import { PasswordGate } from "./_components/PasswordGate";
 import { ReelspyCouponCard } from "./_components/ReelspyCouponCard";
 
@@ -108,6 +108,35 @@ export default async function ChallengeDashboardPage({
               Week 1 오픈 · {formatKstHuman(cohort.week1StartAt)}
             </p>
           </div>
+
+          <Link
+            href={`/challenge/${cohort.id}/start`}
+            className="mb-4 flex items-center gap-2 text-[13px] font-bold text-pink-600 hover:text-pink-700"
+          >
+            시작 안내 다시 보기 <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+
+          {/* 기수 전용 오픈채팅방 — 공지가 오가는 곳이라 현황보다 먼저 보여준다.
+              어드민이 URL 을 넣은 기수에만 뜬다. */}
+          {cohort.openChatUrl && (
+            <a
+              href={cohort.openChatUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mb-6 flex items-center gap-4 rounded-3xl bg-[#FEE500] px-5 py-4 hover:brightness-95 transition"
+            >
+              <span className="shrink-0 w-11 h-11 rounded-2xl bg-black/10 flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-[#3C1E1E]" />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-[15px] font-black text-[#3C1E1E]">오픈채팅방 입장</span>
+                <span className="block text-[12px] text-[#3C1E1E]/70 mt-0.5">
+                  공지와 질문은 여기서 주고받습니다. 시작 전에 꼭 들어와 주세요.
+                </span>
+              </span>
+              <ArrowRight className="w-4 h-4 shrink-0 text-[#3C1E1E]" />
+            </a>
+          )}
 
           {/* 내 숙제 현황 요약 */}
           <div className="grid grid-cols-3 gap-2 mb-6">

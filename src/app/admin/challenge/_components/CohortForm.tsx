@@ -13,6 +13,7 @@ interface Initial {
   weeksTotal?: number;
   isActive?: boolean;
   accessPassword?: string;
+  openChatUrl?: string;
 }
 
 const DEFAULT_START =
@@ -29,6 +30,7 @@ export function CohortForm({ initial }: { initial?: Initial }) {
   const [weeksTotal, setWeeksTotal] = useState(initial?.weeksTotal ?? 5);
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
   const [accessPassword, setAccessPassword] = useState(initial?.accessPassword ?? "");
+  const [openChatUrl, setOpenChatUrl] = useState(initial?.openChatUrl ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -50,6 +52,7 @@ export function CohortForm({ initial }: { initial?: Initial }) {
           weeksTotal,
           isActive,
           accessPassword: accessPassword.trim(),
+          openChatUrl: openChatUrl.trim(),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -125,6 +128,22 @@ export function CohortForm({ initial }: { initial?: Initial }) {
           />
           <p className="text-xs text-neutral-500 mt-1.5">
             카톡방 등에 이 비밀번호를 공지하세요. 로그인한 참여자가 최초 1회 입력하면 참여자로 등록되고, 다음부터는 로그인만 해도 입장됩니다. 비우면 구매자만 입장할 수 있어요.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-neutral-800 mb-1.5">
+            카카오 오픈채팅방 URL
+          </label>
+          <input
+            type="url"
+            value={openChatUrl}
+            onChange={(e) => setOpenChatUrl(e.target.value)}
+            placeholder="https://open.kakao.com/o/... (비우면 입장 버튼 숨김)"
+            className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
+          />
+          <p className="text-xs text-neutral-500 mt-1.5">
+            기수마다 방을 새로 여니 여기서 기수별로 관리합니다. 넣어두면 구매자의 강의실과 이 기수 화면에 &lsquo;오픈채팅방 입장&rsquo; 버튼이 뜹니다. 시작일이 바뀌어 방을 다시 열면 이 값만 바꾸면 됩니다.
           </p>
         </div>
 

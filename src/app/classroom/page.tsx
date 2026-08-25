@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import Link from "next/link";
-import { BookOpen, Clock, Trophy, ArrowRight, Sparkles } from "lucide-react";
+import { BookOpen, Clock, Trophy, ArrowRight, Sparkles, MessageCircle } from "lucide-react";
 import { findEnrolledCohortsForUser } from "@/lib/challenge-enrollment";
 import { formatKstHuman } from "@/lib/kst";
 
@@ -68,8 +68,8 @@ export default async function ClassroomPage() {
                 진행 중인 챌린지
               </p>
               {enrolledCohorts.map((c) => (
+                <div key={c.id}>
                 <Link
-                  key={c.id}
                   href={`/challenge/${c.id}`}
                   className="group flex items-center gap-5 rounded-3xl bg-neutral-950 p-6 sm:p-7 hover:shadow-2xl hover:-translate-y-0.5 transition-all"
                 >
@@ -91,6 +91,18 @@ export default async function ClassroomPage() {
                     대시보드 열기 <ArrowRight className="w-4 h-4" />
                   </div>
                 </Link>
+                {/* 기수 전용 오픈채팅방 — 어드민이 URL 을 넣은 기수에만 뜬다 */}
+                {c.openChatUrl && (
+                  <a
+                    href={c.openChatUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border border-neutral-200 text-sm font-bold text-neutral-700 hover:border-pink-400 hover:text-pink-600"
+                  >
+                    <MessageCircle className="w-4 h-4" /> 오픈채팅방 입장
+                  </a>
+                )}
+                </div>
               ))}
             </div>
           )}

@@ -28,6 +28,7 @@ const groups: NavGroup[] = [
     title: "고객",
     items: [
       { label: "컨택트", href: "/admin/crm/contacts", icon: Sparkles },
+      { label: "들어온 질문", href: "/admin/questions", icon: MessageSquare },
       // 회원 관리는 컨택트로 통합됨. /admin/users URL은 유지 (CSV·일괄 작업용).
       // 컨택트 리스트 상단의 "고급 일괄 작업" 링크로 접근.
     ],
