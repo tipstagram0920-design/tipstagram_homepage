@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateOrderId } from "@/lib/utils";
 import { logEvent } from "@/lib/crm/events";
+import { grantBundleForProduct } from "@/lib/bundle";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -77,11 +78,13 @@ export async function POST(req: NextRequest) {
         const toCreate = userIds.filter((id) => !existingIds.has(id));
 
         await Promise.all(
-          toCreate.map((userId) =>
-            prisma.purchase.create({
+          toCreate.map(async (userId) => {
+            const created = await prisma.purchase.create({
               data: { userId, productId, amount: 0, orderId: generateOrderId() },
-            })
-          )
+            });
+            // 5주 코스 계열이면 마케팅 부스터도 함께 열어준다
+            await grantBundleForProduct(userId, product.slug, created.orderId);
+          })
         );
         return NextResponse.json({ ok: true, count: toCreate.length });
       }

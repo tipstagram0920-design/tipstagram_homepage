@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { grantChallengeBonus } from "@/lib/bundle";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,9 @@ export async function POST(
     update: {},
     create: { cohortId, userId: session.user.id },
   });
+
+  // 5주 코스 신청자에게 약속한 마케팅 부스터 66강 자동 부여 (멱등)
+  await grantChallengeBonus(session.user.id, cohortId);
 
   return NextResponse.json({ ok: true });
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateOrderId } from "@/lib/utils";
+import { grantBundleForProduct } from "@/lib/bundle";
 
 /**
  * 관리자 수동 수강권 부여 / 취소.
@@ -42,12 +43,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       where: { id: existing.id },
       data: { refundedAt: null, refundReason: null, refundedBy: null },
     });
+    await grantBundleForProduct(userId, product.slug, restored.orderId);
     return NextResponse.json({ ...restored, restored: true });
   }
 
   const purchase = await prisma.purchase.create({
     data: { userId, productId, amount: 0, orderId: generateOrderId() },
   });
+  // 5주 코스 계열이면 마케팅 부스터도 함께 열어준다
+  await grantBundleForProduct(userId, product.slug, purchase.orderId);
   return NextResponse.json(purchase);
 }
 

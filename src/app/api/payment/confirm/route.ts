@@ -6,6 +6,7 @@ import { sendMessage } from "@/lib/messaging";
 import { upsertContactByEmail } from "@/lib/crm/contact";
 import { logEvent } from "@/lib/crm/events";
 import { triggerWorkflow } from "@/lib/crm/workflow-engine";
+import { grantBundleForProduct } from "@/lib/bundle";
 
 export const dynamic = "force-dynamic";
 
@@ -52,9 +53,14 @@ export async function POST(req: NextRequest) {
       }),
       prisma.product.findUnique({
         where: { id: productId },
-        select: { title: true },
+        select: { title: true, slug: true },
       }),
     ]);
+
+    // 5주 코스 계열이면 마케팅 부스터 66강도 함께 부여 (멱등)
+    if (product?.slug) {
+      await grantBundleForProduct(session.user.id, product.slug, purchase.orderId);
+    }
 
     // 쿠폰 사용 횟수 증가
     if (couponId) {
