@@ -1,4 +1,10 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import {
+  isOnboardingComplete,
+  parseOnboarding,
+  type OnboardingAnswers,
+} from "@/lib/challenge-onboarding";
 
 const CHALLENGE_SLUGS = ["5-week-challenge", "5-week-challenge-plus-consulting"];
 
@@ -115,4 +121,62 @@ export async function findCohortForNewPurchase(userId: string): Promise<{ id: st
     orderBy: { week1StartAt: "desc" },
     select: { id: true },
   });
+}
+
+/* ── 시작 전 방향 선택 (온보딩) ────────────────────────────────── */
+
+/**
+ * 이 사람이 이 기수에서 고른 방향. 아직 안 골랐으면 빈 객체.
+ *
+ * 주의: 구매로 들어온 사람은 ChallengeEnrollment 행이 아예 없을 수 있다.
+ * 행이 없으면 "아직 안 골랐다"로 본다.
+ */
+export async function getOnboarding(
+  userId: string,
+  cohortId: string
+): Promise<{ answers: OnboardingAnswers; done: boolean }> {
+  const row = await prisma.challengeEnrollment.findUnique({
+    where: { cohortId_userId: { cohortId, userId } },
+    select: { onboarding: true, onboardedAt: true },
+  });
+  const answers = parseOnboarding(row?.onboarding ?? null);
+  return { answers, done: Boolean(row?.onboardedAt) && isOnboardingComplete(answers) };
+}
+
+/**
+ * 고른 방향을 저장한다. 구매로 들어와 등록 행이 없던 사람은 여기서 행이 만들어진다.
+ * 답이 덜 찼으면 onboardedAt 을 비워 둬서 게이트를 다시 통과하게 한다.
+ */
+export async function saveOnboarding(
+  userId: string,
+  cohortId: string,
+  answers: OnboardingAnswers
+) {
+  const done = isOnboardingComplete(answers);
+  const data = {
+    onboarding: answers as Prisma.InputJsonValue,
+    onboardedAt: done ? new Date() : null,
+  };
+  await prisma.challengeEnrollment.upsert({
+    where: { cohortId_userId: { cohortId, userId } },
+    update: data,
+    create: { cohortId, userId, ...data },
+  });
+  return { done };
+}
+
+/**
+ * 여러 참가자의 방향을 한 번에. (피드백 일괄 생성처럼 N명을 도는 곳에서 쓴다)
+ * 리턴: userId → 저장된 원본 Json (generateFeedbackText 가 그대로 파싱한다)
+ */
+export async function getOnboardingMap(
+  cohortId: string,
+  userIds: string[]
+): Promise<Map<string, unknown>> {
+  if (userIds.length === 0) return new Map();
+  const rows = await prisma.challengeEnrollment.findMany({
+    where: { cohortId, userId: { in: userIds } },
+    select: { userId: true, onboarding: true },
+  });
+  return new Map(rows.map((r) => [r.userId, r.onboarding]));
 }

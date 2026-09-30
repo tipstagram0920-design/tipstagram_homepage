@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { assertCohortEnrollment } from "@/lib/challenge-enrollment";
+import { assertCohortEnrollment, getOnboarding } from "@/lib/challenge-enrollment";
 import { formatKstHuman } from "@/lib/kst";
 import {
   ChevronLeft,
@@ -92,6 +92,10 @@ export default async function ChallengeWeekPage({
   const isAdmin = (session.user as { role?: string }).role === "ADMIN";
   const enrolled = await assertCohortEnrollment(session.user.id, cohortId);
   if (!enrolled && !isAdmin) notFound();
+
+  // 주차 URL 을 직접 쳐도 방향 선택을 먼저 거치게 한다
+  const onboarding = await getOnboarding(session.user.id, cohortId);
+  if (!onboarding.done && !isAdmin) redirect(`/challenge/${cohortId}/onboarding`);
 
   const week = await prisma.challengeWeek.findFirst({
     where: { cohortId, weekIndex: idx },
@@ -471,6 +475,7 @@ export default async function ChallengeWeekPage({
                   weekId={week.id}
                   weekIndex={week.weekIndex}
                   alreadySubmitted={alreadySubmitted}
+                  onboarding={onboarding.answers}
                   initial={
                     mySubmission
                       ? {

@@ -5,6 +5,8 @@ import { ChevronDown, ExternalLink, CheckCircle2, Circle } from "lucide-react";
 import { GUIDE_LABELS } from "@/components/consulting/guides/TaskGuide";
 import { buildProfiles } from "@/components/consulting/guides/CustomerSelectGuide";
 import { assembleLanding } from "@/components/consulting/guides/LandingPageGuide";
+import { landingCopyToText, deliverableToText } from "@/lib/consulting-guide-data";
+import type { LandingCopy, PageCopy } from "@/lib/consulting-guide-data";
 
 interface ResultTask {
   id: string;
@@ -48,6 +50,9 @@ function ResultView({ guideKey, data }: { guideKey: string; data: unknown }) {
   const d = (data ?? {}) as Record<string, unknown>;
   if (guideKey === "customer-select") {
     const problems = Array.isArray(d.problems) ? (d.problems as string[]) : [];
+    const finalLines = Array.isArray(d.finalLines)
+      ? (d.finalLines as string[]).map((l) => (l ?? "").trim()).filter(Boolean)
+      : [];
     const versions = buildProfiles(
       problems.find((p) => p?.trim()) ?? "",
       (d.change as string) ?? "",
@@ -56,6 +61,11 @@ function ResultView({ guideKey, data }: { guideKey: string; data: unknown }) {
     );
     return (
       <div className="space-y-1.5">
+        {/* 본인이 직접 쓴 이야기 — 프로필의 재료 */}
+        <Row label="나도 겪었던 문제" value={d.myProblem as string} />
+        <Row label="나를 바꾼 결정적인 한 가지" value={d.myTurning as string} />
+        <Row label="내 근거(경력·숫자)" value={d.myProof as string} />
+        <Row label="왜 이 사람들인가" value={d.whyThem as string} />
         <div>
           <p className="text-[11px] font-bold text-neutral-500">소비자 문제</p>
           <ul className="text-[13px] text-neutral-900 list-disc pl-4">
@@ -66,17 +76,71 @@ function ResultView({ guideKey, data }: { guideKey: string; data: unknown }) {
         <Row label="페르소나" value={d.personaLine as string} />
         <Row label="페르소나 상세" value={d.personaDetail as string} />
         <Row label="전문성" value={d.expertise as string} />
-        <div className="pt-1">
-          <p className="text-[11px] font-bold text-neutral-500 mb-1">추천 프로필</p>
-          <div className="space-y-1.5">
-            {versions.map((v) => (
-              <div key={v.name} className="rounded-lg border border-neutral-200 bg-white p-2">
-                <p className="text-[11px] font-bold text-neutral-500 mb-0.5">{v.name}</p>
-                <p className="text-[13px] text-neutral-900 whitespace-pre-wrap">{v.lines.join("\n")}</p>
-              </div>
-            ))}
+        {finalLines.length > 0 ? (
+          <div className="pt-1">
+            <p className="text-[11px] font-bold text-emerald-600 mb-1">
+              확정한 프로필{d.chosenName ? ` · ${d.chosenName as string}` : ""}
+            </p>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-2">
+              <p className="text-[13px] text-neutral-900 whitespace-pre-wrap">{finalLines.join("\n")}</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="pt-1">
+            <p className="text-[11px] font-bold text-neutral-500 mb-1">
+              추천 프로필 (아직 확정 안 함 · 기본 양식)
+            </p>
+            <div className="space-y-1.5">
+              {versions.map((v) => (
+                <div key={v.name} className="rounded-lg border border-neutral-200 bg-white p-2">
+                  <p className="text-[11px] font-bold text-neutral-500 mb-0.5">{v.name}</p>
+                  <p className="text-[13px] text-neutral-900 whitespace-pre-wrap">{v.lines.join("\n")}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+  // 무료자료·후기·FAQ 페이지 숙제 — 구조가 같아 한 번에 처리한다
+  if (guideKey === "freebie-page" || guideKey === "proof-page" || guideKey === "faq-page") {
+    const KIND_LABEL: Record<string, string> = {
+      freebie: "무료 자료",
+      trial: "무료 체험",
+      event: "이벤트",
+    };
+    const fields = (d.fields ?? {}) as Record<string, string>;
+    const copy = (d.copy ?? null) as PageCopy | null;
+    const answered = Object.entries(fields).filter(
+      ([k, v]) => k !== "noReview" && (v ?? "").trim()
+    );
+    const dText = copy ? deliverableToText(copy) : "";
+    return (
+      <div className="space-y-1.5">
+        {typeof d.kind === "string" && (
+          <Row label="선택한 유형" value={KIND_LABEL[d.kind] ?? (d.kind as string)} />
+        )}
+        {fields.noReview === "1" && (
+          <Row label="후기 여부" value="아직 없음 → 내 변화 스토리로 작성" />
+        )}
+        {answered.map(([k, v]) => (
+          <Row key={k} label={k} value={v} />
+        ))}
+        <LinkRow label="페이지 주소" url={d.url as string} />
+        {copy && (
+          <div className="pt-1">
+            <p className="text-[11px] font-bold text-pink-600 mb-1">생성된 페이지 글</p>
+            <div className="rounded-lg border border-neutral-200 bg-white p-2.5 text-[13px] text-neutral-900 whitespace-pre-wrap leading-relaxed">
+              {landingCopyToText(copy)}
+            </div>
+            {dText && (
+              <div className="mt-1.5 rounded-lg border border-indigo-200 bg-indigo-50/50 p-2.5 text-[13px] text-neutral-900 whitespace-pre-wrap leading-relaxed">
+                {dText}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -94,10 +158,16 @@ function ResultView({ guideKey, data }: { guideKey: string; data: unknown }) {
     return <LinkRow label="상담하러 가기 URL" url={d.consultUrl as string} />;
   }
   if (guideKey === "landing-page") {
-    const out = assembleLanding(d as Record<string, string>);
+    // 생성된 글이 있으면 그것을, 없으면 입력값을 순서대로 조립해 보여준다
+    const copy = (d.copy ?? null) as LandingCopy | null;
+    const out = copy ? landingCopyToText(copy) : assembleLanding(d as Record<string, string>);
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white p-2.5 text-[13px] text-neutral-900 whitespace-pre-wrap leading-relaxed">
-        {out || "작성 내용 없음"}
+      <div className="space-y-1.5">
+        <LinkRow label="페이지 주소" url={d.url as string} />
+        {copy && <p className="text-[11px] font-bold text-pink-600">생성된 랜딩페이지 글</p>}
+        <div className="rounded-lg border border-neutral-200 bg-white p-2.5 text-[13px] text-neutral-900 whitespace-pre-wrap leading-relaxed">
+          {out || "작성 내용 없음"}
+        </div>
       </div>
     );
   }

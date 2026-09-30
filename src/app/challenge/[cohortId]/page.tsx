@@ -4,10 +4,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { assertCohortEnrollment } from "@/lib/challenge-enrollment";
+import { assertCohortEnrollment, getOnboarding } from "@/lib/challenge-enrollment";
 import { formatKstHuman } from "@/lib/kst";
 import { CheckCircle2, Circle, Lock, Trophy, ArrowRight, MessageSquareText, Calendar, MessageCircle } from "lucide-react";
 import { PasswordGate } from "./_components/PasswordGate";
+import { MyPlanCard } from "./_components/MyPlanCard";
+import { buildPlan } from "@/lib/challenge-onboarding";
 import { ReelspyCouponCard } from "./_components/ReelspyCouponCard";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +46,10 @@ export default async function ChallengeDashboardPage({
     );
   }
 
+  // 시작 전 방향 선택을 아직 안 했으면 먼저 고르게 한다 (관리자는 고객 화면을 봐야 하므로 통과)
+  const onboarding = await getOnboarding(session.user.id, cohortId);
+  if (!onboarding.done && !isAdmin) redirect(`/challenge/${cohortId}/onboarding`);
+
   const cohort = await prisma.challengeCohort.findUnique({
     where: { id: cohortId },
     include: {
@@ -70,6 +76,9 @@ export default async function ChallengeDashboardPage({
     ) ?? cohort.weeks[0];
 
   // 내 숙제 현황 요약 (draft는 미제출로 취급)
+  // 시작 전에 고른 방향으로 만든 "내 5주" (관리자는 안 골랐을 수 있어 null 가능)
+  const myPlan = buildPlan(onboarding.answers);
+
   const openedCount = cohort.weeks.filter((w) => w.openAt.getTime() <= now.getTime()).length;
   const submittedCount = cohort.weeks.filter(
     (w) => w.submissions[0] && w.submissions[0].status !== "draft"
@@ -108,6 +117,14 @@ export default async function ChallengeDashboardPage({
               Week 1 오픈 · {formatKstHuman(cohort.week1StartAt)}
             </p>
           </div>
+
+          {myPlan && (
+            <MyPlanCard
+              plan={myPlan}
+              productNote={onboarding.answers.productNote}
+              redoHref={`/challenge/${cohort.id}/onboarding?redo=1`}
+            />
+          )}
 
           <Link
             href={`/challenge/${cohort.id}/start`}

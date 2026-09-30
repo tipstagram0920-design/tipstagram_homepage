@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { onboardingBriefing, parseOnboarding } from "@/lib/challenge-onboarding";
 
 // 5주 챌린지 숙제에 대한 강사 피드백 초안을 Claude로 자동 생성한다.
 // 생성된 초안은 어드민에서 검토 후 '전송'해야 학생에게 발송된다(자동 발송 아님).
@@ -249,16 +250,19 @@ export async function generateFeedbackText(opts: {
   studentName?: string | null;
   content: string;
   formData?: unknown;
+  /** 이 사람이 시작 전에 고른 방향 (업종·목표) — 같은 답이어도 업종에 따라 피드백이 달라야 한다 */
+  onboarding?: unknown;
 }): Promise<string | null> {
   if (!isAiFeedbackConfigured()) return null;
   const client = new Anthropic();
 
   const transcript = buildSubmissionTranscript(opts.content, opts.formData);
+  const briefing = onboardingBriefing(parseOnboarding(opts.onboarding ?? null));
 
   const prompt = `[Week ${opts.weekIndex}${opts.weekTitle ? ` · ${opts.weekTitle}` : ""}]${
     opts.studentName ? ` 수강생: ${opts.studentName}` : ""
   }
-${opts.weekContext ? `\n이번 주 안내(강사가 낸 편지/방향):\n${opts.weekContext.trim()}\n` : ""}
+${briefing ? `\n${briefing}\n이 배경에 맞춰 피드백하세요. 업종·목표에 안 맞는 조언은 하지 마세요.\n` : ""}${opts.weekContext ? `\n이번 주 안내(강사가 낸 편지/방향):\n${opts.weekContext.trim()}\n` : ""}
 아래는 수강생이 제출한 숙제입니다. 각 항목은 "질문 · 질문의 의도 · 학생의 답변" 순서입니다.
 먼저 전체를 이해한 뒤, 각 질문의 의도와 답변을 비교해 항목별 강사 피드백을 작성해 주세요.
 ════════════════════

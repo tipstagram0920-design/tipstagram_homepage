@@ -648,6 +648,10 @@ model ChallengeEnrollment {
   userId    String
   createdAt DateTime @default(now())
 
+  // 시작 전 방향 선택 (상품 유무 · 업종/방향 · 무엇을 파는지 · 계정 상태 · 5주 뒤 목표)
+  onboarding  Json? // { hasProduct, track, productNote, stage, goal }
+  onboardedAt DateTime? // 답을 끝낸 시각. 없으면 게이트로 보낸다.
+
   cohort ChallengeCohort @relation(fields: [cohortId], references: [id], onDelete: Cascade)
   user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 

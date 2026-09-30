@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { feedbackTextToHtml } from "@/lib/challenge-feedback";
 import { generateFeedbackText, isAiFeedbackConfigured } from "@/lib/challenge-ai-feedback";
+import { getOnboardingMap } from "@/lib/challenge-enrollment";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -30,7 +31,7 @@ export async function POST(
   const { weekId } = await params;
   const week = await prisma.challengeWeek.findUnique({
     where: { id: weekId },
-    select: { weekIndex: true, title: true, homeworkPrompt: true, description: true },
+    select: { weekIndex: true, title: true, homeworkPrompt: true, description: true, cohortId: true },
   });
   if (!week) return NextResponse.json({ error: "주차를 찾을 수 없어요." }, { status: 404 });
 
@@ -40,6 +41,12 @@ export async function POST(
     take: MAX_PER_RUN,
     include: { user: { select: { name: true } } },
   });
+
+  // N명을 도는 곳이라 방향은 한 번에 읽어둔다
+  const onboardingMap = await getOnboardingMap(
+    week.cohortId,
+    targets.map((t) => t.userId)
+  );
 
   let generated = 0;
   let failed = 0;
@@ -51,6 +58,7 @@ export async function POST(
       studentName: s.user.name,
       content: s.content,
       formData: s.formData,
+      onboarding: onboardingMap.get(s.userId),
     });
     if (!text) {
       failed++;

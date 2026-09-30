@@ -10,7 +10,8 @@ import {
   FIELD_TA,
   FLABEL,
 } from "./common";
-import { Gift, MessageSquareQuote, HelpCircle, PhoneCall, CheckCircle2, Circle } from "lucide-react";
+import { Gift, MessageSquareQuote, HelpCircle, PhoneCall, CheckCircle2, Circle, Lightbulb } from "lucide-react";
+import type { GuideContext } from "@/lib/consulting-guide-data";
 
 /**
  * 인포크(링크인바이오)에 넣을 페이지 4종.
@@ -99,9 +100,11 @@ const PAGES: {
 export function LinkPagesGuide({
   taskId,
   initialData,
+  context,
 }: {
   taskId: string;
   initialData: LinkPagesData | null;
+  context?: GuideContext | null;
 }) {
   const [data, setData] = useState<LinkPagesData>(initialData ?? {});
   const { saving, saved, save } = useGuideSave(taskId);
@@ -109,6 +112,23 @@ export function LinkPagesGuide({
 
   const set = (k: keyof LinkPagesData, v: string) => setData((prev) => ({ ...prev, [k]: v }));
   const doneCount = PAGES.filter((p) => (data[p.urlKey] || "").trim()).length;
+
+  // 앞 숙제(소비자 선정 → 프로필)에서 확정한 값 — 여기서 만드는 페이지의 기준이 된다.
+  const c = context?.customer ?? null;
+  const profileLines = (c?.finalLines ?? []).map((l) => (l ?? "").trim()).filter(Boolean);
+  const problems = (c?.problems ?? []).map((p) => (p ?? "").trim()).filter(Boolean);
+  const persona = (c?.personaLine ?? "").trim();
+  const hasCarry = profileLines.length > 0 || problems.length > 0 || Boolean(persona);
+
+  // 페이지별로 "앞 숙제의 무엇을 보고 만들면 되는지" 한 줄
+  const carryHint: Partial<Record<keyof LinkPagesData, string>> = {
+    freebieUrl: problems[0] ? `앞 숙제 문제 1번 "${problems[0]}"을 풀어주는 자료로 만드세요.` : "",
+    proofUrl: (c?.myProblem ?? "").trim()
+      ? "앞 숙제에 쓴 내 이야기(그때 → 지금)를 그대로 페이지로 옮기면 됩니다."
+      : "",
+    faqUrl: problems.length > 1 ? `문제 ${problems.length}개가 곧 질문 목록입니다.` : "",
+    contactUrl: "이 페이지 문구는 다음 숙제(랜딩페이지 글)에서 자동으로 만들어집니다.",
+  };
 
   return (
     <div className="space-y-4">
@@ -119,6 +139,36 @@ export function LinkPagesGuide({
         </p>
         <AutosaveStatus saving={auto.saving} saved={auto.saved} />
       </div>
+
+      {hasCarry && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+          <p className="text-[12px] font-bold text-emerald-700 mb-1.5">
+            앞 숙제에서 정한 내용 — 이 4개 페이지는 전부 여기에 맞춰 만듭니다
+          </p>
+          {profileLines.length > 0 && (
+            <div className="mb-2 space-y-0.5 text-[13px] leading-6 text-emerald-900/85">
+              {profileLines.map((l, i) => (
+                <p key={i}>{l}</p>
+              ))}
+            </div>
+          )}
+          {persona && (
+            <p className="text-[12.5px] text-emerald-900/75">
+              <strong>타겟</strong> · {persona}
+            </p>
+          )}
+          {problems.length > 0 && (
+            <div className="mt-1.5">
+              <p className="text-[12px] font-bold text-emerald-900/70">소비자 문제</p>
+              <ol className="mt-0.5 list-decimal space-y-0.5 pl-4 text-[12.5px] leading-5 text-emerald-900/75">
+                {problems.slice(0, 5).map((p, i) => (
+                  <li key={i}>{p}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
         <p className="text-[13px] font-bold text-neutral-800">
@@ -162,6 +212,13 @@ export function LinkPagesGuide({
                 <li key={i}>{h}</li>
               ))}
             </ul>
+
+            {carryHint[p.urlKey] && (
+              <p className="ml-8 mb-3 inline-flex items-start gap-1.5 rounded-lg bg-indigo-50 px-2.5 py-2 text-[12px] leading-5 text-indigo-800">
+                <Lightbulb className="mt-0.5 w-3.5 h-3.5 shrink-0" />
+                <span>{carryHint[p.urlKey]}</span>
+              </p>
+            )}
 
             <div className="space-y-2 pl-8">
               <div>

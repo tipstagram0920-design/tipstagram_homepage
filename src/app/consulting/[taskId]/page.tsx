@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { TaskGuide, GUIDE_LABELS } from "@/components/consulting/guides/TaskGuide";
 import { getConsultingRefVideoMap, splitIntakeNote } from "@/lib/consulting";
+import { loadGuideContext } from "@/lib/consulting-context";
 import { parseVideoSource, getEmbedUrl } from "@/lib/video";
 import { TaskDoneButton } from "./_components/TaskDoneButton";
 import {
@@ -51,7 +52,7 @@ export default async function ConsultingTaskPage({
   const siblings = await prisma.consultingTask.findMany({
     where: { enrollmentId: task.enrollmentId },
     orderBy: [{ day: "asc" }, { order: "asc" }],
-    select: { id: true, title: true, day: true, doneAt: true },
+    select: { id: true, title: true, day: true, doneAt: true, guideKey: true },
   });
   const idx = siblings.findIndex((t) => t.id === task.id);
   const prev = idx > 0 ? siblings[idx - 1] : null;
@@ -68,6 +69,9 @@ export default async function ConsultingTaskPage({
       })
     : null;
   const refVideo = refLesson?.vimeoId ? parseVideoSource(refLesson.vimeoId) : null;
+
+  // 앞 숙제(나의 스토리 · 소비자 선정)의 답 — 도우미가 미리 채우기·이어짐에 쓴다
+  const guideContext = task.guideKey ? await loadGuideContext(task.enrollmentId) : null;
 
   const { note: intakeNote, body: description } = splitIntakeNote(task.description);
   const isDone = !!task.doneAt;
@@ -153,7 +157,14 @@ export default async function ConsultingTaskPage({
               <p className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-bold text-pink-600">
                 <Wand2 className="h-4 w-4" /> {GUIDE_LABELS[task.guideKey] ?? "작성 도우미"}
               </p>
-              <TaskGuide guideKey={task.guideKey} taskId={task.id} data={task.data} />
+              <TaskGuide
+                guideKey={task.guideKey}
+                taskId={task.id}
+                data={task.data}
+                context={guideContext}
+                next={next}
+                siblings={siblings}
+              />
             </section>
           )}
 

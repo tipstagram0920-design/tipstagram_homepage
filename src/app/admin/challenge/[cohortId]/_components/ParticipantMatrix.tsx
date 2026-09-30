@@ -17,6 +17,8 @@ export interface RosterItem {
   name: string | null;
   email: string;
   via: "purchase" | "password";
+  /** 시작 전에 고른 방향 요약 (예: "매장형 · 첫 문의 · 계정 없음") */
+  track?: string;
 }
 export type CellMap = Record<string, Record<number, Cell>>;
 
@@ -105,6 +107,11 @@ export function ParticipantMatrix({
                         )}
                       </p>
                       <p className="text-[11px] text-neutral-400 truncate">{u.email}</p>
+                      {u.track ? (
+                        <p className="text-[11px] text-violet-600 truncate">{u.track}</p>
+                      ) : (
+                        <p className="text-[11px] text-neutral-300 truncate">방향 미선택</p>
+                      )}
                     </div>
                   </td>
                   {openedWeeks.map((w) => {

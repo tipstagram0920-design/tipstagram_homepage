@@ -6,6 +6,7 @@ import { currentDayIndex, CONSULTING_DURATION_DAYS } from "@/lib/consulting";
 import { TaskBoard, type BoardTask } from "@/components/consulting/TaskBoard";
 import { ChevronLeft } from "lucide-react";
 import { ResetTasksButton } from "./_components/ResetTasksButton";
+import { SyncTasksButton } from "./_components/SyncTasksButton";
 import { AdminResults } from "./_components/AdminResults";
 
 export const dynamic = "force-dynamic";
@@ -60,7 +61,10 @@ export default async function AdminConsultingEnrollmentPage({
                 : `현재 Day ${dayIdx}`}
           </p>
         </div>
-        <ResetTasksButton enrollmentId={enrollment.id} />
+        <div className="flex flex-wrap items-center gap-2">
+          <SyncTasksButton enrollmentId={enrollment.id} />
+          <ResetTasksButton enrollmentId={enrollment.id} />
+        </div>
       </div>
 
       {/* 고객 제출 결과 — 클릭하면 결과가 펼쳐집니다 */}

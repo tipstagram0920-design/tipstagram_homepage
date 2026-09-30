@@ -1,7 +1,17 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Copy, Check, Loader2, Save, Sparkles, MessageSquareText, CloudUpload } from "lucide-react";
+import {
+  Copy,
+  Check,
+  Loader2,
+  Save,
+  Sparkles,
+  MessageSquareText,
+  CloudUpload,
+  ArrowRight,
+  ArrowDownToLine,
+} from "lucide-react";
 
 /**
  * 입력값이 바뀌면 잠시 뒤 자동으로 임시 저장(디바운스). 버튼 없이도 작성 중인 내용이 보존된다.
@@ -206,4 +216,118 @@ export function compress(input: string, maxLen: number): string {
   const clipped = arr.slice(0, maxLen).join("");
   const lastSpace = clipped.lastIndexOf(" ");
   return lastSpace > maxLen * 0.6 ? clipped.slice(0, lastSpace) : clipped;
+}
+
+// ---------------------------------------------------------------------------
+// 숙제를 단계로 끊어 보여주고, 앞/다음 숙제와 이어주는 조각들
+// ---------------------------------------------------------------------------
+
+/** 도우미 안에서 "STEP n. 제목" 구분선 */
+export function StepHeader({
+  n,
+  title,
+  desc,
+  done,
+}: {
+  n: number;
+  title: string;
+  desc?: string;
+  done?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-2.5 pt-1">
+      <span
+        className={
+          "shrink-0 mt-0.5 w-6 h-6 rounded-lg text-[11px] font-black flex items-center justify-center " +
+          (done ? "bg-emerald-500 text-white" : "ig-gradient text-white")
+        }
+      >
+        {done ? <Check className="w-3.5 h-3.5" /> : n}
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-[14px] font-black text-neutral-900 leading-6">{title}</p>
+        {desc && <p className="mt-0.5 text-[12px] leading-5 text-neutral-500">{desc}</p>}
+      </div>
+    </div>
+  );
+}
+
+/** 앞 숙제 답을 그대로 끌어오는 버튼 */
+export function PrefillButton({
+  onClick,
+  label = "앞 숙제에서 가져오기",
+  disabled,
+}: {
+  onClick: () => void;
+  label?: string;
+  disabled?: boolean;
+}) {
+  const [used, setUsed] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => {
+        onClick();
+        setUsed(true);
+        setTimeout(() => setUsed(false), 2000);
+      }}
+      className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-[11.5px] font-bold text-indigo-600 hover:border-indigo-400 disabled:opacity-40"
+    >
+      {used ? <Check className="w-3.5 h-3.5" /> : <ArrowDownToLine className="w-3.5 h-3.5" />}
+      {used ? "가져왔어요" : label}
+    </button>
+  );
+}
+
+/** 이 숙제의 결과가 어디로 이어지는지 + 다음 숙제 바로가기 */
+export function NextTaskBox({
+  title,
+  items,
+  next,
+  ready,
+}: {
+  title: string;
+  items: string[];
+  next?: { id: string; title: string; day: number } | null;
+  ready?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4">
+      <p className="inline-flex items-center gap-1.5 text-[13px] font-bold text-indigo-700">
+        <ArrowRight className="w-3.5 h-3.5" /> {title}
+      </p>
+      <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[12.5px] leading-5 text-indigo-900/80">
+        {items.map((t, i) => (
+          <li key={i}>{t}</li>
+        ))}
+      </ul>
+      {next && (
+        <a
+          href={`/consulting/${next.id}`}
+          className={
+            "mt-3 flex items-center justify-between gap-2 rounded-xl border bg-white px-3.5 py-3 transition-colors " +
+            (ready
+              ? "border-indigo-300 hover:border-indigo-500"
+              : "border-neutral-200 hover:border-neutral-400")
+          }
+        >
+          <span className="min-w-0">
+            <span className="block text-[11px] font-bold text-neutral-400">
+              다음 숙제 · Day {next.day}
+            </span>
+            <span className="block truncate text-[13.5px] font-bold text-neutral-900">
+              {next.title}
+            </span>
+          </span>
+          <ArrowRight className="w-4 h-4 shrink-0 text-neutral-400" />
+        </a>
+      )}
+      {next && !ready && (
+        <p className="mt-2 text-[11.5px] text-indigo-900/60">
+          위 단계를 먼저 끝내면 다음 숙제가 훨씬 쉬워집니다.
+        </p>
+      )}
+    </div>
+  );
 }

@@ -17,12 +17,23 @@ export interface StoryInput {
   numbers?: string;
 }
 
+/** 이 숙제 안에서 참여자가 직접 쓴 본인 이야기 */
+export interface OwnStoryInput {
+  myProblem?: string;
+  myTurning?: string;
+  myProof?: string;
+  whyThem?: string;
+}
+
 export interface ProfileInput {
   problems: string[];
   change: string;
   personaLine: string;
   personaDetail?: string;
   expertise?: string;
+  /** 이 숙제에서 직접 쓴 내 이야기 (가장 우선한다) */
+  own?: OwnStoryInput | null;
+  /** 앞 숙제(my-story)의 답 — 보조 재료 */
   story?: StoryInput | null;
 }
 
@@ -65,6 +76,8 @@ const SYSTEM_PROMPT = `너는 국내 소상공인·1인 사업가의 인스타�
 - 이모지는 전체 2개 이하. 줄 맨 앞 장식용 이모지 남발 금지.
 
 ## 반드시 지킬 것
+- "내 이야기"는 참여자 본인이 직접 쓴 답이다. 3버전 모두 이 사람의 경험이 느껴져야 한다.
+  누구에게나 쓸 수 있는 문장이 나왔다면 실패다.
 - 입력값의 단어를 그대로 잘라 붙이지 마라. 소비자가 쓰는 말로 다시 써라.
 - 숫자는 입력에 있는 것만 쓴다. 없으면 숫자 없이 전문성을 표현한다. **지어내기 절대 금지.**
 - 3가지 버전은 서로 다른 각도여야 한다. 조사만 바꾼 반복 금지.
@@ -119,9 +132,16 @@ const SCHEMA = {
 function buildPrompt(input: ProfileInput): string {
   const problems = input.problems.filter((p) => p.trim());
   const s = input.story ?? {};
+  const o = input.own ?? {};
   const has = (v?: string) => (v && v.trim() ? v.trim() : "(입력 없음)");
 
-  return `# 내 이야기 (프로필 1줄·3줄의 재료)
+  return `# 내 이야기 — 이 숙제에서 본인이 직접 쓴 답 (가장 중요한 재료)
+- 나도 똑같이 겪었던 문제: ${has(o.myProblem)}
+- 그 문제를 넘게 해준 결정적인 한 가지: ${has(o.myTurning)}
+- 내가 이 말을 할 수 있는 근거(경력·숫자): ${has(o.myProof || input.expertise)}
+- 왜 하필 이 사람들을 돕고 싶은가: ${has(o.whyThem)}
+
+# 참고 — 앞 숙제(나의 스토리)에 쓴 답
 - 이 일을 시작한 계기: ${has(s.origin)}
 - 문제를 넘을 때 가장 중요했던 것: ${has(s.turningPoint)}
 - 지금은 그 문제를 어떻게 해결했나: ${has(s.howSolved)}
@@ -137,7 +157,9 @@ ${problems.length ? problems.map((p, i) => `  ${i + 1}. ${p.trim()}`).join("\n")
 
 위 내용을 근거로, 3줄 구조(전문가 소개 → 타겟에게 주는 가치 → 팔로우 후의 변화)를 지킨
 인스타 프로필 3가지 버전과 보완 팁을 만들어 줘.
-각 줄은 반드시 조사와 서술어를 갖춘 완결된 문장으로 써 줘.`;
+각 줄은 반드시 조사와 서술어를 갖춘 완결된 문장으로 써 줘.
+"내 이야기"에 본인이 직접 쓴 답이 있으면 그 사람만의 표현·경험이 프로필에 반드시 묻어나게 해 줘.
+앞 숙제 답과 이 숙제 답이 겹치면, 이 숙제에서 직접 쓴 답을 우선해라.`;
 }
 
 /** 3줄이 아니거나 조각 문장이면 최소한의 정리를 한다 */

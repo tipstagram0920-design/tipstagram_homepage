@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { feedbackTextToHtml } from "@/lib/challenge-feedback";
 import { generateFeedbackText, isAiFeedbackConfigured } from "@/lib/challenge-ai-feedback";
+import { getOnboarding } from "@/lib/challenge-enrollment";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // AI 호출이 있어 여유롭게
@@ -39,12 +40,13 @@ export async function GET(req: NextRequest) {
     take: MAX_PER_RUN,
     include: {
       user: { select: { name: true } },
-      week: { select: { weekIndex: true, title: true, homeworkPrompt: true, description: true } },
+      week: { select: { weekIndex: true, title: true, homeworkPrompt: true, description: true, cohortId: true } },
     },
   });
 
   let generated = 0;
   for (const s of targets) {
+    const { answers: onboarding } = await getOnboarding(s.userId, s.week.cohortId);
     const text = await generateFeedbackText({
       weekIndex: s.week.weekIndex,
       weekTitle: s.week.title,
@@ -52,6 +54,7 @@ export async function GET(req: NextRequest) {
       studentName: s.user.name,
       content: s.content,
       formData: s.formData,
+      onboarding,
     });
     if (!text) continue;
     await prisma.homeworkSubmission.update({

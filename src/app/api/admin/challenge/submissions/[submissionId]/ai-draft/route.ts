@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { feedbackTextToHtml } from "@/lib/challenge-feedback";
 import { generateFeedbackText, isAiFeedbackConfigured } from "@/lib/challenge-ai-feedback";
+import { getOnboarding } from "@/lib/challenge-enrollment";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -30,7 +31,7 @@ export async function POST(
     where: { id: submissionId },
     include: {
       user: { select: { name: true } },
-      week: { select: { weekIndex: true, title: true, homeworkPrompt: true, description: true } },
+      week: { select: { weekIndex: true, title: true, homeworkPrompt: true, description: true, cohortId: true } },
     },
   });
   if (!submission) {
@@ -43,6 +44,9 @@ export async function POST(
     );
   }
 
+  // 같은 답이어도 업종·목표에 따라 조언이 달라야 한다
+  const { answers: onboarding } = await getOnboarding(submission.userId, submission.week.cohortId);
+
   const text = await generateFeedbackText({
     weekIndex: submission.week.weekIndex,
     weekTitle: submission.week.title,
@@ -50,6 +54,7 @@ export async function POST(
     studentName: submission.user.name,
     content: submission.content,
     formData: submission.formData,
+    onboarding,
   });
   if (!text) {
     return NextResponse.json({ error: "AI 생성에 실패했어요. 잠시 후 다시 시도해 주세요." }, { status: 502 });

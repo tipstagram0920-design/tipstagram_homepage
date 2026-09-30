@@ -3,6 +3,10 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2, Instagram, CheckCircle2, Link as LinkIcon, ImagePlus, X, Layers, Users, Save, Film } from "lucide-react";
+import { WEEK1_Q1_COPY, type OnboardingAnswers } from "@/lib/challenge-onboarding";
+
+/** 방향을 아직 안 골랐거나 트랙이 없을 때 쓰는 기본 문구 */
+const DEFAULT_Q1_COPY = WEEK1_Q1_COPY.commerce;
 
 interface Initial {
   content: string;
@@ -96,6 +100,8 @@ interface Props {
   initial: Initial | null;
   /** 이미 정식 제출한 숙제인지 (임시저장 버튼 노출 여부 판단) */
   alreadySubmitted?: boolean;
+  /** 시작 전에 고른 방향 — 1주차 Q1 문구가 이걸 따라간다 */
+  onboarding?: OnboardingAnswers;
 }
 
 const WEEK1_QUESTIONS = [
@@ -207,7 +213,9 @@ function assembleContent(
   freeText: string,
   reels: ReelEntry[],
   w3: Required<Omit<Week3FormData, "kind">>,
-  w4: Required<Omit<Week4FormData, "kind">>
+  w4: Required<Omit<Week4FormData, "kind">>,
+  /** 1주차 Q1 제목 — 참가자가 고른 방향에 따라 달라진다 */
+  q1Label: string = DEFAULT_Q1_COPY.label
 ): string {
   if (weekIndex === 4) {
     const valid = w4.reels.filter((r) => r.refUrl.trim() || r.myUrl.trim());
@@ -248,7 +256,7 @@ function assembleContent(
     const parts: string[] = [];
     const validProducts = products.filter((p) => p.name.trim() || p.description.trim());
     if (validProducts.length > 0) {
-      parts.push(`# Q1. 팔고 싶은 것 · 팔고 있는 것`);
+      parts.push(`# Q1. ${q1Label}`);
       validProducts.forEach((p, i) => {
         const line = [`### ${i + 1}. ${p.name || "(이름 미입력)"}`];
         if (p.description) line.push(p.description);
@@ -321,7 +329,9 @@ function QHeader({
   );
 }
 
-export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubmitted }: Props) {
+export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubmitted, onboarding }: Props) {
+  // 쿠팡 파트너스면 "소개할 상품", 인스타 보너스면 "주제"처럼 묻는 말이 달라진다
+  const q1 = (onboarding?.track && WEEK1_Q1_COPY[onboarding.track]) || DEFAULT_Q1_COPY;
   const router = useRouter();
   const isWeek1 = weekIndex === 1;
   const isWeek2 = weekIndex === 2;
@@ -359,6 +369,9 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
   const [products, setProducts] = useState<ProductEntry[]>(
     w1Initial?.products && w1Initial.products.length > 0
       ? w1Initial.products.map((p) => ({ ...EMPTY_PRODUCT, ...p }))
+      : onboarding?.productNote?.trim()
+      ? // 시작 전에 "무엇을 파는지" 써둔 게 있으면 그대로 채워 놓는다
+        [{ ...EMPTY_PRODUCT, name: onboarding.productNote.trim() }]
       : [{ ...EMPTY_PRODUCT }]
   );
   const [answers, setAnswers] = useState<QAnswers>(w1Initial?.answers ?? {});
@@ -495,7 +508,8 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
       freeText,
       reels,
       w3,
-      w4
+      w4,
+      q1.label
     );
     if (isWeek4) {
       return {
@@ -822,16 +836,14 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
         <>
           {/* Q1. 상품 · 다중 카드 */}
           <div className={SECTION}>
-            <QHeader
-              number="Q1"
-              label="팔고 싶은 것 또는 팔고 있는 것은 무엇인가요?"
-              help="여러 개라면 카드를 추가해서 각각 남겨 주세요."
-            />
+            <QHeader number="Q1" label={q1.label} help={q1.help} />
             <div className="space-y-3">
               {products.map((p, i) => (
                 <div key={i} className={NESTED_CARD}>
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold text-neutral-500">상품 {i + 1}</p>
+                    <p className="text-xs font-bold text-neutral-500">
+                      {q1.itemLabel} {i + 1}
+                    </p>
                     {products.length > 1 && (
                       <button
                         type="button"
@@ -850,7 +862,7 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
                         prev.map((x, idx) => (idx === i ? { ...x, name: e.target.value } : x))
                       )
                     }
-                    placeholder="상품·서비스·콘텐츠 이름"
+                    placeholder={q1.namePlaceholder}
                     className={INPUT}
                   />
                   <textarea
@@ -861,7 +873,7 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
                       )
                     }
                     rows={3}
-                    placeholder="한두 문장으로 설명 · 가격·형태·핵심 결과가 드러나면 더 좋아요"
+                    placeholder={q1.descPlaceholder}
                     className={TEXTAREA}
                   />
                 </div>
@@ -871,7 +883,7 @@ export function HomeworkForm({ cohortId, weekId, weekIndex, initial, alreadySubm
                 onClick={() => setProducts((prev) => [...prev, { ...EMPTY_PRODUCT }])}
                 className={ADD_BUTTON}
               >
-                <Plus className="w-4 h-4" /> 상품 추가
+                <Plus className="w-4 h-4" /> {q1.itemLabel} 추가
               </button>
             </div>
           </div>

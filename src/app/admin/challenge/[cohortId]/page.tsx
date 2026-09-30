@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Users, MessageSquareText, Video } from "luci
 import { OpenChatUrlEditor } from "./_components/OpenChatUrlEditor";
 import { AccessPasswordEditor } from "./_components/AccessPasswordEditor";
 import { ParticipantMatrix } from "./_components/ParticipantMatrix";
+import { onboardingSummary, parseOnboarding } from "@/lib/challenge-onboarding";
 import { GenerateAllButton } from "./weeks/[weekId]/submissions/_components/GenerateAllButton";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +50,18 @@ export default async function CohortDetailPage({
       rosterMap.set(e.user.id, { ...e.user, via: "password" });
     }
   }
-  const roster = Array.from(rosterMap.values());
+  // 시작 전에 고른 방향 — 구매자는 등록 행이 나중에 생기므로 별도로 읽는다
+  const onboardingRows = await prisma.challengeEnrollment.findMany({
+    where: { cohortId },
+    select: { userId: true, onboarding: true },
+  });
+  const trackByUser = new Map(
+    onboardingRows.map((r) => [r.userId, onboardingSummary(parseOnboarding(r.onboarding))])
+  );
+  const roster = Array.from(rosterMap.values()).map((u) => ({
+    ...u,
+    track: trackByUser.get(u.id) || "",
+  }));
   const enrolled = roster.length;
 
   // 참여자별 주차별 제출 현황 (임시저장 draft는 제외 = 미제출로 취급)
