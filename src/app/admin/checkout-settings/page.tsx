@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CheckoutSettingsPage() {
   const externalCheckoutUrl = (await getSetting(SETTING_KEYS.externalCheckoutUrl)) || "";
+  const studioProductSlugs = (await getSetting(SETTING_KEYS.studioProductSlugs)) || "";
 
   return (
     <div>
@@ -12,7 +13,7 @@ export default async function CheckoutSettingsPage() {
       <p className="text-sm text-neutral-500 mb-8">
         결제를 외부 사이트에서 받는 경우, 외부 결제 URL을 입력하세요. 비어 있으면 내부 토스 결제 흐름이 작동합니다.
       </p>
-      <CheckoutSettingsClient initial={{ externalCheckoutUrl }} />
+      <CheckoutSettingsClient initial={{ externalCheckoutUrl, studioProductSlugs }} />
     </div>
   );
 }

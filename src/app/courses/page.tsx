@@ -12,7 +12,7 @@ const COURSES_HIDDEN = false;
  * 순서 자체는 Product.order 로 정하고(부스터 → 챌린지 → 컨설팅), 강조는 여기서 고른다.
  * 위치(index 1)로 잡지 않는 이유: 상품이 하나 늘면 엉뚱한 카드가 추천이 된다.
  */
-const RECOMMENDED_SLUG = "5-week-challenge";
+const RECOMMENDED_SLUG = "monetization-program";
 
 async function getProducts() {
   try {

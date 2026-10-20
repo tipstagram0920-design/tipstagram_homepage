@@ -37,6 +37,7 @@ const groups: NavGroup[] = [
     title: "자동화 · 메시징",
     items: [
       { label: "워크플로우", href: "/admin/crm/workflows", icon: Workflow },
+      { label: "라이브 관제탑", href: "/admin/live-ops", icon: Calendar },
       { label: "웨비나 캠페인", href: "/admin/crm/webinar", icon: Calendar },
       { label: "5주 챌린지", href: "/admin/challenge", icon: Trophy },
       { label: "1:1 컨설팅", href: "/admin/consulting", icon: SparklesIcon },

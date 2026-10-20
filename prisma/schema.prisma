@@ -253,6 +253,11 @@ model EmailTemplate {
   subject   String
   html      String   @db.Text
   design    String?  @db.Text
+  // 글로 쓰는 메일 본문. 이게 있으면 발송 HTML 은 저장할 때 여기서 만든다.
+  // (드래그앤드롭 에디터로 만든 문안은 html/design 만 쓴다)
+  bodyText  String?  @db.Text
+  // 같은 사건에 나가는 문자(SMS) 문안. 비워두면 문자는 안 나간다.
+  smsBody   String?  @db.Text
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -501,6 +506,7 @@ model WebinarCampaign {
 
   sends          WebinarCampaignSend[]
   questions      WebinarQuestion[]
+  liveEvent      LiveEvent?
 
   @@map("webinar_campaigns")
 }
@@ -636,6 +642,7 @@ model ChallengeCohort {
 
   weeks       ChallengeWeek[]
   enrollments ChallengeEnrollment[]
+  liveEvent   LiveEvent?
 
   @@index([productSlug, week1StartAt])
   @@map("challenge_cohorts")
@@ -726,4 +733,57 @@ model ChallengeReminderSend {
   @@unique([weekId, stepKey, userId])
   @@index([weekId, sentAt])
   @@map("challenge_reminder_sends")
+}
+
+// ─────────────────────────────────────────────
+// 라이브 관제탑 — 무료 라이브 한 회차의 **원본**.
+// 여기 저장하면 /live 랜딩·웨비나 메일 캠페인·카톡 문안·챌린지 기수·팁스킷 live_events 가 전부 따라온다.
+// 날짜가 10군데에 흩어져 있어 매달 놓치던 것을 한 곳으로 모은다(2026-10-08).
+// ─────────────────────────────────────────────
+model LiveEvent {
+  id            String    @id @default(cuid())
+  title         String
+  startsAt      DateTime  // 라이브 일시 (UTC)
+  youtubeUrl    String?   // 입장 링크 (유튜브 라이브 · 줌도 가능)
+  replayUrl     String?   // 다시보기
+  signupCloseAt DateTime? // 신청 마감
+  salesCloseAt  DateTime? // 다시보기·챌린지 판매 마감 = 캠페인 endDate
+  chatUrl       String?   // 라이브 대기 오픈채팅
+  cohortId      String?   @unique
+  campaignId    String?   @unique
+  tipskitSlug   String?   // 팁스킷 live_events.slug (동기화 키)
+  tipskitSyncedAt DateTime?
+  tipskitSyncError String?
+  kakaoQueuedAt   DateTime? // 맥의 카톡 자동화가 이 라이브로 캠페인·공지를 예약한 시각 (ack)
+  kakaoNote       String?
+  promoQueuedAt   DateTime? // 인스타·스레드 예고 카드뉴스를 SNS automation 에 예약한 시각
+  promoNote       String?
+  kakaoVersion    String? // ack 시점의 내용 해시 — 현재 해시와 같으면 '반영됨'
+  promoVersion    String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  cohort   ChallengeCohort? @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  campaign WebinarCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  clicks   LiveEnterClick[]
+
+  @@index([isActive, startsAt])
+  @@map("live_events")
+}
+
+// 라이브 '입장' 링크 클릭 = 참석의 근사치. 메일(컨택트 식별)과 카톡(익명 카운트)을 같은 표에 둔다.
+model LiveEnterClick {
+  id        String   @id @default(cuid())
+  liveId    String
+  contactId String?
+  email     String?
+  via       String   // email | kakao | other
+  createdAt DateTime @default(now())
+
+  live LiveEvent @relation(fields: [liveId], references: [id], onDelete: Cascade)
+
+  @@index([liveId, createdAt])
+  @@map("live_enter_clicks")
 }

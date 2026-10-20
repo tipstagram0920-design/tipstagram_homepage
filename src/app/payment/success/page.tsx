@@ -20,7 +20,7 @@ function SuccessContent() {
     // ReelSpy 서버가 이미 webhook으로 Purchase를 만들어 두었음 (idempotent)
     if (external === "1") {
       setStatus("success");
-      const dest = slugParam ? `/classroom/${slugParam}` : "/classroom";
+      const dest = slugParam === "monetization-program" ? "/studio" : slugParam ? `/classroom/${slugParam}` : "/classroom";
       setTimeout(() => router.push(dest), 3000);
       return;
     }

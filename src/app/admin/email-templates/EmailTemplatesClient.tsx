@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { Save, ToggleLeft, ToggleRight, Mail, Info, Plus, Trash2, Loader2 } from "lucide-react";
+import { Save, ToggleLeft, ToggleRight, Mail, Info, Plus, Trash2, Loader2, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UnlayerEditorHandle } from "@/components/admin/UnlayerEditor";
 
@@ -28,6 +28,8 @@ interface EmailTemplate {
   subject: string;
   html: string;
   design?: string | null;
+  bodyText?: string | null;
+  smsBody?: string | null;
   isActive: boolean;
   updatedAt: Date;
   product?: { id: string; title: string } | null;
@@ -36,17 +38,32 @@ interface EmailTemplate {
 const TEMPLATE_TYPES = [
   {
     type: "purchase_confirmation",
-    label: "구매 완료 이메일",
-    description: "상품 결제 완료 시 자동 발송",
+    label: "구매 완료 안내",
+    description: "상품 결제 완료 시 이메일·문자 자동 발송",
     variables: ["{{name}}", "{{product}}", "{{amount}}", "{{orderId}}"],
+    // 5주 챌린지 계열 구매에서만 값이 채워지는 변수 (기수 편집 화면의 값을 읽어온다)
+    challengeVariables: ["{{openChatUrl}}", "{{cohortName}}", "{{week1Date}}", "{{challengeUrl}}"],
     defaultSubject: "{{product}} 구매가 완료되었습니다!",
+    // 자주 손대는 문안이라 드래그앤드롭 대신 "보이는 글"로 편집한다
+    textMode: true,
+    smsSupported: true,
+    defaultSms:
+      "[팁스타그램] {{name}}님, {{product}} 결제가 완료되었습니다.\n\n" +
+      "· 1주차 시작: {{week1Date}}\n" +
+      "· 오픈채팅방: {{openChatUrl}}\n" +
+      "· 챌린지 페이지: {{challengeUrl}}\n\n" +
+      "시작 전에 방향 선택부터 해주세요.",
   },
   {
     type: "welcome",
     label: "회원가입 환영 이메일",
     description: "신규 회원가입 완료 시 자동 발송",
     variables: ["{{name}}"],
+    challengeVariables: [] as string[],
     defaultSubject: "팁스타그램에 오신 것을 환영합니다!",
+    textMode: false,
+    smsSupported: false,
+    defaultSms: "",
   },
 ];
 
@@ -62,6 +79,8 @@ function TemplateEditor({
   onDelete?: (id: string) => void;
 }) {
   const [subject, setSubject] = useState(existing?.subject || templateType.defaultSubject);
+  const [smsBody, setSmsBody] = useState(existing?.smsBody ?? "");
+  const [bodyText, setBodyText] = useState(existing?.bodyText ?? "");
   const [isActive, setIsActive] = useState(existing?.isActive ?? true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -83,7 +102,8 @@ function TemplateEditor({
       let html = existing?.html || "";
       let design: object | undefined;
 
-      if (editorRef.current) {
+      // 글로 쓰는 문안은 서버가 HTML 을 만든다. 에디터는 아예 쓰지 않는다.
+      if (!templateType.textMode && editorRef.current) {
         const exported = await editorRef.current.exportHtmlAndDesign();
         html = exported.html;
         design = exported.design;
@@ -102,6 +122,8 @@ function TemplateEditor({
           subject,
           html,
           design,
+          bodyText: templateType.textMode ? bodyText : null,
+          smsBody: templateType.smsSupported ? smsBody : null,
           isActive,
         }),
       });
@@ -157,8 +179,10 @@ function TemplateEditor({
       {/* 변수 안내 */}
       <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-xl">
         <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-        <div>
-          <p className="text-xs font-semibold text-blue-700 mb-1">사용 가능한 변수 (메일 내용에 그대로 입력)</p>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-blue-700 mb-1">
+            사용 가능한 변수 (메일·문자 내용에 그대로 입력)
+          </p>
           <div className="flex flex-wrap gap-1.5">
             {templateType.variables.map((v) => (
               <code key={v} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-mono">
@@ -166,6 +190,29 @@ function TemplateEditor({
               </code>
             ))}
           </div>
+
+          {templateType.challengeVariables.length > 0 && (
+            <>
+              <p className="text-xs font-semibold text-blue-700 mt-2.5 mb-1">
+                5주 챌린지 구매일 때만 채워지는 변수
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {templateType.challengeVariables.map((v) => (
+                  <code
+                    key={v}
+                    className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md font-mono"
+                  >
+                    {v}
+                  </code>
+                ))}
+              </div>
+              <p className="text-[11px] leading-relaxed text-blue-600/80 mt-2">
+                기수 정보는 발송하는 순간 DB에서 읽어옵니다. 기수가 바뀌면 문안은 그대로 두고{" "}
+                <strong>5주 챌린지 → 기수 상세 → 오픈채팅방 URL</strong>만 바꾸면 됩니다.
+                구매자가 들어갈 기수는 &ldquo;아직 시작 안 한 활성 기수 중 가장 이른 것&rdquo;으로 정해집니다.
+              </p>
+            </>
+          )}
         </div>
       </div>
 
@@ -180,20 +227,95 @@ function TemplateEditor({
         />
       </div>
 
-      {/* Unlayer 드래그앤드랍 에디터 */}
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-1.5">메일 내용</label>
-        <div className="border border-neutral-200 rounded-xl overflow-hidden">
-          <UnlayerEditor
-            ref={editorRef}
-            design={existingDesign}
-            onReady={handleReady}
+      {/* 메일 내용 — 자주 고치는 문안은 글로, 그 외는 드래그앤드롭 에디터 */}
+      {templateType.textMode ? (
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 mb-1.5">메일 내용</label>
+          <textarea
+            value={bodyText}
+            onChange={(e) => setBodyText(e.target.value)}
+            rows={20}
+            placeholder="여기에 쓴 글이 그대로 메일로 나갑니다."
+            className="w-full px-4 py-3 rounded-xl border border-neutral-200 text-sm leading-[1.8] focus:outline-none focus:border-pink-400 resize-y font-mono"
           />
+          <div className="mt-2 p-3 bg-neutral-50 rounded-xl">
+            <p className="text-xs font-semibold text-neutral-700 mb-1.5">쓰는 방법 (전부 선택사항)</p>
+            <ul className="space-y-1 text-[11.5px] leading-relaxed text-neutral-500">
+              <li>
+                <code className="bg-white px-1.5 py-0.5 rounded border border-neutral-200 font-mono"># 제목</code>{" "}
+                → 큰 제목
+              </li>
+              <li>
+                <code className="bg-white px-1.5 py-0.5 rounded border border-neutral-200 font-mono">- 항목</code>{" "}
+                → 목록 한 줄
+              </li>
+              <li>
+                <code className="bg-white px-1.5 py-0.5 rounded border border-neutral-200 font-mono">
+                  [버튼]오픈채팅방 입장하기|https://open.kakao.com/o/xxxx
+                </code>{" "}
+                → 누를 수 있는 버튼
+              </li>
+              <li>주소를 그냥 적으면 자동으로 링크가 됩니다. 빈 줄은 문단이 나뉩니다.</li>
+              <li>제목·로고·꼬리말 틀은 자동으로 붙으니 본문만 쓰시면 됩니다.</li>
+            </ul>
+          </div>
         </div>
-        {!editorReady && (
-          <p className="text-xs text-neutral-400 mt-1.5">에디터 로딩 중...</p>
-        )}
-      </div>
+      ) : (
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 mb-1.5">메일 내용</label>
+          <div className="border border-neutral-200 rounded-xl overflow-hidden">
+            <UnlayerEditor
+              ref={editorRef}
+              design={existingDesign}
+              onReady={handleReady}
+            />
+          </div>
+          {!editorReady && (
+            <p className="text-xs text-neutral-400 mt-1.5">에디터 로딩 중...</p>
+          )}
+        </div>
+      )}
+
+      {/* 문자(SMS) 문안 — 비워두면 문자는 안 나간다 */}
+      {templateType.smsSupported && (
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="flex items-center gap-1.5 text-sm font-medium text-neutral-700">
+              <MessageSquare className="w-3.5 h-3.5 text-neutral-400" /> 문자(SMS) 내용
+            </label>
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "text-[11px] font-semibold tabular-nums",
+                  smsBody.length > 90 ? "text-amber-600" : "text-neutral-400"
+                )}
+              >
+                {smsBody.length}자{smsBody.length > 90 ? " · 장문(LMS)" : ""}
+              </span>
+              {!smsBody && (
+                <button
+                  type="button"
+                  onClick={() => setSmsBody(templateType.defaultSms)}
+                  className="text-[11px] font-bold text-pink-600 hover:underline"
+                >
+                  기본 문안 넣기
+                </button>
+              )}
+            </div>
+          </div>
+          <textarea
+            value={smsBody}
+            onChange={(e) => setSmsBody(e.target.value)}
+            rows={7}
+            placeholder="비워두면 문자는 발송하지 않고 이메일만 나갑니다."
+            className="w-full px-4 py-3 rounded-xl border border-neutral-200 text-sm leading-relaxed focus:outline-none focus:border-pink-400 resize-none font-mono"
+          />
+          <p className="text-[11px] text-neutral-500 mt-1.5 leading-relaxed">
+            90자를 넘으면 장문(LMS)으로 발송돼 요금이 올라갑니다. 문자는 연락처에 전화번호가 있는
+            구매자에게만 나갑니다.
+          </p>
+        </div>
+      )}
 
       {/* 버튼 */}
       <div className="flex justify-between">

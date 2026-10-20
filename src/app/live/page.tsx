@@ -4,7 +4,12 @@ import { Footer } from "@/components/layout/Footer";
 import { COMPANY } from "@/lib/company";
 import { LiveSignupForm } from "./LiveSignupForm";
 import { TrackerPixel } from "@/components/TrackerPixel";
-import { TrendingUp, Users as UsersIcon, Banknote, BookOpen, Sparkles } from "lucide-react";
+import { TrendingUp, Users as UsersIcon, Banknote, BookOpen, Sparkles, CalendarDays } from "lucide-react";
+import { nextLiveEvent } from "@/lib/live-ops";
+import { formatLive, daysUntil } from "@/lib/challenge-schedule";
+
+// 관제탑의 다음 라이브 날짜를 매 요청 읽는다 — 정적으로 굳히면 날짜를 바꿔도 랜딩이 옛날 값을 보여준다
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: `무료 라이브 대기방 신청 - ${COMPANY.serviceName}`,
@@ -25,7 +30,10 @@ const LIVE_TOPICS = [
   { title: "지금 당장 적용 가능한 액션", desc: "라이브가 끝나는 그 날, 오늘 밤부터 바꿀 수 있는 3가지 점검 포인트." },
 ];
 
-export default function LiveSignupPage() {
+export default async function LiveSignupPage() {
+  // 관제탑에 등록된 다음 라이브 — 없으면 날짜 없이 기존 화면 그대로
+  const live = await nextLiveEvent();
+  const dday = live ? daysUntil(live.startsAt) : -1;
   return (
     <>
       <TrackerPixel page="live" />
@@ -54,6 +62,14 @@ export default function LiveSignupPage() {
               </p>
             </div>
 
+            {live && (
+              <div className="mb-4 flex items-center justify-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-5 py-3.5 text-white">
+                <CalendarDays className="w-4 h-4 text-amber-300 shrink-0" />
+                <span className="text-sm sm:text-[15px] font-bold">{formatLive(live.startsAt)}</span>
+                {dday > 0 && <span className="text-[11px] font-black px-2 py-0.5 rounded-full ig-gradient">{`D-${dday}`}</span>}
+                {dday === 0 && <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-red-500">오늘</span>}
+              </div>
+            )}
             <div className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl">
               <LiveSignupForm />
             </div>

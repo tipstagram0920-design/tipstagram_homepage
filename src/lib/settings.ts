@@ -5,6 +5,8 @@ export const SETTING_KEYS = {
   ebookUrl: "live_ebook_url",
   /** 외부 결제 URL. 비어있으면 내부 토스 결제 흐름 사용. */
   externalCheckoutUrl: "external_checkout_url",
+  /** 스튜디오(설치 파일) 접근을 주는 상품 슬러그 목록(쉼표). 비면 lib/studio.ts 기본값 */
+  studioProductSlugs: "studio_product_slugs",
   /** 1차 전자책 파일 URL */
   ebook1Url: "ebook1_url",
   /** 2차 전자책 파일 URL */

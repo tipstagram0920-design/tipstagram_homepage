@@ -302,9 +302,9 @@ export const PRESET_STEPS: WebinarStep[] = [
       <h1 style="font-size:22px;font-weight:800;margin:0 0 12px;">{{name}}님, 1시간 후 시작합니다</h1>
       <p style="font-size:15px;color:#444;margin:0 0 20px;">Zoom 방은 시작 15분 전부터 열립니다. 오디오·화면 상태 미리 점검하시고 편하게 들어와 계셔도 좋습니다.</p>
       <p style="text-align:center;margin:24px 0;">
-        <a href="{{zoomUrl}}" style="display:inline-block;padding:16px 32px;border-radius:12px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);color:#fff;font-weight:800;text-decoration:none;font-size:16px;">▶ 라이브 입장하기</a>
+        <a href="{{liveEnterUrl}}" style="display:inline-block;padding:16px 32px;border-radius:12px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCAF45);color:#fff;font-weight:800;text-decoration:none;font-size:16px;">▶ 라이브 입장하기</a>
       </p>
-      <p style="font-size:13px;color:#666;margin:24px 0 0;">버튼이 안 열리면: <a href="{{zoomUrl}}" style="color:#FD1D1D;word-break:break-all;">{{zoomUrl}}</a></p>
+      <p style="font-size:13px;color:#666;margin:24px 0 0;">버튼이 안 열리면: <a href="{{liveEnterUrl}}" style="color:#FD1D1D;word-break:break-all;">{{zoomUrl}}</a></p>
     `),
     transactional: true,
   },

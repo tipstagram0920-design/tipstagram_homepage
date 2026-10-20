@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { prisma } from "@/lib/prisma";
+import { loadOgFonts, ogFontList } from "@/lib/og-fonts";
 
 export const runtime = "nodejs";
 
@@ -18,24 +19,6 @@ const TIERS: Record<string, { label: string; accent: string; glow: string; note?
 };
 const FALLBACK = { label: "TIPSTAGRAM", accent: "#FB7185", glow: "#9F1239" };
 
-/**
- * 한글 글리프가 있는 폰트를 실어야 한다. 없으면 전부 두부(□)로 나온다.
- *
- * 구글 폰트 CSS 에서 뽑아 쓰는 흔한 방법은 여기서 안 됐다 — 받아지는 바이트가 TTF 가 아니라
- * satori 가 "Unsupported OpenType signature" 로 거절한다. Pretendard 는 OTF(OTTO) 를 그대로 준다.
- */
-const FONT_CDN = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static";
-let fontCache: { black: ArrayBuffer; bold: ArrayBuffer } | null = null;
-async function loadFonts() {
-  if (fontCache) return fontCache;
-  const [black, bold] = await Promise.all([
-    fetch(`${FONT_CDN}/Pretendard-Black.otf`).then((r) => r.arrayBuffer()),
-    fetch(`${FONT_CDN}/Pretendard-Bold.otf`).then((r) => r.arrayBuffer()),
-  ]);
-  fontCache = { black, bold };
-  return fontCache;
-}
-
 /** 950000 → "95만원", 3300000 → "330만원" */
 function manwon(price: number): string {
   const man = Math.round(price / 10000);
@@ -51,7 +34,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   if (!product) return new Response("not found", { status: 404 });
 
   const tier = TIERS[slug] ?? FALLBACK;
-  const fonts = await loadFonts();
+  const fonts = await loadOgFonts();
 
   // 제목 마지막 낱말만 색을 준다 — 한 줄로 흘리는 것보다 눈이 먼저 붙는다
   const words = product.title.split(" ");
@@ -147,10 +130,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     {
       width: 1200,
       height: 900,
-      fonts: [
-        { name: "Pretendard", data: fonts.black, weight: 900, style: "normal" as const },
-        { name: "Pretendard", data: fonts.bold, weight: 700, style: "normal" as const },
-      ],
+      fonts: ogFontList(fonts),
       headers: { "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=86400" },
     }
   );

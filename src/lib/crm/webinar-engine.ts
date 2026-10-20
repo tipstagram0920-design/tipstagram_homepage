@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { sendMessage } from "@/lib/messaging";
 import { getSetting, SETTING_KEYS } from "@/lib/settings";
+import { makeUnsubscribeToken } from "./unsubscribe-token";
 import { resolveAudience, type AudienceCriteria } from "./webinar-audience";
 import type { Prisma } from "@prisma/client";
 
@@ -97,7 +98,14 @@ async function buildVars(
 
   const SITE = "https://tipstagram-homepage.vercel.app";
 
+  // 관제탑 라이브가 연결돼 있으면 입장 링크를 '클릭이 남는' 주소로 바꾼다 — 참석 근사치의 유일한 출처
+  const live = await prisma.liveEvent.findUnique({ where: { campaignId: campaign.id }, select: { id: true } }).catch(() => null);
+  const enterUrl = live
+    ? `${SITE}/r/live/${live.id}?t=${encodeURIComponent(makeUnsubscribeToken(contact.email))}`
+    : campaign.zoomUrl || zoomUrl || "";
+
   return {
+    "{{liveEnterUrl}}": enterUrl,
     "{{name}}": contact.name || "회원",
     "{{email}}": contact.email,
     "{{daysToWebinar}}": String(diffDays(now, campaign.webinarDate)),

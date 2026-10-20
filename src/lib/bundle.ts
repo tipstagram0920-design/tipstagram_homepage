@@ -19,9 +19,13 @@ export const CHALLENGE_PRODUCT_SLUGS = [
 /** 5주 코스 신청자에게 함께 열어주는 상품 슬러그 */
 export const CHALLENGE_BONUS_SLUGS = ["marketing-booster"] as const;
 
-const BUNDLE_MAP: Record<string, readonly string[]> = Object.fromEntries(
-  CHALLENGE_PRODUCT_SLUGS.map((slug) => [slug, CHALLENGE_BONUS_SLUGS])
-);
+/** 수익화 프로그램(100만원 단일 상품) 도 부스터 강의를 함께 연다 */
+const MONETIZATION_PROGRAM_SLUG = "monetization-program";
+
+const BUNDLE_MAP: Record<string, readonly string[]> = Object.fromEntries([
+  ...CHALLENGE_PRODUCT_SLUGS.map((slug) => [slug, CHALLENGE_BONUS_SLUGS] as const),
+  [MONETIZATION_PROGRAM_SLUG, CHALLENGE_BONUS_SLUGS] as const,
+]);
 
 export interface GrantResult {
   /** 이번에 새로 부여한 슬러그 */

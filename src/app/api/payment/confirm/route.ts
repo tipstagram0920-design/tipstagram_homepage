@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatPrice } from "@/lib/utils";
-import { sendMessage } from "@/lib/messaging";
+import { sendPurchaseNotification } from "@/lib/purchase-notify";
 import { upsertContactByEmail } from "@/lib/crm/contact";
 import { logEvent } from "@/lib/crm/events";
 import { triggerWorkflow } from "@/lib/crm/workflow-engine";
@@ -98,43 +97,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 구매 완료 자동 이메일 발송
-    if (user && product) {
-      const template = await prisma.emailTemplate.findFirst({
-        where: {
-          type: "purchase_confirmation",
-          isActive: true,
-          OR: [{ productId }, { productId: null }],
-        },
-        orderBy: { productId: "desc" },
-      }).catch(() => null);
-
-      if (template) {
-        const variables: Record<string, string> = {
-          "{{name}}": user.name || "회원",
-          "{{product}}": product.title,
-          "{{amount}}": formatPrice(amount),
-          "{{orderId}}": orderId,
-        };
-        const html = Object.entries(variables).reduce(
-          (acc, [k, v]) => acc.replaceAll(k, v),
-          template.html
-        );
-        const subject = Object.entries(variables).reduce(
-          (acc, [k, v]) => acc.replaceAll(k, v),
-          template.subject
-        );
-
-        await sendMessage({
-          to: user.email,
-          contactId: contactId ?? undefined,
-          subject,
-          body: html,
-          templateKey: "purchase_confirmation",
-          transactional: true,
-        }).catch(() => { }); // 이메일 실패해도 결제는 성공 처리
-      }
-    }
+    // 구매 완료 안내 (이메일 + 문자). 문안은 어드민에서 고치고, 기수 정보는 발송 시점에 채운다.
+    await sendPurchaseNotification({
+      userId: session.user.id,
+      productId,
+      orderId,
+      amount,
+      contactId,
+    });
 
     return NextResponse.json({ success: true, purchaseId: purchase.id });
   } catch {

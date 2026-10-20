@@ -7,10 +7,21 @@ import { Check, ExternalLink, Loader2 } from "lucide-react";
 export function CheckoutSettingsClient({
   initial,
 }: {
-  initial: { externalCheckoutUrl: string };
+  initial: { externalCheckoutUrl: string; studioProductSlugs?: string };
 }) {
   const router = useRouter();
   const [url, setUrl] = useState(initial.externalCheckoutUrl);
+  const [studioSlugs, setStudioSlugs] = useState(initial.studioProductSlugs || "");
+  const [studioSaved, setStudioSaved] = useState(false);
+  const saveStudio = async () => {
+    setStudioSaved(false);
+    const res = await fetch("/api/admin/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "studio_product_slugs", value: studioSlugs.trim() }),
+    });
+    if (res.ok) { setStudioSaved(true); router.refresh(); setTimeout(() => setStudioSaved(false), 2500); }
+  };
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -82,6 +93,20 @@ export function CheckoutSettingsClient({
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
           저장
         </button>
+      </section>
+
+      <section className="bg-white rounded-2xl border border-neutral-100 p-6 space-y-3">
+        <label className="block text-sm font-semibold text-neutral-800">스튜디오 설치 파일을 받을 수 있는 상품 (슬러그, 쉼표 구분)</label>
+        <input
+          type="text"
+          value={studioSlugs}
+          onChange={(e) => setStudioSlugs(e.target.value)}
+          placeholder="비워두면 기본값: monetization-program, 5-week-challenge, 5-week-challenge-plus-consulting"
+          className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm focus:outline-none focus:border-pink-400"
+        />
+        <p className="text-xs text-neutral-500">챌린지 기수에 비밀번호로 들어온 참여자는 목록과 상관없이 받을 수 있습니다. /studio 페이지에 적용됩니다.</p>
+        {studioSaved && <p className="text-sm text-green-600 bg-green-50 px-4 py-3 rounded-xl flex items-center gap-1.5"><Check className="w-4 h-4" /> 저장되었습니다.</p>}
+        <button onClick={saveStudio} className="px-5 py-2.5 rounded-xl ig-gradient text-white text-sm font-bold hover:opacity-90">저장</button>
       </section>
 
       <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">

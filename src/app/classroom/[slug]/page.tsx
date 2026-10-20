@@ -47,6 +47,9 @@ export default async function ClassroomCoursePage({
   const purchase = await getClassroomData(session.user.id, slug).catch(() => null);
   if (!purchase) notFound();
 
+  // 수익화 프로그램(100만원 단일 상품)은 영상 코스가 아니라 설치 페이지가 본체다. 부스터 강의는 번들로 따로 열린다.
+  if (slug === "monetization-program") redirect("/studio");
+
   // 챌린지 계열은 영상 코스가 없다. 그대로 두면 195만원 결제 직후 "0/0 강 완료" 빈 강의실이 뜬다.
   // 실체는 기수 안내·대시보드이므로 그쪽으로 보낸다 (결제 성공 → /classroom/{slug} 로 오는 동선).
   if (!purchase.product.course) {

@@ -6,7 +6,7 @@ import {
   type OnboardingAnswers,
 } from "@/lib/challenge-onboarding";
 
-const CHALLENGE_SLUGS = ["5-week-challenge", "5-week-challenge-plus-consulting"];
+export const CHALLENGE_SLUGS = ["5-week-challenge", "5-week-challenge-plus-consulting"];
 
 /**
  * 이 사용자가 이 기수에 참여할 자격이 있는지 (챌린지 계열 상품을 유효 구매)
